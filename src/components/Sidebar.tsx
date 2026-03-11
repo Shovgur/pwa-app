@@ -1,234 +1,133 @@
 import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import {
-  LayoutDashboard, BarChart3, Users, MessageSquare,
-  Settings, Bell, Zap, LogOut, ChevronLeft,
-  Sparkles, Wallet, Rocket,
-} from 'lucide-react'
+import { Home, Search, CalendarCheck, MapPin, User, Settings, Bell, LogOut, ChevronLeft } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
-const NAV_ITEMS = [
-  { to: '/dashboard', icon: LayoutDashboard, label: 'Дашборд', color: '#a855f7' },
-  { to: '/dashboard/analytics', icon: BarChart3, label: 'Аналитика', color: '#22d3ee' },
-  { to: '/dashboard/users', icon: Users, label: 'Пользователи', color: '#f472b6' },
-  { to: '/dashboard/messages', icon: MessageSquare, label: 'Сообщения', color: '#34d399', badge: 3 },
-  { to: '/dashboard/wallet', icon: Wallet, label: 'Кошелёк', color: '#fbbf24' },
-  { to: '/dashboard/ai', icon: Sparkles, label: 'AI', color: '#818cf8' },
-  { to: '/dashboard/projects', icon: Rocket, label: 'Проекты', color: '#fb923c' },
-  { to: '/dashboard/notifications', icon: Bell, label: 'Уведомления', color: '#94a3b8', badge: 5 },
-  { to: '/dashboard/settings', icon: Settings, label: 'Настройки', color: '#94a3b8' },
+const NAV = [
+  { to: '/dashboard', icon: Home, label: 'Главная', color: '#22c55e' },
+  { to: '/dashboard/courts', icon: Search, label: 'Площадки', color: '#3b82f6' },
+  { to: '/dashboard/bookings', icon: CalendarCheck, label: 'Бронирования', color: '#f97316', badge: 2 },
+  { to: '/dashboard/map', icon: MapPin, label: 'Карта', color: '#a855f7' },
+  { to: '/dashboard/profile', icon: User, label: 'Профиль', color: '#06b6d4' },
 ]
 
-// Мобильная нижняя навигация (первые 5 пунктов)
-const MOBILE_NAV = NAV_ITEMS.slice(0, 5)
+const BOTTOM = [
+  { to: '/dashboard/notifications', icon: Bell, label: 'Уведомления', color: '#94a3b8', badge: 3 },
+  { to: '/dashboard/settings', icon: Settings, label: 'Настройки', color: '#94a3b8' },
+]
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
   const { user, logout } = useAuth()
   const navigate = useNavigate()
 
-  function handleLogout() {
-    logout()
-    navigate('/login')
-  }
-
   return (
-    <>
-      {/* ===== Десктопный сайдбар ===== */}
-      <motion.aside
-        initial={false}
-        animate={{ width: collapsed ? 68 : 220 }}
-        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        className="hidden md:flex flex-col h-full glass"
-        style={{ borderRight: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}
+    <motion.aside
+      animate={{ width: collapsed ? 68 : 224 }}
+      transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+      className="flex flex-col h-full relative"
+      style={{ background: '#141f2e', borderRight: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}
+    >
+      <motion.button
+        onClick={() => setCollapsed(!collapsed)}
+        className="absolute -right-3.5 top-7 z-50 w-7 h-7 rounded-full flex items-center justify-center"
+        style={{ background: '#1a2840', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}
+        whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
       >
-        {/* Кнопка свернуть */}
-        <motion.button
-          onClick={() => setCollapsed(!collapsed)}
-          className="absolute -right-3.5 top-7 z-50 w-7 h-7 rounded-full flex items-center justify-center glass neon-border"
-          style={{ background: '#0f0f2e' }}
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-        >
-          <motion.div animate={{ rotate: collapsed ? 0 : 180 }}>
-            <ChevronLeft size={13} className="text-purple-400" />
-          </motion.div>
-        </motion.button>
+        <motion.div animate={{ rotate: collapsed ? 0 : 180 }}>
+          <ChevronLeft size={13} color="#94a3b8" />
+        </motion.div>
+      </motion.button>
 
-        {/* Логотип */}
-        <div className="px-3 py-4 flex items-center gap-3 overflow-hidden">
-          <motion.div
-            className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
-            style={{ background: 'linear-gradient(135deg, #7c3aed, #06b6d4)' }}
-            animate={{ boxShadow: ['0 0 10px rgba(124,58,237,0.4)', '0 0 20px rgba(124,58,237,0.7)', '0 0 10px rgba(124,58,237,0.4)'] }}
-            transition={{ duration: 2, repeat: Infinity }}
-          >
-            <Zap size={18} className="text-white" />
-          </motion.div>
+      {/* Лого */}
+      <div style={{ padding: '20px 16px', display: 'flex', alignItems: 'center', gap: 12, overflow: 'hidden' }}>
+        <div style={{ width: 36, height: 36, borderRadius: 12, background: 'linear-gradient(135deg, #22c55e, #16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>⚡</div>
+        <AnimatePresence>
+          {!collapsed && (
+            <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', whiteSpace: 'nowrap' }}>SportBook</div>
+              <div style={{ fontSize: 10, color: '#22c55e', fontWeight: 600, letterSpacing: 0.5 }}>БРОНИРОВАНИЕ</div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+
+      <div style={{ height: 1, margin: '0 16px 12px', background: 'rgba(255,255,255,0.06)' }} />
+
+      {/* Основная навигация */}
+      <nav style={{ flex: 1, padding: '0 8px', display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto' }}>
+        {NAV.map(item => <NavItem key={item.to} item={item} collapsed={collapsed} />)}
+      </nav>
+
+      <div style={{ height: 1, margin: '8px 16px', background: 'rgba(255,255,255,0.06)' }} />
+
+      {/* Нижние пункты */}
+      <div style={{ padding: '0 8px 8px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+        {BOTTOM.map(item => <NavItem key={item.to} item={item} collapsed={collapsed} />)}
+      </div>
+
+      <div style={{ height: 1, margin: '0 16px 12px', background: 'rgba(255,255,255,0.06)' }} />
+
+      {/* Юзер */}
+      <div style={{ padding: '0 8px 16px' }}>
+        <motion.div
+          style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 14, cursor: 'pointer', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)' }}
+          whileHover={{ background: 'rgba(255,255,255,0.05)' }}
+          onClick={() => { logout(); navigate('/login') }}
+        >
+          <div style={{ width: 32, height: 32, borderRadius: 10, background: 'linear-gradient(135deg, #22c55e, #3b82f6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
+            {user?.avatar ?? 'U'}
+          </div>
           <AnimatePresence>
             {!collapsed && (
-              <motion.span
-                initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}
-                className="font-black text-base gradient-text whitespace-nowrap"
-              >
-                NEXUS
-              </motion.span>
+              <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#e2e8f0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.name}</p>
+                <p style={{ fontSize: 11, color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</p>
+              </motion.div>
             )}
           </AnimatePresence>
-        </div>
-
-        <div className="mx-3 h-px mb-3" style={{ background: 'linear-gradient(90deg, transparent, rgba(124,58,237,0.4), transparent)' }} />
-
-        {/* Навигация */}
-        <nav className="flex-1 px-2 space-y-0.5 overflow-y-auto overflow-x-hidden">
-          {NAV_ITEMS.map(item => <NavItem key={item.to} item={item} collapsed={collapsed} />)}
-        </nav>
-
-        <div className="mx-3 my-2 h-px" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.06), transparent)' }} />
-
-        {/* Юзер */}
-        <div className="px-2 pb-4">
-          <motion.div
-            className="flex items-center gap-2.5 p-2.5 rounded-xl glass-hover glass cursor-pointer overflow-hidden"
-            style={{ border: '1px solid rgba(255,255,255,0.05)' }}
-            whileHover={{ x: 2 }}
-            onClick={handleLogout}
-            title="Выйти"
-          >
-            <div
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 text-white"
-              style={{ background: 'linear-gradient(135deg, #7c3aed, #ec4899)' }}
-            >
-              {user?.avatar ?? 'U'}
-            </div>
-            <AnimatePresence>
-              {!collapsed && (
-                <motion.div
-                  initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}
-                  className="flex-1 min-w-0"
-                >
-                  <p className="text-sm font-medium text-white truncate">{user?.name}</p>
-                  <p className="text-xs text-slate-500 truncate">{user?.role}</p>
-                </motion.div>
-              )}
-            </AnimatePresence>
-            {!collapsed && <LogOut size={14} className="text-slate-500 flex-shrink-0" />}
-          </motion.div>
-        </div>
-      </motion.aside>
-
-      {/* ===== Мобильная нижняя панель ===== */}
-      <nav
-        className="md:hidden fixed bottom-0 left-0 right-0 glass"
-        style={{
-          zIndex: 100,
-          borderTop: '1px solid rgba(255,255,255,0.08)',
-          paddingBottom: 'env(safe-area-inset-bottom)',
-        }}
-      >
-        <div className="flex items-center justify-around px-2 py-2">
-          {MOBILE_NAV.map(item => {
-            const Icon = item.icon
-            return (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.to === '/dashboard'}
-                className="flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl relative"
-              >
-                {({ isActive }) => (
-                  <>
-                    <motion.div
-                      animate={{ scale: isActive ? 1.15 : 1 }}
-                      className="relative"
-                    >
-                      <Icon size={22} color={isActive ? item.color : '#475569'} />
-                      {item.badge && !isActive && (
-                        <span
-                          className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full flex items-center justify-center text-white"
-                          style={{ background: item.color, fontSize: 8 }}
-                        >
-                          {item.badge}
-                        </span>
-                      )}
-                    </motion.div>
-                    <span
-                      className="text-xs leading-none"
-                      style={{ color: isActive ? item.color : '#475569', fontSize: 10 }}
-                    >
-                      {item.label}
-                    </span>
-                    {isActive && (
-                      <motion.div
-                        layoutId="mobileActive"
-                        className="absolute -top-0.5 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full"
-                        style={{ background: item.color }}
-                      />
-                    )}
-                  </>
-                )}
-              </NavLink>
-            )
-          })}
-          {/* Кнопка выйти */}
-          <button
-            onClick={handleLogout}
-            className="flex flex-col items-center gap-0.5 px-2 py-1 rounded-xl"
-          >
-            <LogOut size={22} color="#475569" />
-            <span style={{ color: '#475569', fontSize: 10 }} className="text-xs leading-none">Выйти</span>
-          </button>
-        </div>
-      </nav>
-    </>
+          {!collapsed && <LogOut size={14} color="#64748b" style={{ flexShrink: 0 }} />}
+        </motion.div>
+      </div>
+    </motion.aside>
   )
 }
 
-// Компонент одного пункта меню (десктоп)
 function NavItem({ item, collapsed }: {
-  item: { to: string; icon: React.FC<{ size?: number; color?: string; className?: string }>; label: string; color: string; badge?: number }
+  item: { to: string; icon: React.FC<{ size?: number; color?: string }>; label: string; color: string; badge?: number }
   collapsed: boolean
 }) {
   const Icon = item.icon
   return (
-    <NavLink to={item.to} end={item.to === '/dashboard'} className="block">
+    <NavLink to={item.to} end={item.to === '/dashboard'} style={{ textDecoration: 'none' }}>
       {({ isActive }) => (
         <motion.div
-          className="relative flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl cursor-pointer overflow-hidden"
           style={{
+            display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 12,
             background: isActive ? `${item.color}18` : 'transparent',
-            border: isActive ? `1px solid ${item.color}35` : '1px solid transparent',
+            border: isActive ? `1px solid ${item.color}30` : '1px solid transparent',
+            cursor: 'pointer', position: 'relative',
           }}
-          whileHover={{ background: `${item.color}12`, x: 2 }}
+          whileHover={{ background: `${item.color}10`, x: 2 }}
           transition={{ duration: 0.15 }}
         >
           {isActive && (
-            <motion.div
-              layoutId="activeIndicator"
-              className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full"
-              style={{ background: item.color }}
-            />
+            <motion.div layoutId="sidebarActive"
+              style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', width: 3, height: 20, borderRadius: '0 3px 3px 0', background: item.color }} />
           )}
-          <div className="flex-shrink-0 relative">
-            <Icon size={17} color={isActive ? item.color : '#64748b'} />
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            <Icon size={18} color={isActive ? item.color : '#64748b'} />
             {item.badge && (
-              <span
-                className="absolute -top-1.5 -right-1.5 w-3.5 h-3.5 rounded-full flex items-center justify-center text-white"
-                style={{ fontSize: 8, background: item.color }}
-              >
+              <span style={{ position: 'absolute', top: -5, right: -5, width: 14, height: 14, borderRadius: '50%', background: item.color, color: '#fff', fontSize: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
                 {item.badge}
               </span>
             )}
           </div>
           <AnimatePresence>
             {!collapsed && (
-              <motion.span
-                initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -8 }}
-                transition={{ duration: 0.15 }}
-                className="text-sm font-medium whitespace-nowrap"
-                style={{ color: isActive ? item.color : '#94a3b8' }}
-              >
+              <motion.span initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -8 }}
+                style={{ fontSize: 14, fontWeight: isActive ? 600 : 400, color: isActive ? item.color : '#94a3b8', whiteSpace: 'nowrap' }}>
                 {item.label}
               </motion.span>
             )}

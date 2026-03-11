@@ -18,6 +18,8 @@ const ACTIVITY = [
 
 const BARS = [65, 80, 45, 92, 70, 85, 60, 75, 88, 55, 95, 72]
 const MONTHS = ['Я', 'Ф', 'М', 'А', 'М', 'И', 'И', 'А', 'С', 'О', 'Н', 'Д']
+const MAX_BAR = Math.max(...BARS)
+const BAR_MAX_PX = 80
 
 export function OverviewTab() {
   const { user } = useAuth()
@@ -91,23 +93,27 @@ export function OverviewTab() {
           </div>
           <span className="text-green-400 text-xs font-medium">+18% ↑</span>
         </div>
-        <div className="flex items-end gap-1 h-24">
-          {BARS.map((h, i) => (
-            <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
-              <motion.div
-                className="w-full rounded-t"
-                style={{
-                  height: `${h}%`,
-                  background: i === 11 ? 'linear-gradient(180deg, #a855f7, #7c3aed)' : 'rgba(168,85,247,0.2)',
-                  minHeight: 3,
-                }}
-                initial={{ scaleY: 0 }}
-                animate={{ scaleY: 1 }}
-                transition={{ delay: 0.4 + i * 0.04 }}
-              />
-              <span className="text-slate-600" style={{ fontSize: 8 }}>{MONTHS[i]}</span>
-            </div>
-          ))}
+        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4, height: BAR_MAX_PX + 20 }}>
+          {BARS.map((h, i) => {
+            const px = Math.round((h / MAX_BAR) * BAR_MAX_PX)
+            return (
+              <div key={i} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+                <motion.div
+                  style={{
+                    width: '100%',
+                    height: px,
+                    borderRadius: '4px 4px 0 0',
+                    background: i === 11 ? 'linear-gradient(180deg, #c084fc, #7c3aed)' : 'rgba(168,85,247,0.25)',
+                    minHeight: 4,
+                  }}
+                  initial={{ height: 0 }}
+                  animate={{ height: px }}
+                  transition={{ delay: 0.4 + i * 0.04, duration: 0.5, ease: 'easeOut' }}
+                />
+                <span style={{ fontSize: 8, color: '#475569' }}>{MONTHS[i]}</span>
+              </div>
+            )
+          })}
         </div>
       </motion.div>
 

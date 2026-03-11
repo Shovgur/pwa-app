@@ -1,8 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 
-const COLORS = ['#7c3aed', '#06b6d4', '#a855f7']
-
 function MiniParticles() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
 
@@ -13,14 +11,14 @@ function MiniParticles() {
     if (!ctx) return
 
     let animId: number
-    const particles = Array.from({ length: 40 }, () => ({
+    const particles = Array.from({ length: 30 }, () => ({
       x: Math.random() * window.innerWidth,
       y: Math.random() * window.innerHeight,
-      vx: (Math.random() - 0.5) * 0.25,
-      vy: (Math.random() - 0.5) * 0.25,
-      r: Math.random() * 1.2 + 0.3,
-      alpha: Math.random() * 0.3 + 0.05,
-      color: COLORS[Math.floor(Math.random() * COLORS.length)],
+      vx: (Math.random() - 0.5) * 0.2,
+      vy: (Math.random() - 0.5) * 0.2,
+      r: Math.random() * 1 + 0.3,
+      alpha: Math.random() * 0.2 + 0.05,
+      color: ['#22c55e', '#3b82f6', '#f97316'][Math.floor(Math.random() * 3)],
       pulse: Math.random() * Math.PI * 2,
     }))
 
@@ -36,7 +34,7 @@ function MiniParticles() {
       if (!ctx || !canvas) return
       ctx.clearRect(0, 0, canvas.width, canvas.height)
       for (const p of particles) {
-        p.pulse += 0.008
+        p.pulse += 0.006
         const a = p.alpha * (0.6 + 0.4 * Math.sin(p.pulse))
         ctx.beginPath()
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
@@ -54,62 +52,17 @@ function MiniParticles() {
     return () => { cancelAnimationFrame(animId); window.removeEventListener('resize', resize) }
   }, [])
 
-  return (
-    <canvas
-      ref={canvasRef}
-      style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}
-    />
-  )
+  return <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }} />
 }
 
 export function AmbientBg() {
   return (
-    <div
-      style={{
-        position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-        zIndex: 0, pointerEvents: 'none', overflow: 'hidden',
-      }}
-    >
+    <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
       <MiniParticles />
-
-      {/* Орб 1 — фиолетовый, левый верх */}
-      <motion.div
-        style={{
-          position: 'absolute', width: 600, height: 600,
-          top: '-20%', left: '-15%',
-          background: 'radial-gradient(circle, rgba(124,58,237,0.12) 0%, transparent 70%)',
-          filter: 'blur(80px)',
-          borderRadius: '50%',
-        }}
-        animate={{ scale: [1, 1.25, 1], x: [0, 40, 0], y: [0, -25, 0] }}
-        transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut' }}
-      />
-
-      {/* Орб 2 — циан, правый низ */}
-      <motion.div
-        style={{
-          position: 'absolute', width: 500, height: 500,
-          bottom: '-15%', right: '-10%',
-          background: 'radial-gradient(circle, rgba(6,182,212,0.1) 0%, transparent 70%)',
-          filter: 'blur(80px)',
-          borderRadius: '50%',
-        }}
-        animate={{ scale: [1, 1.2, 1], x: [0, -30, 0], y: [0, 20, 0] }}
-        transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
-      />
-
-      {/* Орб 3 — пинк, центр */}
-      <motion.div
-        style={{
-          position: 'absolute', width: 350, height: 350,
-          top: '35%', left: '45%',
-          background: 'radial-gradient(circle, rgba(168,85,247,0.07) 0%, transparent 70%)',
-          filter: 'blur(70px)',
-          borderRadius: '50%',
-        }}
-        animate={{ scale: [1, 1.4, 1], rotate: [0, 180, 360] }}
-        transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut', delay: 4 }}
-      />
+      <motion.div style={{ position: 'absolute', width: 700, height: 700, top: '-20%', right: '-15%', background: 'radial-gradient(circle, rgba(34,197,94,0.06) 0%, transparent 65%)', filter: 'blur(100px)', borderRadius: '50%' }}
+        animate={{ scale: [1, 1.2, 1], x: [0, 30, 0] }} transition={{ duration: 14, repeat: Infinity, ease: 'easeInOut' }} />
+      <motion.div style={{ position: 'absolute', width: 600, height: 600, bottom: '-15%', left: '-10%', background: 'radial-gradient(circle, rgba(59,130,246,0.06) 0%, transparent 65%)', filter: 'blur(100px)', borderRadius: '50%' }}
+        animate={{ scale: [1, 1.15, 1], y: [0, -20, 0] }} transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 3 }} />
     </div>
   )
 }
