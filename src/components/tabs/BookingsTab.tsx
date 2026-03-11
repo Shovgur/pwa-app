@@ -33,33 +33,38 @@ interface CancelPopupProps {
 
 function CancelPopup({ booking, onConfirm, onClose }: CancelPopupProps) {
   return (
-    <AnimatePresence>
+    <>
+      {/* Overlay */}
       <motion.div
-        key="overlay"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
         style={{
-          position: 'fixed', inset: 0, zIndex: 2000,
-          background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)',
+          position: 'fixed', inset: 0, zIndex: 11000,
+          background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)',
         }}
       />
-      <motion.div
-        key="popup"
-        initial={{ opacity: 0, scale: 0.85, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.85, y: 20 }}
-        transition={{ type: 'spring', damping: 25, stiffness: 350 }}
-        onClick={e => e.stopPropagation()}
-        style={{
-          position: 'fixed', left: '50%', top: '50%', transform: 'translate(-50%, -50%)',
-          zIndex: 2001, width: 'calc(100% - 40px)', maxWidth: 360,
-          background: '#111827', borderRadius: 24,
-          border: '1px solid rgba(255,255,255,0.1)',
-          padding: 24, boxShadow: '0 40px 80px rgba(0,0,0,0.6)',
-        }}
-      >
+      {/* Centering wrapper — позиционируем через flex, не transform */}
+      <div style={{
+        position: 'fixed', inset: 0, zIndex: 11001,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '0 20px', pointerEvents: 'none',
+      }}>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.82, y: 24 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.82, y: 24 }}
+          transition={{ type: 'spring', damping: 26, stiffness: 380 }}
+          onClick={e => e.stopPropagation()}
+          style={{
+            pointerEvents: 'auto',
+            width: '100%', maxWidth: 360,
+            background: '#111827', borderRadius: 24,
+            border: '1px solid rgba(255,255,255,0.1)',
+            padding: 24, boxShadow: '0 40px 80px rgba(0,0,0,0.7)',
+          }}
+        >
         {/* Иконка предупреждения */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 18 }}>
           <div style={{
@@ -119,8 +124,9 @@ function CancelPopup({ booking, onConfirm, onClose }: CancelPopupProps) {
             Отменить
           </motion.button>
         </div>
-      </motion.div>
-    </AnimatePresence>
+        </motion.div>
+      </div>
+    </>
   )
 }
 
