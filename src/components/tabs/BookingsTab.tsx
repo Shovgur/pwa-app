@@ -1,112 +1,349 @@
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { CalendarCheck, Clock, MapPin, X, CheckCircle2, AlertCircle } from 'lucide-react'
+import { MapPin, AlertTriangle, X, RotateCcw } from 'lucide-react'
+import { useBookings } from '../../contexts/BookingContext'
+import type { Booking } from '../../contexts/BookingContext'
+import { CourtDetailSheet } from '../CourtDetailSheet'
 
-const BOOKINGS = [
-  { id: 1, emoji: '🎾', name: 'Корт "Спарта"', location: 'Парк Горького', date: '11 марта', time: '18:00 — 19:30', price: 2250, status: 'upcoming', color: '#22c55e' },
-  { id: 2, emoji: '⚽', name: 'Поле "Олимп" 5×5', location: 'Олимпийский', date: '15 марта', time: '10:00 — 11:00', price: 2400, status: 'upcoming', color: '#3b82f6' },
-  { id: 3, emoji: '🏀', name: 'Arena ЦСКА', location: 'Ленинградский пр.', date: '5 марта', time: '20:00 — 21:00', price: 900, status: 'completed', color: '#f97316' },
-  { id: 4, emoji: '🏸', name: 'Бадминтон Plaza', location: 'Сокольники', date: '28 февр.', time: '12:00 — 13:00', price: 700, status: 'completed', color: '#a855f7' },
-  { id: 5, emoji: '🎾', name: 'Лужники — Корт 1', location: 'Лужники', date: '20 февр.', time: '09:00 — 10:00', price: 3000, status: 'cancelled', color: '#64748b' },
+type Tab = 'upcoming' | 'completed' | 'cancelled'
+
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'upcoming', label: 'Предстоящие' },
+  { id: 'completed', label: 'Завершённые' },
+  { id: 'cancelled', label: 'Отменённые' },
 ]
 
-const STATUS = {
-  upcoming: { label: 'Предстоит', color: '#22c55e', bg: 'rgba(34,197,94,0.12)', icon: CalendarCheck },
-  completed: { label: 'Завершено', color: '#3b82f6', bg: 'rgba(59,130,246,0.12)', icon: CheckCircle2 },
-  cancelled: { label: 'Отменено', color: '#f87171', bg: 'rgba(239,68,68,0.12)', icon: AlertCircle },
+const STATUS_COLORS: Record<Tab, string> = {
+  upcoming: '#22c55e',
+  completed: '#3b82f6',
+  cancelled: '#ef4444',
+}
+
+const STATUS_LABELS: Record<Tab, string> = {
+  upcoming: 'Предстоит',
+  completed: 'Завершено',
+  cancelled: 'Отменено',
+}
+
+interface CancelPopupProps {
+  booking: Booking
+  onConfirm: () => void
+  onClose: () => void
+}
+
+function CancelPopup({ booking, onConfirm, onClose }: CancelPopupProps) {
+  return (
+    <AnimatePresence>
+      <motion.div
+        key="overlay"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        onClick={onClose}
+        style={{
+          position: 'fixed', inset: 0, zIndex: 2000,
+          background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(6px)',
+        }}
+      />
+      <motion.div
+        key="popup"
+        initial={{ opacity: 0, scale: 0.85, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.85, y: 20 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+        onClick={e => e.stopPropagation()}
+        style={{
+          position: 'fixed', left: '50%', top: '50%', transform: 'translate(-50%, -50%)',
+          zIndex: 2001, width: 'calc(100% - 40px)', maxWidth: 360,
+          background: '#111827', borderRadius: 24,
+          border: '1px solid rgba(255,255,255,0.1)',
+          padding: 24, boxShadow: '0 40px 80px rgba(0,0,0,0.6)',
+        }}
+      >
+        {/* Иконка предупреждения */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 18 }}>
+          <div style={{
+            width: 64, height: 64, borderRadius: '50%',
+            background: 'rgba(239,68,68,0.15)', border: '2px solid rgba(239,68,68,0.3)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <AlertTriangle size={28} color="#ef4444" />
+          </div>
+        </div>
+
+        <h3 style={{ fontSize: 18, fontWeight: 800, color: '#f1f5f9', textAlign: 'center', marginBottom: 8 }}>
+          Отменить бронирование?
+        </h3>
+        <p style={{ fontSize: 14, color: '#64748b', textAlign: 'center', lineHeight: 1.5, marginBottom: 20 }}>
+          Вы уверены, что хотите отменить бронь<br />
+          <span style={{ color: '#94a3b8', fontWeight: 600 }}>{booking.court.name}</span> на {booking.date} в {booking.time}?
+        </p>
+
+        {/* Карточка брони */}
+        <div style={{
+          background: 'rgba(255,255,255,0.04)', borderRadius: 14, padding: '12px 14px', marginBottom: 20,
+          display: 'flex', alignItems: 'center', gap: 12,
+          border: '1px solid rgba(255,255,255,0.07)',
+        }}>
+          <span style={{ fontSize: 28 }}>{booking.court.emoji}</span>
+          <div>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#f1f5f9' }}>{booking.court.name}</div>
+            <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>{booking.date}, {booking.time} · {booking.price.toLocaleString()} ₽</div>
+          </div>
+        </div>
+
+        {/* Кнопки */}
+        <div style={{ display: 'flex', gap: 10 }}>
+          <motion.button
+            whileTap={{ scale: 0.96 }}
+            onClick={onClose}
+            style={{
+              flex: 1, padding: '13px', borderRadius: 14,
+              background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+              color: '#94a3b8', fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+            }}
+          >
+            Оставить
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.96 }}
+            onClick={onConfirm}
+            style={{
+              flex: 1, padding: '13px', borderRadius: 14,
+              background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+              color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer',
+              border: 'none', fontFamily: 'inherit',
+              boxShadow: '0 6px 20px rgba(239,68,68,0.4)',
+            }}
+          >
+            Отменить
+          </motion.button>
+        </div>
+      </motion.div>
+    </AnimatePresence>
+  )
+}
+
+function BookingCard({ booking, onCancel, onRebook }: { booking: Booking; onCancel?: () => void; onRebook?: () => void }) {
+  const status = booking.status as Tab
+  const color = STATUS_COLORS[status]
+
+  return (
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -12, scale: 0.95 }}
+      style={{
+        background: 'rgba(255,255,255,0.03)',
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: 20, overflow: 'hidden',
+      }}
+    >
+      {/* Полоска статуса сверху */}
+      <div style={{ height: 3, background: color, opacity: status === 'cancelled' ? 0.5 : 1 }} />
+
+      <div style={{ padding: '14px 16px' }}>
+        {/* Верхняя строка */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+          <div style={{
+            width: 48, height: 48, borderRadius: 14, background: booking.court.photos[0],
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0,
+          }}>
+            {booking.court.emoji}
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#f1f5f9', marginBottom: 3 }}>{booking.court.name}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <MapPin size={11} color="#64748b" />
+              <span style={{ fontSize: 12, color: '#64748b' }}>{booking.court.location}</span>
+            </div>
+          </div>
+          <div style={{
+            padding: '4px 10px', borderRadius: 8,
+            background: `${color}18`, color: color,
+            fontSize: 11, fontWeight: 700,
+          }}>
+            {STATUS_LABELS[status]}
+          </div>
+        </div>
+
+        {/* Детали */}
+        <div style={{
+          display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginBottom: 14,
+          background: 'rgba(255,255,255,0.03)', borderRadius: 12, padding: '10px 12px',
+        }}>
+          {[
+            ['📅', 'Дата', booking.date],
+            ['⏰', 'Время', booking.time],
+            ['⏱', 'Длит.', `${booking.duration} мин`],
+          ].map(([icon, label, val]) => (
+            <div key={label as string} style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 14, marginBottom: 2 }}>{icon}</div>
+              <div style={{ fontSize: 10, color: '#475569', marginBottom: 2 }}>{label}</div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#f1f5f9' }}>{val}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Итог и кнопки */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <div style={{ fontSize: 11, color: '#475569', marginBottom: 1 }}>Оплачено</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: color }}>{booking.price.toLocaleString()} ₽</div>
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {onRebook && (
+              <motion.button
+                whileTap={{ scale: 0.94 }}
+                onClick={onRebook}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 5, padding: '9px 14px',
+                  borderRadius: 12, background: `${booking.court.color}18`,
+                  border: `1px solid ${booking.court.color}40`,
+                  color: booking.court.color, fontSize: 13, fontWeight: 600,
+                  cursor: 'pointer', fontFamily: 'inherit',
+                }}
+              >
+                <RotateCcw size={13} />
+                Снова
+              </motion.button>
+            )}
+            {onCancel && (
+              <motion.button
+                whileTap={{ scale: 0.94 }}
+                onClick={onCancel}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 5, padding: '9px 14px',
+                  borderRadius: 12, background: 'rgba(239,68,68,0.1)',
+                  border: '1px solid rgba(239,68,68,0.2)',
+                  color: '#ef4444', fontSize: 13, fontWeight: 600,
+                  cursor: 'pointer', fontFamily: 'inherit',
+                }}
+              >
+                <X size={13} />
+                Отменить
+              </motion.button>
+            )}
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  )
 }
 
 export function BookingsTab() {
-  const [tab, setTab] = useState<'upcoming' | 'completed' | 'cancelled'>('upcoming')
+  const { bookings, cancelBooking } = useBookings()
+  const [activeTab, setActiveTab] = useState<Tab>('upcoming')
+  const [cancelTarget, setCancelTarget] = useState<Booking | null>(null)
+  const [rebookCourt, setRebookCourt] = useState<typeof bookings[0]['court'] | null>(null)
 
-  const filtered = BOOKINGS.filter(b => b.status === tab)
-  const upcoming = BOOKINGS.filter(b => b.status === 'upcoming')
-  const totalSpent = BOOKINGS.filter(b => b.status === 'completed').reduce((s, b) => s + b.price, 0)
+  const filtered = bookings.filter(b => b.status === activeTab)
+
+  const handleConfirmCancel = () => {
+    if (cancelTarget) {
+      cancelBooking(cancelTarget.id)
+      setCancelTarget(null)
+    }
+  }
+
+  const upcomingCount = bookings.filter(b => b.status === 'upcoming').length
 
   return (
-    <div style={{ padding: '24px 20px', paddingBottom: 100, display: 'flex', flexDirection: 'column', gap: 20 }}>
-
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
-        <h1 style={{ fontSize: 24, fontWeight: 800, color: '#f1f5f9', marginBottom: 4 }}>Мои бронирования</h1>
-        <p style={{ color: '#64748b', fontSize: 14 }}>Управляйте всеми бронированиями</p>
+    <div style={{ padding: '24px 16px', paddingBottom: 100 }}>
+      {/* Заголовок */}
+      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: 20 }}>
+        <h1 style={{ fontSize: 24, fontWeight: 800, color: '#f1f5f9', marginBottom: 2 }}>Мои брони</h1>
+        <p style={{ color: '#64748b', fontSize: 14 }}>
+          {upcomingCount > 0 ? `${upcomingCount} предстоящих визита` : 'Нет предстоящих бронирований'}
+        </p>
       </motion.div>
 
-      {/* Сводка */}
-      <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-          <div className="card" style={{ padding: '16px' }}>
-            <div style={{ fontSize: 26, fontWeight: 800, color: '#22c55e' }}>{upcoming.length}</div>
-            <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>Предстоящих</div>
-          </div>
-          <div className="card" style={{ padding: '16px' }}>
-            <div style={{ fontSize: 26, fontWeight: 800, color: '#f1f5f9' }}>{totalSpent.toLocaleString()} ₽</div>
-            <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>Потрачено всего</div>
-          </div>
-        </div>
+      {/* Табы */}
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.05 }}
+        style={{
+          display: 'flex', background: 'rgba(255,255,255,0.04)',
+          borderRadius: 14, padding: 4, marginBottom: 20,
+        }}
+      >
+        {TABS.map(tab => {
+          const isActive = activeTab === tab.id
+          const count = bookings.filter(b => b.status === tab.id).length
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                flex: 1, padding: '9px 4px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                background: isActive ? STATUS_COLORS[tab.id] : 'transparent',
+                color: isActive ? '#fff' : '#64748b',
+                fontSize: 12, fontWeight: isActive ? 700 : 500,
+                fontFamily: 'inherit', transition: 'all 0.2s',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+              }}
+            >
+              {tab.label}
+              {count > 0 && (
+                <span style={{
+                  background: isActive ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.1)',
+                  borderRadius: 6, padding: '1px 6px', fontSize: 11, fontWeight: 700,
+                }}>
+                  {count}
+                </span>
+              )}
+            </button>
+          )
+        })}
       </motion.div>
-
-      {/* Вкладки */}
-      <div style={{ display: 'flex', gap: 8, background: '#1a2332', borderRadius: 14, padding: 4 }}>
-        {(['upcoming', 'completed', 'cancelled'] as const).map(t => (
-          <button key={t} onClick={() => setTab(t)}
-            style={{ flex: 1, padding: '9px 8px', borderRadius: 10, border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 600, transition: 'all 0.2s', background: tab === t ? STATUS[t].color : 'transparent', color: tab === t ? '#fff' : '#64748b' }}>
-            {STATUS[t].label}
-          </button>
-        ))}
-      </div>
 
       {/* Список */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        <AnimatePresence mode="popLayout">
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeTab}
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.15 }}
+          style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+        >
           {filtered.length === 0 ? (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ textAlign: 'center', padding: '48px 20px' }}>
-              <div style={{ fontSize: 48, marginBottom: 12 }}>📭</div>
-              <p style={{ color: '#64748b', fontSize: 15 }}>Нет бронирований</p>
-            </motion.div>
+            <div style={{ textAlign: 'center', padding: '48px 20px', color: '#475569' }}>
+              <div style={{ fontSize: 48, marginBottom: 12 }}>
+                {activeTab === 'upcoming' ? '📅' : activeTab === 'completed' ? '✅' : '❌'}
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 6, color: '#64748b' }}>
+                {activeTab === 'upcoming' ? 'Нет предстоящих броней' : activeTab === 'completed' ? 'Нет завершённых броней' : 'Нет отменённых броней'}
+              </div>
+              <div style={{ fontSize: 13 }}>
+                {activeTab === 'upcoming' && 'Найдите и забронируйте площадку'}
+              </div>
+            </div>
           ) : (
-            filtered.map((b, i) => {
-              const statusConf = STATUS[b.status as keyof typeof STATUS]
-              const StatusIcon = statusConf.icon
-              return (
-                <motion.div key={b.id} className="card"
-                  style={{ padding: '16px', borderLeft: `3px solid ${statusConf.color}` }}
-                  initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 16 }}
-                  transition={{ delay: i * 0.07 }} layout>
-                  <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-                    <div style={{ width: 48, height: 48, borderRadius: 15, background: `${b.color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>
-                      {b.emoji}
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 }}>
-                        <h3 style={{ fontSize: 15, fontWeight: 700, color: '#f1f5f9', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '65%' }}>{b.name}</h3>
-                        <span style={{ fontSize: 16, fontWeight: 700, color: '#f1f5f9', flexShrink: 0 }}>{b.price.toLocaleString()} ₽</span>
-                      </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        <span style={{ fontSize: 12, color: '#64748b', display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <Clock size={11} /> {b.date}, {b.time}
-                        </span>
-                        <span style={{ fontSize: 12, color: '#64748b', display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <MapPin size={11} /> {b.location}
-                        </span>
-                      </div>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
-                        <span style={{ fontSize: 11, padding: '4px 10px', borderRadius: 100, fontWeight: 600, background: statusConf.bg, color: statusConf.color, display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <StatusIcon size={11} /> {statusConf.label}
-                        </span>
-                        {b.status === 'upcoming' && (
-                          <button style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', fontSize: 12, fontWeight: 600, padding: '5px 12px', borderRadius: 100, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', gap: 4 }}>
-                            <X size={11} /> Отменить
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              )
-            })
+            filtered.map(booking => (
+              <BookingCard
+                key={booking.id}
+                booking={booking}
+                onCancel={booking.status === 'upcoming' ? () => setCancelTarget(booking) : undefined}
+                onRebook={booking.status !== 'upcoming' ? () => setRebookCourt(booking.court) : undefined}
+              />
+            ))
           )}
-        </AnimatePresence>
-      </div>
+        </motion.div>
+      </AnimatePresence>
+
+      {/* Попап отмены */}
+      {cancelTarget && (
+        <CancelPopup
+          booking={cancelTarget}
+          onConfirm={handleConfirmCancel}
+          onClose={() => setCancelTarget(null)}
+        />
+      )}
+
+      {/* Повторное бронирование */}
+      {rebookCourt && (
+        <CourtDetailSheet court={rebookCourt} onClose={() => setRebookCourt(null)} />
+      )}
     </div>
   )
 }

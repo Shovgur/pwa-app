@@ -1,29 +1,30 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { CalendarCheck, MapPin, Clock, Star, TrendingUp, Users, ChevronRight } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
+import { useBookings, COURTS } from '../../contexts/BookingContext'
 import { useNavigate } from 'react-router-dom'
+import { CourtDetailSheet } from '../CourtDetailSheet'
+import type { Court } from '../../contexts/BookingContext'
 
-const UPCOMING = [
-  { id: 1, sport: '🎾', name: 'Теннисный корт №3', location: 'Лужники, Москва', date: 'Сегодня', time: '18:00 — 19:30', price: 1800, color: '#22c55e', status: 'confirmed' },
-  { id: 2, sport: '⚽', name: 'Футбольное поле 5×5', location: 'Олимпийский, Москва', date: 'Завтра', time: '10:00 — 11:00', price: 2400, color: '#3b82f6', status: 'confirmed' },
-]
-
-const POPULAR = [
-  { id: 1, sport: '🎾', name: 'Корт "Спарта"', rating: 4.9, reviews: 128, price: 1500, location: 'Парк Горького', color: '#22c55e', available: true },
-  { id: 2, sport: '🏀', name: 'Баскетбол Arena', rating: 4.7, reviews: 84, price: 900, location: 'ЦСКА, Москва', color: '#f97316', available: true },
-  { id: 3, sport: '🏸', name: 'Бадминтон Plaza', rating: 4.8, reviews: 56, price: 700, location: 'Сокольники', color: '#a855f7', available: false },
-]
-
-const STATS = [
-  { icon: CalendarCheck, label: 'Всего бронирований', value: '24', color: '#22c55e' },
-  { icon: Clock, label: 'Часов сыграно', value: '48', color: '#3b82f6' },
-  { icon: Star, label: 'Средний рейтинг', value: '4.8', color: '#f97316' },
-  { icon: Users, label: 'Партнёров', value: '12', color: '#a855f7' },
-]
+const POPULAR = COURTS.filter(c => c.available).slice(0, 3)
 
 export function HomeTab() {
   const { user } = useAuth()
+  const { bookings } = useBookings()
   const navigate = useNavigate()
+  const [selectedCourt, setSelectedCourt] = useState<Court | null>(null)
+
+  const upcoming = bookings.filter(b => b.status === 'upcoming')
+  const completed = bookings.filter(b => b.status === 'completed')
+  const totalMinutes = completed.reduce((sum, b) => sum + b.duration, 0)
+
+  const STATS = [
+    { icon: CalendarCheck, label: 'Всего бронирований', value: String(bookings.length), color: '#22c55e' },
+    { icon: Clock, label: 'Часов сыграно', value: String(Math.round(totalMinutes / 60)), color: '#3b82f6' },
+    { icon: Star, label: 'Предстоящих', value: String(upcoming.length), color: '#f97316' },
+    { icon: Users, label: 'Завершённых', value: String(completed.length), color: '#a855f7' },
+  ]
 
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Доброе утро' : hour < 18 ? 'Добрый день' : 'Добрый вечер'
@@ -51,9 +52,10 @@ export function HomeTab() {
       </motion.div>
 
       {/* Ближайшее бронирование */}
-      {UPCOMING[0] && (
+      {upcoming[0] ? (
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-          <div style={{ borderRadius: 20, overflow: 'hidden', background: 'linear-gradient(135deg, #16a34a 0%, #15803d 100%)', padding: 20, position: 'relative', boxShadow: '0 8px 32px rgba(22,163,74,0.25)' }}>
+          <div style={{ borderRadius: 20, overflow: 'hidden', background: `linear-gradient(135deg, ${upcoming[0].court.color}cc 0%, ${upcoming[0].court.color}88 100%)`, padding: 20, position: 'relative', boxShadow: `0 8px 32px ${upcoming[0].court.color}40`, cursor: 'pointer' }}
+            onClick={() => navigate('/dashboard/bookings')}>
             <div style={{ position: 'absolute', top: -20, right: -20, width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
             <div style={{ position: 'absolute', bottom: -30, right: 40, width: 80, height: 80, borderRadius: '50%', background: 'rgba(255,255,255,0.06)' }} />
             <div style={{ position: 'relative' }}>
@@ -61,22 +63,31 @@ export function HomeTab() {
                 <span style={{ background: 'rgba(255,255,255,0.2)', padding: '4px 10px', borderRadius: 100, fontSize: 11, fontWeight: 700, color: '#fff' }}>
                   БЛИЖАЙШЕЕ
                 </span>
-                <span style={{ fontSize: 28 }}>{UPCOMING[0].sport}</span>
+                <span style={{ fontSize: 28 }}>{upcoming[0].court.emoji}</span>
               </div>
-              <h3 style={{ color: '#fff', fontSize: 18, fontWeight: 700, margin: '0 0 6px' }}>{UPCOMING[0].name}</h3>
+              <h3 style={{ color: '#fff', fontSize: 18, fontWeight: 700, margin: '0 0 6px' }}>{upcoming[0].court.name}</h3>
               <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
-                <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <Clock size={13} /> {UPCOMING[0].date}, {UPCOMING[0].time}
+                <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: 13, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <Clock size={13} /> {upcoming[0].date}, {upcoming[0].time}
                 </span>
-                <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 13, display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <MapPin size={13} /> {UPCOMING[0].location}
+                <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: 13, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <MapPin size={13} /> {upcoming[0].court.location}
                 </span>
               </div>
               <div style={{ marginTop: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ color: '#fff', fontSize: 20, fontWeight: 800 }}>{UPCOMING[0].price} ₽</span>
+                <span style={{ color: '#fff', fontSize: 20, fontWeight: 800 }}>{upcoming[0].price.toLocaleString()} ₽</span>
                 <span style={{ background: 'rgba(255,255,255,0.2)', padding: '5px 12px', borderRadius: 100, color: '#fff', fontSize: 12, fontWeight: 600 }}>Подтверждено ✓</span>
               </div>
             </div>
+          </div>
+        </motion.div>
+      ) : (
+        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          <div style={{ borderRadius: 20, background: 'rgba(255,255,255,0.04)', border: '1px dashed rgba(255,255,255,0.12)', padding: 24, textAlign: 'center', cursor: 'pointer' }}
+            onClick={() => navigate('/dashboard/courts')}>
+            <div style={{ fontSize: 36, marginBottom: 8 }}>🎯</div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: '#64748b', marginBottom: 4 }}>Нет предстоящих броней</div>
+            <div style={{ fontSize: 13, color: '#22c55e', fontWeight: 600 }}>Забронировать площадку →</div>
           </div>
         </motion.div>
       )}
@@ -120,27 +131,26 @@ export function HomeTab() {
               style={{ padding: '14px 16px', cursor: 'pointer' }}
               initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.35 + i * 0.07 }}
               whileHover={{ x: 4 }} whileTap={{ scale: 0.98 }}
-              onClick={() => navigate('/dashboard/courts')}>
+              onClick={() => setSelectedCourt(c)}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                <div style={{ width: 46, height: 46, borderRadius: 14, background: `${c.color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
-                  {c.sport}
+                <div style={{ width: 46, height: 46, borderRadius: 14, background: c.photos[0], display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>
+                  {c.emoji}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
                     <span style={{ fontSize: 14, fontWeight: 600, color: '#f1f5f9', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.name}</span>
-                    {!c.available && <span style={{ fontSize: 10, background: 'rgba(239,68,68,0.15)', color: '#f87171', padding: '2px 6px', borderRadius: 100, flexShrink: 0 }}>Занято</span>}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <span style={{ fontSize: 12, color: '#64748b', display: 'flex', alignItems: 'center', gap: 3 }}>
                       <MapPin size={11} /> {c.location}
                     </span>
-                    <span style={{ fontSize: 12, color: '#f97316', display: 'flex', alignItems: 'center', gap: 2 }}>
-                      <Star size={11} style={{ fill: '#f97316' }} /> {c.rating}
+                    <span style={{ fontSize: 12, color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 2 }}>
+                      <Star size={11} fill="#f59e0b" color="#f59e0b" /> {c.rating}
                     </span>
                   </div>
                 </div>
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <div style={{ fontSize: 15, fontWeight: 700, color: '#f1f5f9' }}>{c.price} ₽</div>
+                  <div style={{ fontSize: 15, fontWeight: 700, color: c.color }}>{c.price.toLocaleString()} ₽</div>
                   <div style={{ fontSize: 11, color: '#64748b' }}>/ час</div>
                 </div>
               </div>
@@ -193,6 +203,9 @@ export function HomeTab() {
           })}
         </div>
       </motion.div>
+
+      {/* Детальный лист площадки */}
+      {selectedCourt && <CourtDetailSheet court={selectedCourt} onClose={() => setSelectedCourt(null)} />}
     </div>
   )
 }
