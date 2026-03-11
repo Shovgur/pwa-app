@@ -48,7 +48,7 @@ export function MessagesTab() {
 
   return (
     <motion.div
-      className="flex h-full"
+      className="flex h-full pb-16 md:pb-0"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >

@@ -1,18 +1,12 @@
 import { useEffect, useRef } from 'react'
 
-interface Particle {
-  x: number
-  y: number
-  vx: number
-  vy: number
-  radius: number
-  alpha: number
-  color: string
-  pulse: number
-  pulseSpeed: number
-}
-
 const COLORS = ['#7c3aed', '#06b6d4', '#a855f7', '#22d3ee', '#ec4899']
+
+interface Particle {
+  x: number; y: number; vx: number; vy: number
+  radius: number; alpha: number; color: string
+  pulse: number; pulseSpeed: number
+}
 
 export function ParticleField() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -20,7 +14,6 @@ export function ParticleField() {
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
-
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
@@ -33,23 +26,22 @@ export function ParticleField() {
       canvas.height = window.innerHeight
     }
 
-    function createParticle(): Particle {
+    function mkParticle(): Particle {
       return {
         x: Math.random() * (canvas?.width ?? window.innerWidth),
         y: Math.random() * (canvas?.height ?? window.innerHeight),
         vx: (Math.random() - 0.5) * 0.4,
         vy: (Math.random() - 0.5) * 0.4,
-        radius: Math.random() * 2 + 0.5,
-        alpha: Math.random() * 0.6 + 0.1,
+        radius: Math.random() * 1.8 + 0.4,
+        alpha: Math.random() * 0.5 + 0.15,
         color: COLORS[Math.floor(Math.random() * COLORS.length)],
         pulse: Math.random() * Math.PI * 2,
-        pulseSpeed: Math.random() * 0.02 + 0.005,
+        pulseSpeed: Math.random() * 0.015 + 0.005,
       }
     }
 
     resize()
-    for (let i = 0; i < 80; i++) particles.push(createParticle())
-
+    for (let i = 0; i < 70; i++) particles.push(mkParticle())
     window.addEventListener('resize', resize)
 
     function draw() {
@@ -59,44 +51,40 @@ export function ParticleField() {
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i]
         p.pulse += p.pulseSpeed
-        const pAlpha = p.alpha * (0.7 + 0.3 * Math.sin(p.pulse))
+        const a = p.alpha * (0.7 + 0.3 * Math.sin(p.pulse))
+        const hex = Math.round(a * 255).toString(16).padStart(2, '0')
 
         ctx.beginPath()
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2)
-        ctx.fillStyle = p.color + Math.round(pAlpha * 255).toString(16).padStart(2, '0')
+        ctx.fillStyle = p.color + hex
         ctx.fill()
 
         for (let j = i + 1; j < particles.length; j++) {
           const q = particles[j]
-          const dx = p.x - q.x
-          const dy = p.y - q.y
+          const dx = p.x - q.x, dy = p.y - q.y
           const dist = Math.sqrt(dx * dx + dy * dy)
-
-          if (dist < 120) {
-            const lineAlpha = (1 - dist / 120) * 0.15
+          if (dist < 100) {
+            const la = (1 - dist / 100) * 0.12
+            const lahex = Math.round(la * 255).toString(16).padStart(2, '0')
             ctx.beginPath()
             ctx.moveTo(p.x, p.y)
             ctx.lineTo(q.x, q.y)
-            ctx.strokeStyle = p.color + Math.round(lineAlpha * 255).toString(16).padStart(2, '0')
-            ctx.lineWidth = 0.5
+            ctx.strokeStyle = p.color + lahex
+            ctx.lineWidth = 0.4
             ctx.stroke()
           }
         }
 
-        p.x += p.vx
-        p.y += p.vy
-
+        p.x += p.vx; p.y += p.vy
         if (p.x < 0) p.x = canvas.width
         if (p.x > canvas.width) p.x = 0
         if (p.y < 0) p.y = canvas.height
         if (p.y > canvas.height) p.y = 0
       }
-
       animId = requestAnimationFrame(draw)
     }
 
     draw()
-
     return () => {
       cancelAnimationFrame(animId)
       window.removeEventListener('resize', resize)
@@ -108,10 +96,8 @@ export function ParticleField() {
       ref={canvasRef}
       style={{
         position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100%',
-        height: '100%',
+        top: 0, left: 0,
+        width: '100%', height: '100%',
         pointerEvents: 'none',
         zIndex: 0,
       }}

@@ -1,16 +1,6 @@
 import { motion } from 'framer-motion'
-import {
-  TrendingUp,
-  TrendingDown,
-  Users,
-  DollarSign,
-  Activity,
-  ArrowRight,
-  Star,
-  Zap,
-} from 'lucide-react'
+import { TrendingUp, TrendingDown, Users, DollarSign, Activity, Star, Zap } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
-import { fadeUpContainer, fadeUpItem } from '../../utils/variants'
 
 const STATS = [
   { label: 'Выручка', value: '$48,295', change: '+12.5%', up: true, icon: DollarSign, color: '#22d3ee', bg: 'rgba(34,211,238,0.1)' },
@@ -20,244 +10,184 @@ const STATS = [
 ]
 
 const ACTIVITY = [
-  { user: 'AR', name: 'Алексей Романов', action: 'Создал новый проект', time: '2 мин назад', color: '#a855f7' },
-  { user: 'МС', name: 'Мария Смирнова', action: 'Завершила задачу #142', time: '15 мин назад', color: '#22d3ee' },
-  { user: 'ДК', name: 'Дмитрий Козлов', action: 'Загрузил документы', time: '1 час назад', color: '#f472b6' },
-  { user: 'ЕВ', name: 'Елена Волкова', action: 'Оставила комментарий', time: '2 часа назад', color: '#34d399' },
-  { user: 'ИН', name: 'Иван Новиков', action: 'Зарегистрировался', time: '3 часа назад', color: '#fbbf24' },
+  { user: 'АР', name: 'Алексей Романов', action: 'Создал новый проект', time: '2 мин', color: '#a855f7' },
+  { user: 'МС', name: 'Мария Смирнова', action: 'Завершила задачу #142', time: '15 мин', color: '#22d3ee' },
+  { user: 'ДК', name: 'Дмитрий Козлов', action: 'Загрузил документы', time: '1 час', color: '#f472b6' },
+  { user: 'ЕВ', name: 'Елена Волкова', action: 'Оставила комментарий', time: '2 ч', color: '#34d399' },
 ]
 
 const BARS = [65, 80, 45, 92, 70, 85, 60, 75, 88, 55, 95, 72]
-const MONTHS = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек']
+const MONTHS = ['Я', 'Ф', 'М', 'А', 'М', 'И', 'И', 'А', 'С', 'О', 'Н', 'Д']
 
 export function OverviewTab() {
   const { user } = useAuth()
 
   return (
     <motion.div
-      className="p-6 space-y-6"
-      variants={fadeUpContainer}
-      initial="hidden"
-      animate="visible"
+      className="p-4 pb-24 md:pb-6 space-y-4"
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
     >
-      {/* Header */}
-      <motion.div variants={fadeUpItem} className="flex items-start justify-between">
+      {/* Хедер */}
+      <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">
-            Привет, {user?.name?.split(' ')[0]} 👋
-          </h1>
-          <p className="text-slate-400 text-sm mt-1">
-            Вот что происходит сегодня в вашем пространстве
-          </p>
+          <h1 className="text-xl font-bold text-white">Привет, {user?.name?.split(' ')[0]} 👋</h1>
+          <p className="text-slate-400 text-xs mt-0.5">Вот что происходит сегодня</p>
         </div>
         <motion.div
-          className="flex items-center gap-2 px-4 py-2 rounded-xl glass"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl glass"
           style={{ border: '1px solid rgba(168,85,247,0.3)' }}
-          animate={{ boxShadow: ['0 0 10px rgba(168,85,247,0.1)', '0 0 20px rgba(168,85,247,0.3)', '0 0 10px rgba(168,85,247,0.1)'] }}
+          animate={{ boxShadow: ['0 0 8px rgba(168,85,247,0.1)', '0 0 16px rgba(168,85,247,0.3)', '0 0 8px rgba(168,85,247,0.1)'] }}
           transition={{ duration: 3, repeat: Infinity }}
         >
-          <Zap size={14} className="text-purple-400" />
-          <span className="text-purple-400 text-sm font-medium">Nexus Pro</span>
+          <Zap size={12} className="text-purple-400" />
+          <span className="text-purple-400 text-xs font-medium">Pro</span>
         </motion.div>
-      </motion.div>
+      </div>
 
-      {/* Stats grid */}
-      <motion.div variants={fadeUpItem} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Статистика — 2 колонки на мобилке, 4 на десктопе */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {STATS.map((stat, i) => {
           const Icon = stat.icon
           return (
             <motion.div
               key={stat.label}
-              className="glass rounded-2xl p-4 relative overflow-hidden"
+              className="glass rounded-2xl p-3.5 relative overflow-hidden"
               style={{ border: '1px solid rgba(255,255,255,0.06)' }}
-              whileHover={{ scale: 1.02, borderColor: `${stat.color}40` }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.1 }}
+              transition={{ delay: i * 0.08 }}
+              whileHover={{ scale: 1.02 }}
             >
-              <div className="absolute top-0 right-0 w-24 h-24 rounded-full -translate-y-8 translate-x-8"
-                style={{ background: `radial-gradient(circle, ${stat.color}15, transparent)` }} />
-
-              <div className="flex items-center justify-between mb-3">
-                <div className="p-2 rounded-lg" style={{ background: stat.bg }}>
-                  <Icon size={16} color={stat.color} />
+              <div className="absolute top-0 right-0 w-20 h-20 rounded-full -translate-y-8 translate-x-8"
+                style={{ background: `radial-gradient(circle, ${stat.color}20, transparent)` }} />
+              <div className="flex items-center justify-between mb-2">
+                <div className="p-1.5 rounded-lg" style={{ background: stat.bg }}>
+                  <Icon size={14} color={stat.color} />
                 </div>
-                <div className={`flex items-center gap-1 text-xs font-medium ${stat.up ? 'text-green-400' : 'text-red-400'}`}>
-                  {stat.up ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
+                <span className={`text-xs font-medium flex items-center gap-0.5 ${stat.up ? 'text-green-400' : 'text-red-400'}`}>
+                  {stat.up ? <TrendingUp size={10} /> : <TrendingDown size={10} />}
                   {stat.change}
-                </div>
+                </span>
               </div>
-
-              <motion.p
-                className="text-2xl font-bold text-white"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 + i * 0.1 }}
-              >
-                {stat.value}
-              </motion.p>
-              <p className="text-slate-500 text-xs mt-1">{stat.label}</p>
+              <p className="text-xl font-bold text-white">{stat.value}</p>
+              <p className="text-slate-500 text-xs mt-0.5">{stat.label}</p>
             </motion.div>
           )
         })}
-      </motion.div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Chart */}
-        <motion.div
-          variants={fadeUpItem}
-          className="lg:col-span-2 glass rounded-2xl p-5"
-          style={{ border: '1px solid rgba(255,255,255,0.06)' }}
-        >
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <h3 className="text-white font-semibold">Доходы за год</h3>
-              <p className="text-slate-500 text-xs mt-0.5">Ежемесячная выручка</p>
-            </div>
-            <div className="flex gap-2">
-              {['3м', '6м', '1г'].map((p, i) => (
-                <motion.button
-                  key={p}
-                  className="px-3 py-1 rounded-lg text-xs"
-                  style={{
-                    background: i === 2 ? 'rgba(168,85,247,0.2)' : 'transparent',
-                    color: i === 2 ? '#a855f7' : '#64748b',
-                    border: i === 2 ? '1px solid rgba(168,85,247,0.3)' : '1px solid transparent',
-                  }}
-                  whileHover={{ scale: 1.05 }}
-                >
-                  {p}
-                </motion.button>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex items-end gap-1.5 h-32">
-            {BARS.map((h, i) => (
-              <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                <motion.div
-                  className="w-full rounded-t-md relative overflow-hidden"
-                  style={{
-                    height: `${h}%`,
-                    background: i === 11
-                      ? 'linear-gradient(180deg, #a855f7, #7c3aed)'
-                      : 'rgba(168,85,247,0.2)',
-                    minHeight: 4,
-                  }}
-                  initial={{ scaleY: 0 }}
-                  animate={{ scaleY: 1 }}
-                  transition={{ delay: 0.4 + i * 0.05 }}
-                  whileHover={{ background: 'linear-gradient(180deg, #22d3ee, #06b6d4)' }}
-                >
-                  {i === 11 && (
-                    <motion.div
-                      className="absolute inset-0"
-                      style={{ background: 'linear-gradient(180deg, rgba(255,255,255,0.2), transparent)' }}
-                      animate={{ opacity: [0.5, 1, 0.5] }}
-                      transition={{ duration: 2, repeat: Infinity }}
-                    />
-                  )}
-                </motion.div>
-                <span className="text-slate-600 text-xs">{MONTHS[i]}</span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
-
-        {/* Activity feed */}
-        <motion.div
-          variants={fadeUpItem}
-          className="glass rounded-2xl p-5"
-          style={{ border: '1px solid rgba(255,255,255,0.06)' }}
-        >
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-white font-semibold">Активность</h3>
-            <motion.button
-              className="text-purple-400 text-xs flex items-center gap-1"
-              whileHover={{ x: 2 }}
-            >
-              Всё <ArrowRight size={12} />
-            </motion.button>
-          </div>
-
-          <div className="space-y-3">
-            {ACTIVITY.map((a, i) => (
-              <motion.div
-                key={i}
-                className="flex items-start gap-3"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.5 + i * 0.08 }}
-              >
-                <div
-                  className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
-                  style={{ background: `${a.color}30`, border: `1px solid ${a.color}50`, color: a.color }}
-                >
-                  {a.user}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-white text-xs font-medium truncate">{a.name}</p>
-                  <p className="text-slate-500 text-xs truncate">{a.action}</p>
-                </div>
-                <span className="text-slate-600 text-xs flex-shrink-0">{a.time}</span>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
       </div>
 
-      {/* Quick actions */}
+      {/* Чарт */}
       <motion.div
-        variants={fadeUpItem}
-        className="glass rounded-2xl p-5"
+        className="glass rounded-2xl p-4"
         style={{ border: '1px solid rgba(255,255,255,0.06)' }}
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
       >
-        <h3 className="text-white font-semibold mb-4">Быстрые действия</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-white font-semibold text-sm">Доходы за год</h3>
+            <p className="text-slate-500 text-xs">Ежемесячная выручка</p>
+          </div>
+          <span className="text-green-400 text-xs font-medium">+18% ↑</span>
+        </div>
+        <div className="flex items-end gap-1 h-24">
+          {BARS.map((h, i) => (
+            <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
+              <motion.div
+                className="w-full rounded-t"
+                style={{
+                  height: `${h}%`,
+                  background: i === 11 ? 'linear-gradient(180deg, #a855f7, #7c3aed)' : 'rgba(168,85,247,0.2)',
+                  minHeight: 3,
+                }}
+                initial={{ scaleY: 0 }}
+                animate={{ scaleY: 1 }}
+                transition={{ delay: 0.4 + i * 0.04 }}
+              />
+              <span className="text-slate-600" style={{ fontSize: 8 }}>{MONTHS[i]}</span>
+            </div>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* Активность */}
+      <motion.div
+        className="glass rounded-2xl p-4"
+        style={{ border: '1px solid rgba(255,255,255,0.06)' }}
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
+      >
+        <h3 className="text-white font-semibold text-sm mb-3">Последняя активность</h3>
+        <div className="space-y-3">
+          {ACTIVITY.map((a, i) => (
+            <motion.div
+              key={i}
+              className="flex items-center gap-3"
+              initial={{ opacity: 0, x: -15 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5 + i * 0.07 }}
+            >
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0"
+                style={{ background: `${a.color}25`, border: `1px solid ${a.color}40`, color: a.color }}>
+                {a.user}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-white text-xs font-medium truncate">{a.name}</p>
+                <p className="text-slate-500 text-xs truncate">{a.action}</p>
+              </div>
+              <span className="text-slate-600 text-xs flex-shrink-0">{a.time}</span>
+            </motion.div>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* Быстрые действия */}
+      <motion.div
+        className="glass rounded-2xl p-4"
+        style={{ border: '1px solid rgba(255,255,255,0.06)' }}
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
+      >
+        <h3 className="text-white font-semibold text-sm mb-3">Быстрые действия</h3>
+        <div className="grid grid-cols-2 gap-2.5">
           {[
             { label: 'Новый проект', color: '#a855f7', icon: '🚀' },
             { label: 'Пригласить', color: '#22d3ee', icon: '👥' },
             { label: 'Аналитика', color: '#f472b6', icon: '📊' },
             { label: 'Интеграции', color: '#34d399', icon: '⚡' },
-          ].map((action) => (
+          ].map(action => (
             <motion.button
               key={action.label}
-              className="flex items-center gap-2.5 p-3 rounded-xl glass-hover glass text-left"
-              style={{ border: `1px solid ${action.color}25` }}
-              whileHover={{ scale: 1.03, borderColor: `${action.color}50` }}
+              className="flex items-center gap-2 p-3 rounded-xl glass-hover text-left"
+              style={{ background: `${action.color}10`, border: `1px solid ${action.color}25` }}
+              whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
             >
-              <span className="text-xl">{action.icon}</span>
-              <span className="text-sm font-medium" style={{ color: action.color }}>{action.label}</span>
+              <span className="text-lg">{action.icon}</span>
+              <span className="text-xs font-medium" style={{ color: action.color }}>{action.label}</span>
             </motion.button>
           ))}
         </div>
       </motion.div>
 
-      {/* Bottom rating */}
+      {/* Рейтинг */}
       <motion.div
-        variants={fadeUpItem}
-        className="glass rounded-2xl p-5 flex items-center justify-between"
+        className="glass rounded-2xl p-4 flex items-center justify-between"
         style={{ border: '1px solid rgba(251,191,36,0.2)', background: 'rgba(251,191,36,0.04)' }}
+        initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}
       >
         <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl" style={{ background: 'rgba(251,191,36,0.15)' }}>
-            <Star size={20} className="text-yellow-400" />
+          <div className="p-2 rounded-xl" style={{ background: 'rgba(251,191,36,0.15)' }}>
+            <Star size={18} className="text-yellow-400" />
           </div>
           <div>
-            <p className="text-white font-semibold">Ваш рейтинг — Excellent</p>
-            <p className="text-slate-400 text-sm">98-й процентиль среди всех пользователей</p>
+            <p className="text-white font-semibold text-sm">Рейтинг — Excellent</p>
+            <p className="text-slate-400 text-xs">98-й процентиль</p>
           </div>
         </div>
-        <div className="flex gap-1">
-          {[1, 2, 3, 4, 5].map((s) => (
-            <motion.div
-              key={s}
-              initial={{ scale: 0, rotate: -30 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ delay: 0.8 + s * 0.1 }}
-            >
-              <Star size={18} className="text-yellow-400 fill-yellow-400" />
+        <div className="flex gap-0.5">
+          {[1, 2, 3, 4, 5].map(s => (
+            <motion.div key={s} initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.8 + s * 0.08 }}>
+              <Star size={14} className="text-yellow-400 fill-yellow-400" />
             </motion.div>
           ))}
         </div>

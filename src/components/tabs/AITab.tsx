@@ -50,7 +50,7 @@ export function AITab() {
 
   return (
     <motion.div
-      className="flex flex-col h-full"
+      className="flex flex-col h-full pb-16 md:pb-0"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
     >

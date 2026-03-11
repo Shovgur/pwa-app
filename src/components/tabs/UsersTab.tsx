@@ -43,7 +43,7 @@ export function UsersTab() {
 
   return (
     <motion.div
-      className="p-6 space-y-6"
+      className="p-4 pb-24 md:p-6 md:pb-6 space-y-4"
       variants={fadeUpContainer}
       initial="hidden"
       animate="visible"

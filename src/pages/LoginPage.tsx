@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
+import { Eye, EyeOff, LogIn, Zap } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { ParticleField } from '../components/ParticleField'
 
 export function LoginPage() {
   const [email, setEmail] = useState('')
@@ -14,238 +17,161 @@ export function LoginPage() {
     e.preventDefault()
     setError('')
     const result = await login(email, password)
-    if (result.success) {
-      navigate('/dashboard')
-    } else {
-      setError(result.error ?? 'Ошибка входа')
-    }
+    if (result.success) navigate('/dashboard')
+    else setError(result.error ?? 'Ошибка входа')
   }
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'linear-gradient(135deg, #0a0a1a 0%, #0f0f2e 50%, #0a0a1a 100%)',
-        padding: '24px',
-        boxSizing: 'border-box',
-      }}
-    >
-      <div style={{ width: '100%', maxWidth: '400px' }}>
+    <div className="relative min-h-screen flex items-center justify-center p-4"
+      style={{ background: 'linear-gradient(135deg, #0a0a1a 0%, #0f0f2e 100%)' }}>
+
+      {/* Частицы — всегда в фоне */}
+      <ParticleField />
+
+      {/* Орб фиолетовый */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden" style={{ zIndex: 1 }}>
+        <motion.div
+          className="absolute rounded-full"
+          style={{
+            width: 500, height: 500, top: '-15%', left: '-10%',
+            background: 'radial-gradient(circle, rgba(124,58,237,0.18) 0%, transparent 70%)',
+            filter: 'blur(60px)',
+          }}
+          animate={{ scale: [1, 1.2, 1], x: [0, 20, 0], y: [0, -15, 0] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          className="absolute rounded-full"
+          style={{
+            width: 400, height: 400, bottom: '-10%', right: '-5%',
+            background: 'radial-gradient(circle, rgba(6,182,212,0.15) 0%, transparent 70%)',
+            filter: 'blur(60px)',
+          }}
+          animate={{ scale: [1, 1.15, 1], x: [0, -15, 0], y: [0, 15, 0] }}
+          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
+        />
+      </div>
+
+      {/* Форма */}
+      <motion.div
+        className="relative w-full max-w-sm"
+        style={{ zIndex: 10 }}
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+      >
         {/* Лого */}
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div
+        <div className="text-center mb-8">
+          <motion.div
+            className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-4"
             style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '72px',
-              height: '72px',
-              borderRadius: '20px',
               background: 'rgba(124,58,237,0.2)',
               border: '1px solid rgba(124,58,237,0.5)',
-              fontSize: '32px',
-              marginBottom: '16px',
-              boxShadow: '0 0 20px rgba(124,58,237,0.4)',
+              boxShadow: '0 0 25px rgba(124,58,237,0.4)',
             }}
+            animate={{ boxShadow: ['0 0 20px rgba(124,58,237,0.3)', '0 0 40px rgba(124,58,237,0.6)', '0 0 20px rgba(124,58,237,0.3)'] }}
+            transition={{ duration: 2.5, repeat: Infinity }}
           >
-            ⚡
-          </div>
-          <h1
-            style={{
-              fontSize: '36px',
-              fontWeight: 900,
-              margin: 0,
-              background: 'linear-gradient(135deg, #a855f7, #22d3ee)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-            }}
-          >
-            NEXUS
-          </h1>
-          <p style={{ color: '#94a3b8', fontSize: '12px', marginTop: '6px', letterSpacing: '3px' }}>
-            PLATFORM
-          </p>
+            <Zap size={28} className="text-purple-400" />
+          </motion.div>
+          <h1 className="text-3xl font-black gradient-text">NEXUS</h1>
+          <p className="text-slate-500 text-xs mt-1 tracking-widest uppercase">Platform</p>
         </div>
 
         {/* Карточка */}
-        <div
-          style={{
-            background: 'rgba(255,255,255,0.05)',
-            backdropFilter: 'blur(20px)',
-            WebkitBackdropFilter: 'blur(20px)',
-            borderRadius: '24px',
-            padding: '32px',
-            border: '1px solid rgba(255,255,255,0.1)',
-            boxShadow: '0 0 40px rgba(124,58,237,0.15)',
-          }}
-        >
-          <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#fff', margin: '0 0 4px 0' }}>
-            Добро пожаловать
-          </h2>
-          <p style={{ color: '#94a3b8', fontSize: '14px', margin: '0 0 24px 0' }}>
-            Войдите в свой аккаунт
-          </p>
+        <div className="glass rounded-3xl p-6 neon-border">
+          <h2 className="text-xl font-bold text-white mb-1">Добро пожаловать</h2>
+          <p className="text-slate-400 text-sm mb-6">Войдите в свой аккаунт</p>
 
-          <form
-            onSubmit={handleSubmit}
-            style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}
-          >
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label
-                style={{
-                  display: 'block',
-                  color: '#94a3b8',
-                  fontSize: '11px',
-                  letterSpacing: '1px',
-                  marginBottom: '6px',
-                }}
-              >
-                EMAIL
-              </label>
+              <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Email</label>
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={e => setEmail(e.target.value)}
                 placeholder="you@example.com"
                 required
+                className="w-full px-4 py-3 rounded-xl text-white text-sm outline-none"
                 style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  borderRadius: '12px',
                   background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.12)',
-                  color: '#fff',
-                  fontSize: '14px',
-                  boxSizing: 'border-box',
-                  outline: 'none',
+                  border: '1px solid rgba(255,255,255,0.1)',
                 }}
               />
             </div>
 
             <div>
-              <label
-                style={{
-                  display: 'block',
-                  color: '#94a3b8',
-                  fontSize: '11px',
-                  letterSpacing: '1px',
-                  marginBottom: '6px',
-                }}
-              >
-                ПАРОЛЬ
-              </label>
-              <div style={{ position: 'relative' }}>
+              <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wider">Пароль</label>
+              <div className="relative">
                 <input
                   type={showPass ? 'text' : 'password'}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={e => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
+                  className="w-full px-4 py-3 pr-11 rounded-xl text-white text-sm outline-none"
                   style={{
-                    width: '100%',
-                    padding: '12px 48px 12px 16px',
-                    borderRadius: '12px',
                     background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.12)',
-                    color: '#fff',
-                    fontSize: '14px',
-                    boxSizing: 'border-box',
-                    outline: 'none',
+                    border: '1px solid rgba(255,255,255,0.1)',
                   }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPass(!showPass)}
-                  style={{
-                    position: 'absolute',
-                    right: '12px',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    background: 'none',
-                    border: 'none',
-                    color: '#94a3b8',
-                    cursor: 'pointer',
-                    fontSize: '16px',
-                    padding: '4px',
-                    lineHeight: 1,
-                  }}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400"
                 >
-                  {showPass ? '🙈' : '👁️'}
+                  {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               </div>
             </div>
 
-            {error && (
-              <div
-                style={{
-                  padding: '12px 16px',
-                  borderRadius: '12px',
-                  background: 'rgba(239,68,68,0.1)',
-                  border: '1px solid rgba(239,68,68,0.3)',
-                  color: '#f87171',
-                  fontSize: '13px',
-                }}
-              >
-                {error}
-              </div>
-            )}
+            <AnimatePresence>
+              {error && (
+                <motion.p
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="text-red-400 text-sm px-3 py-2 rounded-lg"
+                  style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)' }}
+                >
+                  {error}
+                </motion.p>
+              )}
+            </AnimatePresence>
 
-            <button
+            <motion.button
               type="submit"
               disabled={isLoading}
-              style={{
-                width: '100%',
-                padding: '14px',
-                borderRadius: '12px',
-                background: 'linear-gradient(135deg, #7c3aed, #06b6d4)',
-                border: 'none',
-                color: '#fff',
-                fontSize: '15px',
-                fontWeight: 600,
-                cursor: isLoading ? 'wait' : 'pointer',
-                boxShadow: '0 0 20px rgba(124,58,237,0.3)',
-              }}
+              className="w-full py-3.5 rounded-xl font-semibold text-white text-sm flex items-center justify-center gap-2"
+              style={{ background: 'linear-gradient(135deg, #7c3aed, #06b6d4)', boxShadow: '0 0 20px rgba(124,58,237,0.35)' }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.97 }}
             >
-              {isLoading ? 'Входим...' : 'Войти'}
-            </button>
+              {isLoading ? (
+                <motion.div className="w-5 h-5 rounded-full border-2 border-white border-t-transparent"
+                  animate={{ rotate: 360 }} transition={{ duration: 0.7, repeat: Infinity, ease: 'linear' }} />
+              ) : (
+                <><LogIn size={16} /><span>Войти</span></>
+              )}
+            </motion.button>
           </form>
 
           <button
-            type="button"
             onClick={() => { setEmail('demo@nexus.app'); setPassword('demo123') }}
-            style={{
-              width: '100%',
-              padding: '12px',
-              marginTop: '12px',
-              borderRadius: '12px',
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              color: '#94a3b8',
-              fontSize: '13px',
-              cursor: 'pointer',
-            }}
+            className="w-full py-2.5 mt-3 rounded-xl text-sm text-slate-400 glass-hover"
+            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
           >
             Использовать demo аккаунт
           </button>
 
-          <p style={{ textAlign: 'center', color: '#94a3b8', fontSize: '13px', marginTop: '20px' }}>
+          <p className="text-center text-slate-500 text-sm mt-5">
             Нет аккаунта?{' '}
-            <Link
-              to="/register"
-              style={{ color: '#a855f7', fontWeight: 500, textDecoration: 'none' }}
-            >
-              Зарегистрироваться
-            </Link>
+            <Link to="/register" className="text-purple-400 font-medium">Зарегистрироваться</Link>
           </p>
         </div>
 
-        <p style={{ textAlign: 'center', color: '#374151', fontSize: '11px', marginTop: '20px' }}>
-          © 2026 Nexus Platform
-        </p>
-      </div>
+        <p className="text-center text-slate-700 text-xs mt-5">© 2026 Nexus Platform</p>
+      </motion.div>
     </div>
   )
 }
