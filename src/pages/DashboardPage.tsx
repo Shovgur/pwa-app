@@ -1,4 +1,5 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Link } from 'react-router-dom'
+import { Globe } from 'lucide-react'
 import { AmbientBg } from '../components/AmbientBg'
 import { Sidebar } from '../components/Sidebar'
 import { MobileNav } from '../components/MobileNav'
@@ -20,6 +21,12 @@ export function DashboardPage() {
       </div>
 
       <main className="flex-1 overflow-y-auto overflow-x-hidden" style={{ position: 'relative', zIndex: 10 }}>
+        <div className="dashboard-topbar md:hidden">
+          <Link to="/" className="back-to-site back-to-site--subtle">
+            <Globe size={16} />
+            <span>На сайт</span>
+          </Link>
+        </div>
         <Routes>
           <Route index element={<HomeTab />} />
           <Route path="courts" element={<CourtsTab />} />

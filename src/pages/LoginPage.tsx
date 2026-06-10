@@ -1,9 +1,11 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Eye, EyeOff, LogIn } from 'lucide-react'
+import { MapPin, Eye, EyeOff, LogIn } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { ParticleField } from '../components/ParticleField'
+import { BackToSiteLink } from '../components/ui/BackToSiteLink'
+import { resolveAuthRedirect } from '../config/features'
 
 const SPORTS = ['⚽', '🎾', '🏀', '🏐', '🏸', '🏊']
 
@@ -14,12 +16,14 @@ export function LoginPage() {
   const [error, setError] = useState('')
   const { login, isLoading } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
+  const redirectTo = resolveAuthRedirect((location.state as { from?: string } | null)?.from)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
     const result = await login(email, password)
-    if (result.success) navigate('/dashboard')
+    if (result.success) navigate(redirectTo, { replace: true })
     else setError(result.error ?? 'Ошибка входа')
   }
 
@@ -30,6 +34,10 @@ export function LoginPage() {
     }}>
       <ParticleField />
 
+      <div style={{ position: 'fixed', top: 24, left: 24, zIndex: 50 }}>
+        <BackToSiteLink />
+      </div>
+
       {/* Орбы */}
       <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 1 }}>
         <motion.div style={{ position: 'absolute', width: 600, height: 600, top: '-10%', right: '-5%', background: 'radial-gradient(circle, rgba(34,197,94,0.1) 0%, transparent 65%)', filter: 'blur(80px)', borderRadius: '50%' }}
@@ -39,19 +47,21 @@ export function LoginPage() {
       </div>
 
       {/* Левая панель — только на десктопе */}
-      <div className="hidden lg:flex" style={{ width: '45%', flexDirection: 'column', justifyContent: 'center', padding: '60px 64px', position: 'relative', zIndex: 10 }}>
+      <div className="hidden lg:flex lg-panel-left">
         <motion.div initial={{ opacity: 0, x: -30 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.7 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 48 }}>
-            <div style={{ width: 44, height: 44, borderRadius: 14, background: 'linear-gradient(135deg, #22c55e, #16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22 }}>⚡</div>
-            <span style={{ fontSize: 22, fontWeight: 900, color: '#fff', letterSpacing: -0.5 }}>SportBook</span>
+            <div style={{ width: 44, height: 44, borderRadius: 14, background: 'linear-gradient(135deg, #22c55e, #3b82f6)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(34,197,94,0.3)' }}>
+              <MapPin size={22} color="#fff" strokeWidth={2.5} />
+            </div>
+            <span className="logo-text" style={{ fontSize: 22, fontWeight: 900, color: '#fff', letterSpacing: '-0.03em' }}>Spotly</span>
           </div>
           <h2 style={{ fontSize: 42, fontWeight: 800, color: '#fff', lineHeight: 1.2, marginBottom: 20 }}>
             Бронируйте<br />
-            <span className="gradient-text">спортивные</span><br />
-            площадки
+            <span className="gradient-text">площадки</span><br />
+            для любого досуга
           </h2>
           <p style={{ color: '#94a3b8', fontSize: 16, lineHeight: 1.7, marginBottom: 48, maxWidth: 400 }}>
-            Тысячи теннисных кортов, футбольных полей, баскетбольных площадок и других объектов по всему миру — всё в одном приложении.
+            Спорт, лофты, переговорные — бронируй за минуту и добавляй услуги прямо при заказе.
           </p>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             {SPORTS.map((s, i) => (
@@ -75,8 +85,10 @@ export function LoginPage() {
           {/* Лого — только мобилка */}
           <div className="lg:hidden" style={{ textAlign: 'center', marginBottom: 32 }}>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-              <div style={{ width: 40, height: 40, borderRadius: 13, background: 'linear-gradient(135deg, #22c55e, #16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>⚡</div>
-              <span style={{ fontSize: 24, fontWeight: 900, color: '#fff' }}>SportBook</span>
+              <div style={{ width: 40, height: 40, borderRadius: 13, background: 'linear-gradient(135deg, #22c55e, #3b82f6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <MapPin size={20} color="#fff" strokeWidth={2.5} />
+              </div>
+              <span style={{ fontSize: 24, fontWeight: 900, color: '#fff' }} className="logo-text">Spotly</span>
             </div>
             <p style={{ color: '#64748b', fontSize: 13 }}>Бронирование спортивных площадок</p>
           </div>

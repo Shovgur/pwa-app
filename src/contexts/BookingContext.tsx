@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, type ReactNode } from 'react'
+import type { Loft, AddOn } from '../data/venues'
 
 export interface Court {
   id: number
@@ -31,6 +32,8 @@ export interface Booking {
   price: number
   status: 'upcoming' | 'completed' | 'cancelled'
   createdAt: string
+  addOns?: { name: string; price: number }[]
+  venueType?: 'sport' | 'loft'
 }
 
 export const COURTS: Court[] = [
@@ -152,6 +155,7 @@ const INITIAL_BOOKINGS: Booking[] = [
 interface BookingContextType {
   bookings: Booking[]
   addBooking: (court: Court, date: string, time: string, duration: number) => Booking
+  addLoftBooking: (loft: Loft, timeSlot: string, addOns: AddOn[], totalPrice: number) => Booking
   cancelBooking: (id: number) => void
 }
 
@@ -172,6 +176,48 @@ export function BookingProvider({ children }: { children: ReactNode }) {
       price,
       status: 'upcoming',
       createdAt: new Date().toISOString().slice(0, 10),
+      venueType: 'sport',
+    }
+    setBookings(prev => [booking, ...prev])
+    return booking
+  }
+
+  function loftAsCourt(loft: Loft): Court {
+    return {
+      id: 900 + loft.id.length,
+      emoji: '🏢',
+      sport: 'Лофт',
+      name: loft.name,
+      location: loft.location,
+      address: loft.location,
+      rating: loft.rating,
+      reviews: loft.reviews,
+      price: loft.price,
+      color: '#F97316',
+      available: true,
+      distance: loft.metro,
+      amenities: loft.features,
+      description: loft.description,
+      photos: [loft.gradient],
+      slots: loft.timeSlots,
+      lat: 55.75,
+      lng: 37.62,
+    }
+  }
+
+  function addLoftBooking(loft: Loft, timeSlot: string, addOns: AddOn[], totalPrice: number): Booking {
+    const booking: Booking = {
+      id: Date.now(),
+      courtId: 900,
+      court: loftAsCourt(loft),
+      date: '10 июня',
+      time: timeSlot,
+      duration: 120,
+      price: totalPrice,
+      status: 'upcoming',
+      createdAt: new Date().toISOString().slice(0, 10),
+      venueType: 'loft',
+      addOns: addOns.map((a) => ({ name: a.name, price: a.price })),
     }
     setBookings(prev => [booking, ...prev])
     return booking
@@ -182,7 +228,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <BookingContext.Provider value={{ bookings, addBooking, cancelBooking }}>
+    <BookingContext.Provider value={{ bookings, addBooking, addLoftBooking, cancelBooking }}>
       {children}
     </BookingContext.Provider>
   )

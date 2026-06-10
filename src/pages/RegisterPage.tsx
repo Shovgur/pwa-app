@@ -4,6 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Eye, EyeOff, UserPlus } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { ParticleField } from '../components/ParticleField'
+import { BackToSiteLink } from '../components/ui/BackToSiteLink'
+import { paths } from '../config/features'
 
 export function RegisterPage() {
   const [name, setName] = useState('')
@@ -18,7 +20,7 @@ export function RegisterPage() {
     e.preventDefault()
     setError('')
     const result = await register(name, email, password)
-    if (result.success) navigate('/dashboard')
+    if (result.success) navigate(paths.postAuth, { replace: true })
     else setError(result.error ?? 'Ошибка регистрации')
   }
 
@@ -30,6 +32,11 @@ export function RegisterPage() {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 24px', position: 'relative', background: 'linear-gradient(160deg, #0a1628 0%, #0f1e35 50%, #0d1f2d 100%)', boxSizing: 'border-box' }}>
       <ParticleField />
+
+      <div style={{ position: 'fixed', top: 24, left: 24, zIndex: 50 }}>
+        <BackToSiteLink />
+      </div>
+
       <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 1 }}>
         <motion.div style={{ position: 'absolute', width: 500, height: 500, top: '-15%', right: '-10%', background: 'radial-gradient(circle, rgba(34,197,94,0.1) 0%, transparent 65%)', filter: 'blur(80px)', borderRadius: '50%' }}
           animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 12, repeat: Infinity }} />
@@ -43,7 +50,7 @@ export function RegisterPage() {
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
             <div style={{ width: 40, height: 40, borderRadius: 13, background: 'linear-gradient(135deg, #22c55e, #16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>⚡</div>
-            <span style={{ fontSize: 24, fontWeight: 900, color: '#fff' }}>SportBook</span>
+            <span style={{ fontSize: 24, fontWeight: 900, color: '#fff' }} className="logo-text">Spotly</span>
           </div>
           <p style={{ color: '#64748b', fontSize: 13 }}>Создайте аккаунт бесплатно</p>
         </div>

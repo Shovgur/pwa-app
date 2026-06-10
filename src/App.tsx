@@ -1,9 +1,20 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { BookingProvider } from './contexts/BookingContext'
+import { ScrollToTop } from './components/ScrollToTop'
+import { PublicLayout } from './components/layout/PublicLayout'
+import { LandingPage } from './pages/LandingPage'
+import { CatalogPage } from './pages/CatalogPage'
+import { SportBookingPage } from './pages/SportBookingPage'
+import { LoftBookingPage } from './pages/LoftBookingPage'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
-import { DashboardPage } from './pages/DashboardPage'
+import { features, paths } from './config/features'
+
+const DashboardPage = lazy(() =>
+  import('./pages/DashboardPage').then((m) => ({ default: m.DashboardPage })),
+)
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth()
@@ -12,17 +23,36 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function PublicRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth()
-  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <>{children}</>
+  if (!isAuthenticated) return <>{children}</>
+  return <Navigate to={features.dashboard ? '/dashboard' : paths.postAuth} replace />
+}
+
+function DashboardRoute() {
+  if (!features.dashboard) {
+    return <Navigate to={paths.catalog} replace />
+  }
+  return (
+    <ProtectedRoute>
+      <Suspense fallback={null}>
+        <DashboardPage />
+      </Suspense>
+    </ProtectedRoute>
+  )
 }
 
 function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Navigate to="/login" replace />} />
+      <Route element={<PublicLayout />}>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/catalog" element={<CatalogPage />} />
+        <Route path="/sport/:id" element={<SportBookingPage />} />
+        <Route path="/loft/:id" element={<LoftBookingPage />} />
+      </Route>
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
       <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
-      <Route path="/dashboard/*" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      <Route path="/dashboard/*" element={<DashboardRoute />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
 }
@@ -30,6 +60,7 @@ function AppRoutes() {
 export default function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <AuthProvider>
         <BookingProvider>
           <AppRoutes />

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Home, Search, CalendarCheck, MapPin, User, Settings, Bell, LogOut, ChevronLeft } from 'lucide-react'
+import { Home, Search, CalendarCheck, MapPin, User, Settings, Bell, LogOut, ChevronLeft, Globe } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
 const NAV = [
@@ -46,7 +46,7 @@ export function Sidebar() {
         <AnimatePresence>
           {!collapsed && (
             <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}>
-              <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', whiteSpace: 'nowrap' }}>SportBook</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', whiteSpace: 'nowrap' }}>Spotly</div>
               <div style={{ fontSize: 10, color: '#22c55e', fontWeight: 600, letterSpacing: 0.5 }}>БРОНИРОВАНИЕ</div>
             </motion.div>
           )}
@@ -68,6 +68,32 @@ export function Sidebar() {
       </div>
 
       <div style={{ height: 1, margin: '0 16px 12px', background: 'rgba(255,255,255,0.06)' }} />
+
+      <div style={{ padding: '0 8px 8px' }}>
+        <NavLink to="/" style={{ textDecoration: 'none' }}>
+          {() => (
+            <motion.div
+              style={{
+                display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 12,
+                background: 'rgba(34,197,94,0.08)',
+                border: '1px solid rgba(34,197,94,0.2)',
+                cursor: 'pointer',
+              }}
+              whileHover={{ background: 'rgba(34,197,94,0.14)', x: 2 }}
+            >
+              <Globe size={18} color="#22c55e" />
+              <AnimatePresence>
+                {!collapsed && (
+                  <motion.span initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -8 }}
+                    style={{ fontSize: 14, fontWeight: 600, color: '#22c55e', whiteSpace: 'nowrap' }}>
+                    На сайт
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          )}
+        </NavLink>
+      </div>
 
       {/* Юзер */}
       <div style={{ padding: '0 8px 16px' }}>

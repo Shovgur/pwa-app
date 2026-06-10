@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 
-const COLORS = ['#7c3aed', '#06b6d4', '#a855f7', '#22d3ee', '#ec4899']
+const COLORS = ['#22C55E', '#3B82F6', '#F97316', '#A855F7', '#38BDF8']
 
 interface Particle {
   x: number; y: number; vx: number; vy: number
