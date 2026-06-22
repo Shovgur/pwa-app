@@ -37,7 +37,7 @@ export function Logo({ to = '/', size = 'md' }: LogoProps) {
         <MapPin size={s.icon} color="#fff" strokeWidth={2.5} />
       </div>
       <span className="logo-text" style={{ fontSize: s.text, fontWeight: 800, color: '#F1F5F9', letterSpacing: '-0.03em' }}>
-        Spotly
+        BookinGo
       </span>
     </motion.div>
   )

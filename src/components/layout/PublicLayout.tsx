@@ -98,7 +98,7 @@ export function PublicLayout() {
           }}
         >
           <Logo to="/" />
-          <p style={{ fontSize: 13, color: colors.muted }}>© 2026 Spotly · Бронирование площадок</p>
+          <p style={{ fontSize: 13, color: colors.muted }}>© 2026 BookinGo · Бронирование площадок</p>
           <div style={{ display: 'flex', gap: 24 }}>
             {['Политика', 'Поддержка', 'API'].map((l) => (
               <span key={l} style={{ fontSize: 13, color: colors.text2, cursor: 'pointer' }}>{l}</span>

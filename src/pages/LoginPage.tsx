@@ -53,7 +53,7 @@ export function LoginPage() {
             <div style={{ width: 44, height: 44, borderRadius: 14, background: 'linear-gradient(135deg, #22c55e, #3b82f6)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(34,197,94,0.3)' }}>
               <MapPin size={22} color="#fff" strokeWidth={2.5} />
             </div>
-            <span className="logo-text" style={{ fontSize: 22, fontWeight: 900, color: '#fff', letterSpacing: '-0.03em' }}>Spotly</span>
+            <span className="logo-text" style={{ fontSize: 22, fontWeight: 900, color: '#fff', letterSpacing: '-0.03em' }}>BookinGo</span>
           </div>
           <h2 style={{ fontSize: 42, fontWeight: 800, color: '#fff', lineHeight: 1.2, marginBottom: 20 }}>
             Бронируйте<br />
@@ -88,7 +88,7 @@ export function LoginPage() {
               <div style={{ width: 40, height: 40, borderRadius: 13, background: 'linear-gradient(135deg, #22c55e, #3b82f6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <MapPin size={20} color="#fff" strokeWidth={2.5} />
               </div>
-              <span style={{ fontSize: 24, fontWeight: 900, color: '#fff' }} className="logo-text">Spotly</span>
+              <span style={{ fontSize: 24, fontWeight: 900, color: '#fff' }} className="logo-text">BookinGo</span>
             </div>
             <p style={{ color: '#64748b', fontSize: 13 }}>Бронирование спортивных площадок</p>
           </div>
@@ -134,7 +134,7 @@ export function LoginPage() {
               </motion.button>
             </form>
 
-            <button onClick={() => { setEmail('demo@nexus.app'); setPassword('demo123') }}
+            <button onClick={() => { setEmail('demo@bookingo.app'); setPassword('demo123') }}
               style={{ width: '100%', padding: '12px', marginTop: 10, borderRadius: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.07)', color: '#94a3b8', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
               Использовать demo аккаунт
             </button>

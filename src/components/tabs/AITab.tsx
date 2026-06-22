@@ -22,7 +22,7 @@ interface Message {
 
 export function AITab() {
   const [messages, setMessages] = useState<Message[]>([
-    { id: 0, text: 'Привет! Я ваш AI-ассистент Nexus. Задайте любой вопрос о вашей платформе, аналитике или бизнесе, и я помогу найти ответ. ✨', mine: false },
+    { id: 0, text: 'Привет! Я AI-ассистент BookinGo. Задайте любой вопрос о бронированиях, площадках или аналитике — помогу найти ответ. ✨', mine: false },
   ])
   const [input, setInput] = useState('')
   const [isTyping, setIsTyping] = useState(false)
@@ -68,7 +68,7 @@ export function AITab() {
             <Sparkles size={18} className="text-white" />
           </motion.div>
           <div>
-            <h2 className="text-white font-semibold">Nexus AI</h2>
+            <h2 className="text-white font-semibold">BookinGo AI</h2>
             <div className="flex items-center gap-1.5">
               <motion.div
                 className="w-1.5 h-1.5 rounded-full bg-green-400"
@@ -81,7 +81,7 @@ export function AITab() {
           <div className="ml-auto flex items-center gap-2 px-3 py-1.5 rounded-xl glass"
             style={{ border: '1px solid rgba(168,85,247,0.3)' }}>
             <Zap size={12} className="text-purple-400" />
-            <span className="text-purple-400 text-xs">GPT-4 Nexus</span>
+            <span className="text-purple-400 text-xs">BookinGo GPT</span>
           </div>
         </div>
       </div>
@@ -179,7 +179,7 @@ export function AITab() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-            placeholder="Спросите Nexus AI..."
+            placeholder="Спросите BookinGo AI..."
             className="flex-1 bg-transparent text-white placeholder-slate-500 outline-none text-sm"
           />
           <motion.button

@@ -3,8 +3,8 @@ import { motion } from 'framer-motion'
 import { Plus, Clock, CheckCircle2, AlertCircle, Rocket } from 'lucide-react'
 
 const PROJECTS = [
-  { id: 1, name: 'Nexus Dashboard', desc: 'Главная панель управления платформой', progress: 85, status: 'active', color: '#a855f7', members: ['АР', 'МС', 'ДК'], deadline: '25 мар 2026', tasks: { done: 17, total: 20 } },
-  { id: 2, name: 'Mobile App', desc: 'iOS и Android приложение Nexus', progress: 42, status: 'active', color: '#22d3ee', members: ['ЕВ', 'ИН'], deadline: '15 апр 2026', tasks: { done: 8, total: 19 } },
+  { id: 1, name: 'BookinGo Dashboard', desc: 'Главная панель управления платформой', progress: 85, status: 'active', color: '#a855f7', members: ['АР', 'МС', 'ДК'], deadline: '25 мар 2026', tasks: { done: 17, total: 20 } },
+  { id: 2, name: 'Mobile App', desc: 'iOS и Android приложение BookinGo', progress: 42, status: 'active', color: '#22d3ee', members: ['ЕВ', 'ИН'], deadline: '15 апр 2026', tasks: { done: 8, total: 19 } },
   { id: 3, name: 'API v3', desc: 'Обновление REST API до версии 3.0', progress: 100, status: 'done', color: '#34d399', members: ['АР', 'ДК'], deadline: '28 фев 2026', tasks: { done: 12, total: 12 } },
   { id: 4, name: 'AI Integration', desc: 'Интеграция языковых моделей в платформу', progress: 15, status: 'pending', color: '#818cf8', members: ['МС', 'АП'], deadline: '1 мая 2026', tasks: { done: 2, total: 15 } },
   { id: 5, name: 'Analytics Engine', desc: 'Движок для обработки аналитических данных', progress: 67, status: 'active', color: '#f472b6', members: ['ИН', 'ЕВ', 'АР'], deadline: '10 апр 2026', tasks: { done: 10, total: 15 } },

@@ -22,10 +22,10 @@ const AuthContext = createContext<AuthContextType | null>(null)
 const MOCK_USERS: Array<User & { password: string }> = [
   {
     id: '1',
-    name: 'Alex Nexus',
-    email: 'demo@nexus.app',
+    name: 'Demo User',
+    email: 'demo@bookingo.app',
     password: 'demo123',
-    avatar: 'AN',
+    avatar: 'BG',
     role: 'Administrator',
   },
 ]
@@ -36,7 +36,12 @@ function delay(ms: number) {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => {
-    const stored = localStorage.getItem('nexus_user')
+    const legacy = localStorage.getItem('nexus_user')
+    const stored = localStorage.getItem('bookingo_user') ?? legacy
+    if (legacy && !localStorage.getItem('bookingo_user')) {
+      localStorage.setItem('bookingo_user', legacy)
+      localStorage.removeItem('nexus_user')
+    }
     return stored ? JSON.parse(stored) : null
   })
   const [isLoading, setIsLoading] = useState(false)
@@ -57,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const { password: _, ...userData } = found
     setUser(userData)
-    localStorage.setItem('nexus_user', JSON.stringify(userData))
+    localStorage.setItem('bookingo_user', JSON.stringify(userData))
     return { success: true }
   }, [])
 
@@ -82,14 +87,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     MOCK_USERS.push({ ...newUser, password })
     setUser(newUser)
-    localStorage.setItem('nexus_user', JSON.stringify(newUser))
+    localStorage.setItem('bookingo_user', JSON.stringify(newUser))
     setIsLoading(false)
     return { success: true }
   }, [])
 
   const logout = useCallback(() => {
     setUser(null)
-    localStorage.removeItem('nexus_user')
+    localStorage.removeItem('bookingo_user')
   }, [])
 
   return (

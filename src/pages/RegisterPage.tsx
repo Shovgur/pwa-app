@@ -50,7 +50,7 @@ export function RegisterPage() {
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
             <div style={{ width: 40, height: 40, borderRadius: 13, background: 'linear-gradient(135deg, #22c55e, #16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>⚡</div>
-            <span style={{ fontSize: 24, fontWeight: 900, color: '#fff' }} className="logo-text">Spotly</span>
+            <span style={{ fontSize: 24, fontWeight: 900, color: '#fff' }} className="logo-text">BookinGo</span>
           </div>
           <p style={{ color: '#64748b', fontSize: 13 }}>Создайте аккаунт бесплатно</p>
         </div>

@@ -168,7 +168,7 @@ export function LandingPage() {
       {/* Features */}
       <section id="features" className="site-container" style={{ paddingBottom: 80 }}>
         <div className="section-heading">
-          <h2>Почему Spotly</h2>
+          <h2>Почему BookinGo</h2>
           <p>Всё для комфортного бронирования — от выбора слота до доп. услуг</p>
         </div>
         <div className="site-grid-3">
@@ -211,7 +211,7 @@ export function LandingPage() {
           />
           <Sparkles size={36} color={colors.green} style={{ margin: '0 auto 20px' }} />
           <h2 style={{ fontSize: 'clamp(28px, 3vw, 40px)', fontWeight: 800, marginBottom: 14, position: 'relative', letterSpacing: '-0.02em' }}>Готов забронировать?</h2>
-          <p style={{ color: colors.muted, marginBottom: 32, position: 'relative', fontSize: 17 }}>Присоединяйся к Spotly — бронируй площадки за пару кликов</p>
+          <p style={{ color: colors.muted, marginBottom: 32, position: 'relative', fontSize: 17 }}>Присоединяйся к BookinGo — бронируй площадки за пару кликов</p>
           <Link to="/catalog"><Button size="lg" icon={<ArrowRight size={18} />}>Смотреть площадки</Button></Link>
         </motion.div>
       </section>

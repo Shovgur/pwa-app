@@ -46,7 +46,7 @@ export function Sidebar() {
         <AnimatePresence>
           {!collapsed && (
             <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}>
-              <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', whiteSpace: 'nowrap' }}>Spotly</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', whiteSpace: 'nowrap' }}>BookinGo</div>
               <div style={{ fontSize: 10, color: '#22c55e', fontWeight: 600, letterSpacing: 0.5 }}>БРОНИРОВАНИЕ</div>
             </motion.div>
           )}

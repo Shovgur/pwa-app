@@ -120,7 +120,7 @@ export function WalletTab() {
               </span>
             ))}
           </div>
-          <p className="text-white/60 text-sm">Nexus Virtual Card</p>
+          <p className="text-white/60 text-sm">BookinGo Card</p>
         </div>
       </motion.div>
 

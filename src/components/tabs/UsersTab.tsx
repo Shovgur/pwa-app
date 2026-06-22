@@ -4,12 +4,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Filter, UserPlus, MoreVertical, Shield, User, Crown } from 'lucide-react'
 
 const USERS = [
-  { id: 1, avatar: 'АР', name: 'Алексей Романов', email: 'a.romanov@nexus.app', role: 'Admin', status: 'online', joined: '12 янв 2026', color: '#a855f7' },
-  { id: 2, avatar: 'МС', name: 'Мария Смирнова', email: 'm.smirnova@nexus.app', role: 'Pro', status: 'online', joined: '15 янв 2026', color: '#22d3ee' },
-  { id: 3, avatar: 'ДК', name: 'Дмитрий Козлов', email: 'd.kozlov@nexus.app', role: 'User', status: 'offline', joined: '20 янв 2026', color: '#f472b6' },
-  { id: 4, avatar: 'ЕВ', name: 'Елена Волкова', email: 'e.volkova@nexus.app', role: 'Pro', status: 'online', joined: '25 янв 2026', color: '#34d399' },
-  { id: 5, avatar: 'ИН', name: 'Иван Новиков', email: 'i.novikov@nexus.app', role: 'User', status: 'away', joined: '1 фев 2026', color: '#fbbf24' },
-  { id: 6, avatar: 'АП', name: 'Анна Петрова', email: 'a.petrova@nexus.app', role: 'User', status: 'offline', joined: '3 фев 2026', color: '#818cf8' },
+  { id: 1, avatar: 'АР', name: 'Алексей Романов', email: 'a.romanov@bookingo.app', role: 'Admin', status: 'online', joined: '12 янв 2026', color: '#a855f7' },
+  { id: 2, avatar: 'МС', name: 'Мария Смирнова', email: 'm.smirnova@bookingo.app', role: 'Pro', status: 'online', joined: '15 янв 2026', color: '#22d3ee' },
+  { id: 3, avatar: 'ДК', name: 'Дмитрий Козлов', email: 'd.kozlov@bookingo.app', role: 'User', status: 'offline', joined: '20 янв 2026', color: '#f472b6' },
+  { id: 4, avatar: 'ЕВ', name: 'Елена Волкова', email: 'e.volkova@bookingo.app', role: 'Pro', status: 'online', joined: '25 янв 2026', color: '#34d399' },
+  { id: 5, avatar: 'ИН', name: 'Иван Новиков', email: 'i.novikov@bookingo.app', role: 'User', status: 'away', joined: '1 фев 2026', color: '#fbbf24' },
+  { id: 6, avatar: 'АП', name: 'Анна Петрова', email: 'a.petrova@bookingo.app', role: 'User', status: 'offline', joined: '3 фев 2026', color: '#818cf8' },
 ]
 
 const ROLE_ICONS: Record<string, typeof Shield> = {
