@@ -3,7 +3,6 @@ import { motion } from 'framer-motion'
 import {
   Zap, PlusCircle, ShieldCheck, ArrowRight, Sparkles,
 } from 'lucide-react'
-import { HeroBackground } from '../components/layout/HeroBackground'
 import { HeroSearch, HeroStats } from '../components/ui/HeroSearch'
 import { Button } from '../components/ui/Button'
 import { VenueCard } from '../components/ui/VenueCard'
@@ -60,7 +59,6 @@ export function LandingPage() {
     <div style={{ width: '100%' }}>
       {/* Hero */}
       <section style={{ position: 'relative', width: '100%', minHeight: '88vh', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <HeroBackground />
         <div
           className="site-container"
           style={{
