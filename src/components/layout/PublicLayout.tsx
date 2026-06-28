@@ -6,7 +6,6 @@ import { Menu, X, ArrowRight } from 'lucide-react'
 import { Logo } from '../ui/Logo'
 import { Button } from '../ui/Button'
 import { SiteAmbientBg } from './SiteAmbientBg'
-import { PwaSafeArea } from '../PwaSafeArea'
 import { colors } from '../../theme/tokens'
 
 const NAV = [
@@ -32,7 +31,6 @@ export function PublicLayout() {
 
   return (
     <div className="site-shell" style={{ color: colors.text }}>
-      <PwaSafeArea />
       <SiteAmbientBg />
       <div className="site-content">
       <motion.header
