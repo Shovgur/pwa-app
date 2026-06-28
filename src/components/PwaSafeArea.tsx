@@ -1,59 +1,74 @@
 import { useEffect, useState } from 'react'
 
 /**
- * Брендированная пилюля точно под Dynamic Island iPhone.
+ * Брендированная пилюля под Dynamic Island (как у Т-банка).
  *
- * Принцип (как у Т-банка):
- *  - Элемент рендерится в `position:fixed; top:0` — физически скрыт
+ * Принцип:
+ *  - Элемент рендерится в position:fixed; top:0 — физически скрыт
  *    за Dynamic Island в нормальном режиме.
- *  - При свайпе вверх (многозадачность/закрытие) вырез убирается
- *    и пилюля становится видна как брендированный элемент.
+ *  - При свайпе вверх (многозадачность) вырез убирается
+ *    и пилюля становится видна.
  *
- * Размеры Dynamic Island по моделям iPhone (CSS px = точки):
- *  iPhone 14 Pro / 15 / 15 Pro (390pt):  126 × 34
- *  iPhone 15 Pro / 16 Pro (393pt):        133 × 37
- *  iPhone 14 Pro Max / 15 Plus (430pt):   126 × 34
- *  iPhone 15 Pro Max (430pt, sat≈59):     138 × 37
- *  iPhone 16 Pro Max (440pt):             140 × 37
+ * ВАЖНО: читаем env(safe-area-inset-top) через DOM-зонд — это
+ * единственный надёжный способ получить пиксельное значение в JS.
  *
- * Определяем модель по ширине вьюпорта + safe-area-inset-top.
+ * Dynamic Island по моделям (CSS points):
+ *  14 Pro / 15 / 16 (390pt)   → 126 × 34
+ *  15 Pro / 16 Pro (393pt)     → 133 × 37
+ *  14 Pro Max / 15 Plus (430pt)→ 126 × 34
+ *  15 Pro Max (430pt, sat≥59)  → 138 × 37
+ *  16 Pro Max (440pt)          → 140 × 37
+ *
+ * Notch-iPhones (sat≈44px) и без выреза (sat<20px) → пилюля скрыта.
  */
 
 interface IslandSize { w: number; h: number }
 
-function detectIsland(): IslandSize | null {
-  // Читаем CSS-переменную --sat (= env(safe-area-inset-top)) заданную в :root
-  const satStr = getComputedStyle(document.documentElement)
-    .getPropertyValue('--sat').trim()
-  const sat = parseFloat(satStr) || 0
+/** Измеряем env(safe-area-inset-top) через временный DOM-элемент */
+function readSafeAreaTop(): number {
+  const probe = document.createElement('div')
+  probe.style.cssText =
+    'position:fixed;top:0;left:0;width:1px;' +
+    'height:env(safe-area-inset-top,0px);' +
+    'visibility:hidden;pointer-events:none;z-index:-1'
+  document.body.appendChild(probe)
+  const sat = probe.getBoundingClientRect().height
+  document.body.removeChild(probe)
+  return sat
+}
 
-  // Dynamic Island iPhones: safe-area-inset-top ≥ 50px
-  // Обычный notch: ~44px  |  Нет выреза: 0-20px
+function getIslandSize(sat: number): IslandSize | null {
+  // Dynamic Island iPhones: safe-area-inset-top ≥ 50 px
+  // Notch iPhones: ~44 px | без выреза: 0–20 px
   if (sat < 50) return null
 
-  const vw = window.innerWidth // CSS пиксели (points)
-
+  const vw = window.innerWidth
   if (vw >= 440) return { w: 140, h: 37 }  // iPhone 16 Pro Max
   if (vw >= 430) return { w: 138, h: 37 }  // 15 Pro Max / 16 Plus
   if (vw >= 393) return { w: 133, h: 37 }  // 15 Pro / 16 Pro
-  return { w: 126, h: 34 }                  // 14 Pro / 15 / 15 Plus / 16
+  return { w: 126, h: 34 }                  // 14 Pro / 15 / 16
 }
 
 export function PwaSafeArea() {
   const [island, setIsland] = useState<IslandSize | null>(null)
 
   useEffect(() => {
-    // После монтирования CSS-переменные уже разрешены
-    setIsland(detectIsland())
+    function update() {
+      const sat = readSafeAreaTop()
+      setIsland(getIslandSize(sat))
+    }
 
-    const onResize = () => setIsland(detectIsland())
-    window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
+    // Небольшая задержка — iOS PWA иногда раскрывает env() чуть позже
+    const t = setTimeout(update, 80)
+    window.addEventListener('resize', update)
+    return () => {
+      clearTimeout(t)
+      window.removeEventListener('resize', update)
+    }
   }, [])
 
   return (
     <>
-      {/* Dynamic Island brand pill — visible only during multitasking swipe */}
       {island && (
         <div
           aria-hidden="true"
@@ -64,8 +79,7 @@ export function PwaSafeArea() {
             transform: 'translateX(-50%)',
             width: island.w,
             height: island.h,
-            /* Округление снизу повторяет форму Dynamic Island */
-            borderRadius: `0 0 ${island.h * 0.65}px ${island.h * 0.65}px`,
+            borderRadius: `0 0 ${Math.round(island.h * 0.65)}px ${Math.round(island.h * 0.65)}px`,
             background: '#22C55E',
             zIndex: 99999,
             pointerEvents: 'none',
@@ -76,7 +90,7 @@ export function PwaSafeArea() {
           }}
         >
           <span style={{
-            fontSize: 8.5,
+            fontSize: 8,
             fontWeight: 900,
             letterSpacing: '0.12em',
             textTransform: 'uppercase',
@@ -90,7 +104,7 @@ export function PwaSafeArea() {
         </div>
       )}
 
-      {/* Bottom strip — home indicator safe area (subtle brand gradient) */}
+      {/* Home indicator zone — subtle brand gradient */}
       <div
         aria-hidden="true"
         style={{
