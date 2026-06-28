@@ -130,7 +130,9 @@ export function PublicLayout() {
                 transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
                 style={{
                   position: 'fixed',
-                  top: 16, left: 16, right: 16,
+                  top: 'calc(16px + env(safe-area-inset-top, 0px))',
+                  left: 16,
+                  right: 16,
                   zIndex: 9999,
                   borderRadius: 24,
                   background: 'rgba(14, 20, 32, 0.97)',
