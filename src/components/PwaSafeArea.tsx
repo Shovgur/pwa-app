@@ -69,34 +69,39 @@ export function PwaSafeArea() {
 
   // Показываем пилюлю в нужные моменты
   useEffect(() => {
-    let hideTimer: ReturnType<typeof setTimeout>
+    let autoHide: ReturnType<typeof setTimeout>
 
-    const reveal = () => { clearTimeout(hideTimer); setShow(true) }
-    const conceal = () => { hideTimer = setTimeout(() => setShow(false), 350) }
+    // Показать пилюлю + авто-скрытие через 2.5 сек если свайп не завершился
+    const reveal = () => {
+      clearTimeout(autoHide)
+      setShow(true)
+      autoHide = setTimeout(() => setShow(false), 2500)
+    }
 
-    // ── 1. touchstart в нижней зоне экрана (home-indicator area) ──────────
-    // Срабатывает в самом начале свайпа вверх — раньше любых system-событий.
+    // Скрыть (вызывается только при возврате в приложение, не при скролле)
+    const conceal = () => {
+      clearTimeout(autoHide)
+      setShow(false)
+    }
+
+    // ── 1. touchstart в нижней зоне — самый ранний триггер ──────────────
     const onTouch = (e: TouchEvent) => {
       const t = e.touches[0]
       const fromBottom = window.innerHeight - t.clientY
-      // Касание в нижних ~50 px (зона home indicator + небольшой запас)
       if (fromBottom <= 50) reveal()
-      else conceal()
     }
 
-    // ── 2. Page Visibility / blur — страховка на случай быстрого свайпа ───
+    // ── 2. visibilitychange / focus — скрываем при возврате в приложение ─
     const onVis = () => { if (document.hidden) reveal(); else conceal() }
 
     window.addEventListener('touchstart', onTouch, { passive: true })
-    window.addEventListener('touchend',   conceal,  { passive: true })
     document.addEventListener('visibilitychange', onVis)
     window.addEventListener('blur',  reveal)
     window.addEventListener('focus', conceal)
 
     return () => {
-      clearTimeout(hideTimer)
+      clearTimeout(autoHide)
       window.removeEventListener('touchstart', onTouch)
-      window.removeEventListener('touchend',   conceal)
       document.removeEventListener('visibilitychange', onVis)
       window.removeEventListener('blur',  reveal)
       window.removeEventListener('focus', conceal)
