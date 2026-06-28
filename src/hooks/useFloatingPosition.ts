@@ -13,16 +13,23 @@ export function useFloatingPosition(
 ) {
   const [menuStyle, setMenuStyle] = useState<FloatingMenuStyle | null>(null)
 
+  const calcPosition = useCallback((el: HTMLElement): FloatingMenuStyle => {
+    const rect = el.getBoundingClientRect()
+    const w = Math.max(rect.width, minWidth)
+    const viewW = window.innerWidth
+    const margin = 16
+    let left = rect.left
+    if (left + w > viewW - margin) {
+      left = Math.max(margin, viewW - w - margin)
+    }
+    return { top: rect.bottom + 8, left, width: Math.min(w, viewW - margin * 2) }
+  }, [minWidth])
+
   const updatePosition = useCallback(() => {
     const el = triggerRef.current
     if (!el) return
-    const rect = el.getBoundingClientRect()
-    setMenuStyle({
-      top: rect.bottom + 8,
-      left: rect.left,
-      width: Math.max(rect.width, minWidth),
-    })
-  }, [triggerRef, minWidth])
+    setMenuStyle(calcPosition(el))
+  }, [triggerRef, calcPosition])
 
   useLayoutEffect(() => {
     if (!open) return
@@ -38,13 +45,8 @@ export function useFloatingPosition(
   const prepareOpen = useCallback(() => {
     const el = triggerRef.current
     if (!el) return
-    const rect = el.getBoundingClientRect()
-    setMenuStyle({
-      top: rect.bottom + 8,
-      left: rect.left,
-      width: Math.max(rect.width, minWidth),
-    })
-  }, [triggerRef, minWidth])
+    setMenuStyle(calcPosition(el))
+  }, [triggerRef, calcPosition])
 
   return { menuStyle, prepareOpen }
 }

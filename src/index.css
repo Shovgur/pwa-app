@@ -260,10 +260,34 @@ input:-webkit-autofill:focus {
   position: relative;
 }
 
+/* Desktop: nav visible, burger hidden */
+.site-header-nav {
+  display: flex;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  align-items: center;
+  gap: 32px;
+}
+
+.site-header-burger {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(255,255,255,0.06);
+  cursor: pointer;
+  color: #F1F5F9;
+  flex-shrink: 0;
+}
+
 @media (max-width: 900px) {
-  .site-header-nav {
-    display: none;
-  }
+  .site-header-nav  { display: none !important; }
+  .site-header-cta  { display: none !important; }
+  .site-header-burger { display: flex !important; }
 }
 
 .site-footer {
@@ -1710,5 +1734,177 @@ input[type="date"]::-webkit-calendar-picker-indicator {
 @media (min-width: 1024px) {
   .lg-panel-left {
     display: flex;
+  }
+}
+
+/* ═══════════════════════════════════
+   Mobile / Responsive fixes
+   ═══════════════════════════════════ */
+
+/* How it works — step grid */
+.how-step {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 32px;
+  padding-top: 48px;
+  padding-bottom: 48px;
+}
+
+.how-step-text  { order: 1; }
+.how-step-visual { order: 2; }
+
+@media (min-width: 768px) {
+  .how-step {
+    grid-template-columns: 1fr 1fr;
+    gap: 64px;
+    padding-top: 80px;
+    padding-bottom: 80px;
+  }
+
+  .how-step-text         { order: 0; }
+  .how-step-text--right  { order: 1; }
+  .how-step-visual       { order: 1; }
+  .how-step-visual--left { order: 0; }
+}
+
+/* How it works — steps overview pill in hero */
+.how-steps-overview {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 20px;
+  padding: 6px;
+  max-width: 580px;
+  margin: 0 auto;
+}
+
+@media (min-width: 640px) {
+  .how-steps-overview {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+    border-radius: 24px;
+  }
+}
+
+/* Footer mobile */
+@media (max-width: 640px) {
+  .site-footer {
+    margin-top: 40px;
+  }
+
+  .site-footer .site-container {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 20px;
+    padding-top: 28px;
+    padding-bottom: 28px;
+  }
+}
+
+/* Hero section mobile padding */
+@media (max-width: 640px) {
+  .hero-search {
+    border-radius: 16px;
+  }
+
+  .hero-search-btn {
+    border-radius: 0 0 16px 16px;
+    padding: 18px 24px;
+  }
+
+  .select-field {
+    padding: 16px 18px;
+  }
+}
+
+/* Hero stats mobile */
+@media (max-width: 480px) {
+  .hero-stats {
+    gap: 0;
+    flex-wrap: nowrap;
+  }
+
+  .hero-stat-item {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+/* Booking layout mobile: summary panel не фиксируется */
+@media (max-width: 1023px) {
+  .booking-summary-panel {
+    max-height: none;
+    border-radius: 24px;
+  }
+
+  .booking-sidebar {
+    padding-bottom: 40px;
+  }
+}
+
+/* Dropdown menus — не вылезать за правый край */
+.select-menu,
+.date-picker {
+  max-width: calc(100vw - 32px);
+}
+
+/* Category cards 1 column on very small screens */
+@media (max-width: 480px) {
+  .site-grid-4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Venue card body padding mobile */
+@media (max-width: 480px) {
+  .venue-card-body {
+    padding: 18px 20px 22px;
+  }
+
+  .venue-card-media-content h3 {
+    font-size: 18px;
+  }
+}
+
+/* Booking back button mobile */
+@media (max-width: 640px) {
+  .booking-back {
+    margin-bottom: 20px;
+  }
+
+  .booking-section-head h2 {
+    font-size: 18px;
+  }
+
+  .booking-slot {
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+}
+
+/* Addon card mobile */
+@media (max-width: 480px) {
+  .addon-card-icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .addon-card-title {
+    font-size: 14px;
+  }
+
+  .addon-card-price {
+    font-size: 13px;
+  }
+}
+
+/* How it works FAQ */
+@media (max-width: 640px) {
+  .how-step-text h2 {
+    font-size: clamp(24px, 7vw, 36px);
   }
 }

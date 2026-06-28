@@ -344,14 +344,6 @@ function StepSection({ step, index }: { step: typeof STEPS[0]; index: number }) 
       initial={{ opacity: 0 }}
       animate={inView ? { opacity: 1 } : {}}
       transition={{ duration: 0.4 }}
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: 64,
-        alignItems: 'center',
-        paddingTop: 80,
-        paddingBottom: 80,
-      }}
       className="how-step"
     >
       {/* Text */}
@@ -359,7 +351,7 @@ function StepSection({ step, index }: { step: typeof STEPS[0]; index: number }) 
         initial={{ opacity: 0, x: isEven ? -40 : 40 }}
         animate={inView ? { opacity: 1, x: 0 } : {}}
         transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
-        style={{ order: isEven ? 0 : 1 }}
+        className={isEven ? 'how-step-text' : 'how-step-text how-step-text--right'}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 24 }}>
           <div style={{
@@ -404,7 +396,7 @@ function StepSection({ step, index }: { step: typeof STEPS[0]; index: number }) 
         initial={{ opacity: 0, x: isEven ? 40 : -40, scale: 0.96 }}
         animate={inView ? { opacity: 1, x: 0, scale: 1 } : {}}
         transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.2 }}
-        style={{ order: isEven ? 1 : 0 }}
+        className={isEven ? 'how-step-visual' : 'how-step-visual how-step-visual--left'}
       >
         <div style={{
           borderRadius: 28, padding: 28,
@@ -551,20 +543,13 @@ export function HowItWorksPage() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.35 }}
-            style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              gap: 0, flexWrap: 'wrap',
-              background: 'rgba(255,255,255,0.03)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              borderRadius: 24, padding: '6px',
-              maxWidth: 580, margin: '0 auto',
-            }}
+            className="how-steps-overview"
           >
             {STEPS.map((s, i) => (
               <div key={s.n} style={{ display: 'flex', alignItems: 'center' }}>
                 <div style={{
                   display: 'flex', alignItems: 'center', gap: 10,
-                  padding: '12px 18px', borderRadius: 18,
+                  padding: '10px 14px', borderRadius: 18,
                 }}>
                   <div style={{
                     width: 28, height: 28, borderRadius: 8, flexShrink: 0,
@@ -573,7 +558,7 @@ export function HowItWorksPage() {
                   }}>
                     <s.icon size={14} color={s.color} />
                   </div>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: colors.text2, whiteSpace: 'nowrap' }}>{s.title}</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: colors.text2 }}>{s.title}</span>
                 </div>
                 {i < STEPS.length - 1 && (
                   <div style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.1)' }} />
