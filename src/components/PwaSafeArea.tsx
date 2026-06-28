@@ -1,20 +1,29 @@
 import { useEffect, useState } from 'react'
 
 /**
- * Брендированная пилюля точно под notch / Dynamic Island на iPhone.
+ * Брендированная пилюля под Dynamic Island / notch — как у Т-банка.
  *
- * В нормальном режиме элемент физически скрыт за вырезом.
- * При свайпе вверх (многозадачность) вырез убирается — пилюля видна.
+ * В ОБЫЧНОМ РЕЖИМЕ: opacity: 0 — полностью невидима.
+ * При СВАЙПЕ ВВЕРХ (app-switcher): visibilitychange / blur →
+ *   opacity: 1 — зелёная пилюля "BookinGo" становится видна
+ *   за долю секунды до полного перехода в многозадачность.
  *
- * Идентификация устройства:
- *  • safe-area-inset-top (sat) читается через DOM-зонд (в JS нельзя
- *    получить env() через getComputedStyle — возвращает строку)
- *  • sat ≥ 55 px  → Dynamic Island (iPhone 14 Pro → 16 Pro Max, 15/16 базовые)
- *  • sat 35–54 px → Notch (iPhone 12, 12 mini, 13, 13 mini, 14, 14 Plus)
- *  • sat < 35 px  → нет выреза, элемент не рендерится
- *  • Модель уточняется по window.innerWidth (CSS points, portrait)
+ * Почему NOT position:fixed top:0 всегда видимая:
+ *   DI и notch не начинаются с точного y=0 — над ними есть
+ *   несколько px дисплея, куда вылезает наш элемент в normal mode.
+ *   Единственный надёжный способ — показывать только в нужный момент.
  *
- * Ширина пилюли всегда ≤ ширины notch → в обычном режиме скрыта.
+ * Размеры пилюли по моделям (CSS points, portrait):
+ *   iPhone 12 mini / 13 mini  (375 pt, notch, sat≈47) → 112 × 33
+ *   iPhone 12 / 12 Pro / 13 / 13 Pro / 14  (390 pt, notch) → 155 × 33
+ *   iPhone 12 Pro Max / 13 Pro Max  (428 pt, notch) → 155 × 33
+ *   iPhone 14 Plus  (430 pt, notch) → 155 × 33
+ *   iPhone 14 Pro / 15 Pro / 16 Pro  (393 pt, DI, sat≈59) → 133 × 37
+ *   iPhone 15 / 16  (390 pt, DI, sat≈59) → 126 × 34
+ *   iPhone 14 Pro Max / 15 Plus / 16 Plus  (430 pt, DI) → 126–138 × 37
+ *   iPhone 15 Pro Max  (430 pt, DI, tall) → 138 × 37
+ *   iPhone 16 Pro Max  (440 pt, DI) → 140 × 37
+ *   iPhone 17+ → fallback по тем же правилам
  */
 
 interface Pill { w: number; h: number }
@@ -31,79 +40,73 @@ function readSat(): number {
   return v
 }
 
-/**
- * Полная карта по моделям (CSS points, portrait orientation):
- *
- * ── Dynamic Island ──────────────────────────────────────────────────
- * iPhone 15 / 16           390 pt   DI ≈ 126 × 34
- * iPhone 14 Pro            393 pt   DI ≈ 126 × 37
- * iPhone 15 Pro / 16 Pro   393 pt   DI ≈ 133 × 37
- * iPhone 14 Pro Max        430 pt   DI ≈ 126 × 37
- * iPhone 15 Plus / 16 Plus 430 pt   DI ≈ 126 × 37
- * iPhone 15 Pro Max        430 pt   DI ≈ 138 × 37
- * iPhone 16 Pro Max        440 pt   DI ≈ 140 × 37
- * iPhone 17 / 17 Pro (est) 390/393  same rules as 15/16 gen
- * iPhone 17 Pro Max (est)  440+     fallback → 140 × 37
- *
- * ── Notch ───────────────────────────────────────────────────────────
- * iPhone 12 mini / 13 mini  375 pt  notch min ≈ 119 pt → pill 112 × 33
- * iPhone 12 / 12 Pro        390 pt  notch ≈ 209 pt     → pill 155 × 33
- * iPhone 13 / 13 Pro        390 pt  notch ≈ 162 pt     → pill 155 × 33
- * iPhone 14                 390 pt  notch ≈ 198 pt     → pill 155 × 33
- * iPhone 12 Pro Max         428 pt  notch ≈ 234 pt     → pill 155 × 33
- * iPhone 13 Pro Max         428 pt  notch ≈ 162 pt     → pill 155 × 33
- * iPhone 14 Plus            430 pt  notch ≈ 198 pt     → pill 155 × 33
- * (пилюля всегда у́же notch → не вылезает)
- */
 function resolve(sat: number): Pill | null {
   const vw = window.innerWidth
 
-  // ── Dynamic Island ─────────────────────────────────────────────────
+  // Dynamic Island: iPhone 14 Pro → 16 Pro Max, 15/16 базовые (sat ≥ 55 px)
   if (sat >= 55) {
-    // iPhone 16 Pro Max (≥440 pt)
-    if (vw >= 440) return { w: 140, h: 37 }
-    // iPhone 15 Pro Max / 14 Pro Max / 15 Plus / 16 Plus (430 pt)
-    // 15 Pro Max DI чуть шире — определяем по высоте экрана:
+    if (vw >= 440) return { w: 140, h: 37 }           // 16 Pro Max
     if (vw >= 428) {
-      const vh = window.innerHeight
-      // 15 Pro Max: 932pt;  14 Pro Max / 15 Plus / 16 Plus: 844–932 pt
-      // Все имеют схожий DI, берём безопасный максимум
-      return vh >= 930 ? { w: 138, h: 37 } : { w: 126, h: 37 }
+      const tall = window.innerHeight >= 930
+      return { w: tall ? 138 : 126, h: 37 }            // 15 Pro Max vs 14 Pro Max / 15 Plus / 16 Plus
     }
-    // iPhone 14 Pro / 15 Pro / 16 Pro (393 pt)
-    if (vw >= 393) return { w: 133, h: 37 }
-    // iPhone 15 / 16 / 17 базовые (390 pt) и будущие ≤ 392 pt
-    return { w: 126, h: 34 }
+    if (vw >= 393) return { w: 133, h: 37 }            // 14 Pro / 15 Pro / 16 Pro
+    return            { w: 126, h: 34 }                 // 15 / 16 (390 pt)
   }
 
-  // ── Notch ──────────────────────────────────────────────────────────
+  // Notch: iPhone 12 mini / 13 mini / 12 / 12 Pro / 13 / 14 / 14 Plus (sat 35–54 px)
   if (sat >= 35) {
-    // Mini (375 pt): 12 mini (notch 162 pt) / 13 mini (notch 119 pt)
-    // Берём наименьший notch (119) → pill 112 pt
-    if (vw <= 380) return { w: 112, h: 33 }
-    // Все остальные notch-модели (390–430 pt):
-    // Наименьший notch среди них — iPhone 13/13 Pro ≈ 162 pt
-    // → pill 155 pt (безопасно для всех notch-моделей)
-    return { w: 155, h: 33 }
+    if (vw <= 380) return { w: 112, h: 33 }            // mini (375 pt)
+    return            { w: 155, h: 33 }                 // всё остальное notch
   }
 
-  // Нет выреза (SE, старые iPhone, Android)
-  return null
+  return null // нет выреза
 }
 
 export function PwaSafeArea() {
-  const [pill, setPill] = useState<Pill | null>(null)
+  const [pill, setPill]       = useState<Pill | null>(null)
+  const [show, setShow]       = useState(false)  // видимость: только в момент свайпа
 
+  // Определяем модель один раз после монтирования
   useEffect(() => {
-    function update() {
-      setPill(resolve(readSat()))
+    const t = setTimeout(() => setPill(resolve(readSat())), 120)
+    const onResize = () => setPill(resolve(readSat()))
+    window.addEventListener('resize', onResize)
+    return () => { clearTimeout(t); window.removeEventListener('resize', onResize) }
+  }, [])
+
+  // Показываем только в момент свайпа / перехода в app-switcher
+  useEffect(() => {
+    let hideTimer: ReturnType<typeof setTimeout>
+
+    // App уходит в фон или app-switcher
+    const onHide = () => {
+      clearTimeout(hideTimer)
+      setShow(true)
     }
-    // iOS PWA иногда раскрывает env() чуть позже монтирования
-    const t = setTimeout(update, 100)
-    window.addEventListener('resize', update)
+
+    // App возвращается на передний план
+    const onShow = () => {
+      // небольшая задержка: если пользователь вернулся сразу — плавно гасим
+      hideTimer = setTimeout(() => setShow(false), 400)
+    }
+
+    // Page Visibility API (срабатывает при уходе в background / app-switcher)
+    const onVis = () => {
+      if (document.hidden) onHide()
+      else onShow()
+    }
+
+    // window blur/focus — дополнительная страховка
+    document.addEventListener('visibilitychange', onVis)
+    window.addEventListener('blur', onHide)
+    window.addEventListener('focus', onShow)
+
     return () => {
-      clearTimeout(t)
-      window.removeEventListener('resize', update)
+      clearTimeout(hideTimer)
+      document.removeEventListener('visibilitychange', onVis)
+      window.removeEventListener('blur', onHide)
+      window.removeEventListener('focus', onShow)
     }
   }, [])
 
@@ -119,7 +122,6 @@ export function PwaSafeArea() {
             transform: 'translateX(-50%)',
             width: pill.w,
             height: pill.h,
-            // Верхние углы — 0 (край экрана), нижние — скруглённые
             borderRadius: `0 0 ${Math.round(pill.h * 0.62)}px ${Math.round(pill.h * 0.62)}px`,
             background: '#22C55E',
             zIndex: 99999,
@@ -128,6 +130,11 @@ export function PwaSafeArea() {
             alignItems: 'center',
             justifyContent: 'center',
             overflow: 'hidden',
+            // Ключевое: только при свайпе opacity: 1
+            opacity: show ? 1 : 0,
+            transition: show
+              ? 'opacity 0.08s ease'        // быстро появляется
+              : 'opacity 0.4s ease 0.1s',   // плавно исчезает при возврате
           }}
         >
           <span style={{
@@ -154,7 +161,7 @@ export function PwaSafeArea() {
           left: 0,
           right: 0,
           height: 'env(safe-area-inset-bottom, 0px)',
-          background: 'linear-gradient(to top, rgba(34,197,94,0.15) 0%, transparent 100%)',
+          background: 'linear-gradient(to top, rgba(34,197,94,0.14) 0%, transparent 100%)',
           zIndex: 99998,
           pointerEvents: 'none',
         }}
