@@ -1,71 +1,104 @@
 import { useEffect, useState } from 'react'
 
 /**
- * Брендированная пилюля под notch / Dynamic Island — как у Т-банка.
+ * Брендированная пилюля точно под notch / Dynamic Island на iPhone.
  *
  * В нормальном режиме элемент физически скрыт за вырезом.
- * При свайпе вверх (многозадачность) вырез убирается и пилюля видна.
+ * При свайпе вверх (многозадачность) вырез убирается — пилюля видна.
  *
- * Охват:
- *  iPhone 12 / 13 / 14 (notch, sat ≈ 44 px) — pill-ширина меньше ширины notch
- *  iPhone 14 Pro → 16 Pro Max (Dynamic Island, sat ≈ 59 px) — точные размеры DI
+ * Идентификация устройства:
+ *  • safe-area-inset-top (sat) читается через DOM-зонд (в JS нельзя
+ *    получить env() через getComputedStyle — возвращает строку)
+ *  • sat ≥ 55 px  → Dynamic Island (iPhone 14 Pro → 16 Pro Max, 15/16 базовые)
+ *  • sat 35–54 px → Notch (iPhone 12, 12 mini, 13, 13 mini, 14, 14 Plus)
+ *  • sat < 35 px  → нет выреза, элемент не рендерится
+ *  • Модель уточняется по window.innerWidth (CSS points, portrait)
  *
- * Читаем env(safe-area-inset-top) через DOM-зонд — единственный
- * надёжный способ получить пиксели в JS (CSS var возвращает строку).
+ * Ширина пилюли всегда ≤ ширины notch → в обычном режиме скрыта.
  */
 
-interface IslandSize {
-  w: number   // ширина пилюли, px
-  h: number   // высота пилюли, px
-}
+interface Pill { w: number; h: number }
 
 function readSat(): number {
-  const probe = document.createElement('div')
-  probe.style.cssText =
+  const d = document.createElement('div')
+  d.style.cssText =
     'position:fixed;top:0;left:0;width:1px;' +
     'height:env(safe-area-inset-top,0px);' +
     'visibility:hidden;pointer-events:none;z-index:-9999'
-  document.body.appendChild(probe)
-  const val = probe.getBoundingClientRect().height
-  document.body.removeChild(probe)
-  return val
+  document.body.appendChild(d)
+  const v = d.getBoundingClientRect().height
+  document.body.removeChild(d)
+  return v
 }
 
-function resolve(sat: number): IslandSize | null {
-  const vw = window.innerWidth   // CSS points
+/**
+ * Полная карта по моделям (CSS points, portrait orientation):
+ *
+ * ── Dynamic Island ──────────────────────────────────────────────────
+ * iPhone 15 / 16           390 pt   DI ≈ 126 × 34
+ * iPhone 14 Pro            393 pt   DI ≈ 126 × 37
+ * iPhone 15 Pro / 16 Pro   393 pt   DI ≈ 133 × 37
+ * iPhone 14 Pro Max        430 pt   DI ≈ 126 × 37
+ * iPhone 15 Plus / 16 Plus 430 pt   DI ≈ 126 × 37
+ * iPhone 15 Pro Max        430 pt   DI ≈ 138 × 37
+ * iPhone 16 Pro Max        440 pt   DI ≈ 140 × 37
+ * iPhone 17 / 17 Pro (est) 390/393  same rules as 15/16 gen
+ * iPhone 17 Pro Max (est)  440+     fallback → 140 × 37
+ *
+ * ── Notch ───────────────────────────────────────────────────────────
+ * iPhone 12 mini / 13 mini  375 pt  notch min ≈ 119 pt → pill 112 × 33
+ * iPhone 12 / 12 Pro        390 pt  notch ≈ 209 pt     → pill 155 × 33
+ * iPhone 13 / 13 Pro        390 pt  notch ≈ 162 pt     → pill 155 × 33
+ * iPhone 14                 390 pt  notch ≈ 198 pt     → pill 155 × 33
+ * iPhone 12 Pro Max         428 pt  notch ≈ 234 pt     → pill 155 × 33
+ * iPhone 13 Pro Max         428 pt  notch ≈ 162 pt     → pill 155 × 33
+ * iPhone 14 Plus            430 pt  notch ≈ 198 pt     → pill 155 × 33
+ * (пилюля всегда у́же notch → не вылезает)
+ */
+function resolve(sat: number): Pill | null {
+  const vw = window.innerWidth
 
-  // ── Dynamic Island ───────────────────────────────────────────────
-  // iPhone 14 Pro / 15 / 15 Pro / 16 / 16 Pro / 16 Pro Max: sat ≈ 59 px
-  if (sat >= 50) {
-    if (vw >= 440) return { w: 140, h: 37 }  // 16 Pro Max
-    if (vw >= 430) return { w: 138, h: 37 }  // 15 Pro Max / 16 Plus
-    if (vw >= 393) return { w: 133, h: 37 }  // 15 Pro / 16 Pro
-    return            { w: 126, h: 34 }       // 14 Pro / 15 / 16
+  // ── Dynamic Island ─────────────────────────────────────────────────
+  if (sat >= 55) {
+    // iPhone 16 Pro Max (≥440 pt)
+    if (vw >= 440) return { w: 140, h: 37 }
+    // iPhone 15 Pro Max / 14 Pro Max / 15 Plus / 16 Plus (430 pt)
+    // 15 Pro Max DI чуть шире — определяем по высоте экрана:
+    if (vw >= 428) {
+      const vh = window.innerHeight
+      // 15 Pro Max: 932pt;  14 Pro Max / 15 Plus / 16 Plus: 844–932 pt
+      // Все имеют схожий DI, берём безопасный максимум
+      return vh >= 930 ? { w: 138, h: 37 } : { w: 126, h: 37 }
+    }
+    // iPhone 14 Pro / 15 Pro / 16 Pro (393 pt)
+    if (vw >= 393) return { w: 133, h: 37 }
+    // iPhone 15 / 16 / 17 базовые (390 pt) и будущие ≤ 392 pt
+    return { w: 126, h: 34 }
   }
 
-  // ── Notch ────────────────────────────────────────────────────────
-  // iPhone 12 / 12 Pro / 13 / 13 Pro / 14: sat ≈ 44 px
-  // Пилюля у́же любого notch → всегда скрыта за ним в обычном режиме:
-  //   iPhone 13 notch ≈ 162 px  →  наша пилюля ≤ 155 px  ✓
-  //   iPhone 12 notch ≈ 210 px  →  наша пилюля ≤ 155 px  ✓
+  // ── Notch ──────────────────────────────────────────────────────────
   if (sat >= 35) {
-    if (vw >= 420) return { w: 155, h: 32 }  // Plus / Pro Max (428–430 pt)
-    return            { w: 126, h: 32 }       // Standard (375–393 pt)
+    // Mini (375 pt): 12 mini (notch 162 pt) / 13 mini (notch 119 pt)
+    // Берём наименьший notch (119) → pill 112 pt
+    if (vw <= 380) return { w: 112, h: 33 }
+    // Все остальные notch-модели (390–430 pt):
+    // Наименьший notch среди них — iPhone 13/13 Pro ≈ 162 pt
+    // → pill 155 pt (безопасно для всех notch-моделей)
+    return { w: 155, h: 33 }
   }
 
-  // Нет выреза — ничего не показываем
+  // Нет выреза (SE, старые iPhone, Android)
   return null
 }
 
 export function PwaSafeArea() {
-  const [island, setIsland] = useState<IslandSize | null>(null)
+  const [pill, setPill] = useState<Pill | null>(null)
 
   useEffect(() => {
     function update() {
-      setIsland(resolve(readSat()))
+      setPill(resolve(readSat()))
     }
-
-    // iOS PWA иногда раскрывает env() немного позже монтирования
+    // iOS PWA иногда раскрывает env() чуть позже монтирования
     const t = setTimeout(update, 100)
     window.addEventListener('resize', update)
     return () => {
@@ -76,7 +109,7 @@ export function PwaSafeArea() {
 
   return (
     <>
-      {island && (
+      {pill && (
         <div
           aria-hidden="true"
           style={{
@@ -84,11 +117,10 @@ export function PwaSafeArea() {
             top: 0,
             left: '50%',
             transform: 'translateX(-50%)',
-            width: island.w,
-            height: island.h,
-            // Верхние углы: 0 (сливается с краем экрана)
-            // Нижние углы: округлые (повторяют форму notch / DI)
-            borderRadius: `0 0 ${Math.round(island.h * 0.6)}px ${Math.round(island.h * 0.6)}px`,
+            width: pill.w,
+            height: pill.h,
+            // Верхние углы — 0 (край экрана), нижние — скруглённые
+            borderRadius: `0 0 ${Math.round(pill.h * 0.62)}px ${Math.round(pill.h * 0.62)}px`,
             background: '#22C55E',
             zIndex: 99999,
             pointerEvents: 'none',
@@ -113,7 +145,7 @@ export function PwaSafeArea() {
         </div>
       )}
 
-      {/* Home indicator area — тонкий зелёный градиент */}
+      {/* Home indicator zone */}
       <div
         aria-hidden="true"
         style={{
