@@ -41,26 +41,18 @@ function readSat(): number {
 }
 
 function resolve(sat: number): Pill | null {
+  // Только Dynamic Island (iPhone 14 Pro → 16 Pro Max, 15/16 базовые)
+  // sat ≈ 59 px; notch-iPhones и Android — не поддерживаем (sat < 55)
+  if (sat < 55) return null
+
   const vw = window.innerWidth
-
-  // Dynamic Island: iPhone 14 Pro → 16 Pro Max, 15/16 базовые (sat ≥ 55 px)
-  if (sat >= 55) {
-    if (vw >= 440) return { w: 140, h: 37 }           // 16 Pro Max
-    if (vw >= 428) {
-      const tall = window.innerHeight >= 930
-      return { w: tall ? 138 : 126, h: 37 }            // 15 Pro Max vs 14 Pro Max / 15 Plus / 16 Plus
-    }
-    if (vw >= 393) return { w: 133, h: 37 }            // 14 Pro / 15 Pro / 16 Pro
-    return            { w: 126, h: 34 }                 // 15 / 16 (390 pt)
+  if (vw >= 440) return { w: 140, h: 37 }          // 16 Pro Max
+  if (vw >= 428) {
+    const tall = window.innerHeight >= 930
+    return { w: tall ? 138 : 126, h: 37 }           // 15 Pro Max vs 14 Pro Max / 15 Plus / 16 Plus
   }
-
-  // Notch: iPhone 12 mini / 13 mini / 12 / 12 Pro / 13 / 14 / 14 Plus (sat 35–54 px)
-  if (sat >= 35) {
-    if (vw <= 380) return { w: 112, h: 33 }            // mini (375 pt)
-    return            { w: 155, h: 33 }                 // всё остальное notch
-  }
-
-  return null // нет выреза
+  if (vw >= 393) return { w: 133, h: 37 }           // 14 Pro / 15 Pro / 16 Pro
+  return            { w: 126, h: 34 }                // 15 / 16 (390 pt)
 }
 
 export function PwaSafeArea() {
@@ -123,7 +115,9 @@ export function PwaSafeArea() {
             transform: 'translateX(-50%)',
             width: pill.w,
             height: pill.h,
-            borderRadius: `0 0 ${Math.round(pill.h * 0.62)}px ${Math.round(pill.h * 0.62)}px`,
+            // Полная капсула: наши скругления > скруглений DI (~10 px)
+            // → углы пилюли всегда внутри DI-вырезa, не вылезают в видимые зазоры
+            borderRadius: pill.h,
             background: '#22C55E',
             zIndex: 99999,
             pointerEvents: 'none',
