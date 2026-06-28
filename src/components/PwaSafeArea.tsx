@@ -75,38 +75,39 @@ export function PwaSafeArea() {
     return () => { clearTimeout(t); window.removeEventListener('resize', onResize) }
   }, [])
 
-  // Показываем только в момент свайпа / перехода в app-switcher
+  // Показываем пилюлю в нужные моменты
   useEffect(() => {
     let hideTimer: ReturnType<typeof setTimeout>
 
-    // App уходит в фон или app-switcher
-    const onHide = () => {
-      clearTimeout(hideTimer)
-      setShow(true)
+    const reveal = () => { clearTimeout(hideTimer); setShow(true) }
+    const conceal = () => { hideTimer = setTimeout(() => setShow(false), 350) }
+
+    // ── 1. touchstart в нижней зоне экрана (home-indicator area) ──────────
+    // Срабатывает в самом начале свайпа вверх — раньше любых system-событий.
+    const onTouch = (e: TouchEvent) => {
+      const t = e.touches[0]
+      const fromBottom = window.innerHeight - t.clientY
+      // Касание в нижних ~50 px (зона home indicator + небольшой запас)
+      if (fromBottom <= 50) reveal()
+      else conceal()
     }
 
-    // App возвращается на передний план
-    const onShow = () => {
-      // небольшая задержка: если пользователь вернулся сразу — плавно гасим
-      hideTimer = setTimeout(() => setShow(false), 400)
-    }
+    // ── 2. Page Visibility / blur — страховка на случай быстрого свайпа ───
+    const onVis = () => { if (document.hidden) reveal(); else conceal() }
 
-    // Page Visibility API (срабатывает при уходе в background / app-switcher)
-    const onVis = () => {
-      if (document.hidden) onHide()
-      else onShow()
-    }
-
-    // window blur/focus — дополнительная страховка
+    window.addEventListener('touchstart', onTouch, { passive: true })
+    window.addEventListener('touchend',   conceal,  { passive: true })
     document.addEventListener('visibilitychange', onVis)
-    window.addEventListener('blur', onHide)
-    window.addEventListener('focus', onShow)
+    window.addEventListener('blur',  reveal)
+    window.addEventListener('focus', conceal)
 
     return () => {
       clearTimeout(hideTimer)
+      window.removeEventListener('touchstart', onTouch)
+      window.removeEventListener('touchend',   conceal)
       document.removeEventListener('visibilitychange', onVis)
-      window.removeEventListener('blur', onHide)
-      window.removeEventListener('focus', onShow)
+      window.removeEventListener('blur',  reveal)
+      window.removeEventListener('focus', conceal)
     }
   }, [])
 
@@ -130,11 +131,10 @@ export function PwaSafeArea() {
             alignItems: 'center',
             justifyContent: 'center',
             overflow: 'hidden',
-            // Ключевое: только при свайпе opacity: 1
             opacity: show ? 1 : 0,
             transition: show
-              ? 'opacity 0.08s ease'        // быстро появляется
-              : 'opacity 0.4s ease 0.1s',   // плавно исчезает при возврате
+              ? 'opacity 0.03s linear'       // почти мгновенно при свайпе
+              : 'opacity 0.35s ease 0.05s',  // плавно гаснет при возврате
           }}
         >
           <span style={{
