@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom'
+import { SeoHead } from '../components/SeoHead'
 import { motion } from 'framer-motion'
 import {
   Zap, PlusCircle, ShieldCheck, ArrowRight, Sparkles,
@@ -57,6 +58,11 @@ export function LandingPage() {
 
   return (
     <div style={{ width: '100%' }}>
+      <SeoHead
+        title="BookinGo — Бронирование площадок для досуга"
+        description="Бронируй спортивные площадки, лофты и переговорные онлайн. Быстро, удобно, с выбором времени и доп. услугами."
+        path="/"
+      />
       {/* Hero */}
       <section style={{ position: 'relative', width: '100%', minHeight: '88vh', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
         <div

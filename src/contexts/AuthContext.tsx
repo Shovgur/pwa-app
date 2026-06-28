@@ -60,7 +60,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { success: false, error: 'Неверный email или пароль' }
     }
 
-    const { password: _, ...userData } = found
+    const userData: User = {
+      id: found.id,
+      name: found.name,
+      email: found.email,
+      avatar: found.avatar,
+      role: found.role,
+    }
     setUser(userData)
     localStorage.setItem('bookingo_user', JSON.stringify(userData))
     return { success: true }

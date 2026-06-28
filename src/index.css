@@ -256,6 +256,16 @@ input:-webkit-autofill:focus {
   z-index: 40;
 }
 
+.site-header-inner {
+  position: relative;
+}
+
+@media (max-width: 900px) {
+  .site-header-nav {
+    display: none;
+  }
+}
+
 .site-footer {
   margin-top: 80px;
   position: relative;
@@ -1522,6 +1532,10 @@ input[type="date"]::-webkit-calendar-picker-indicator {
   color: #F97316;
   font-size: 28px;
   font-weight: 800;
+}
+
+.booking-summary-total-price--green {
+  color: #22C55E;
 }
 
 .booking-sidebar-note {

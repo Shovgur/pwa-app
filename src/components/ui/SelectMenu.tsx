@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, Check } from 'lucide-react'
+import { useFloatingPosition } from '../../hooks/useFloatingPosition'
 
 export interface SelectOption {
   value: string
@@ -20,30 +21,18 @@ interface SelectMenuProps {
 export function SelectMenu({ label, icon, value, options, onChange, accent = '#22C55E' }: SelectMenuProps) {
   const [open, setOpen] = useState(false)
   const triggerRef = useRef<HTMLButtonElement>(null)
-  const [menuStyle, setMenuStyle] = useState({ top: 0, left: 0, width: 240 })
+  const { menuStyle, prepareOpen } = useFloatingPosition(triggerRef, open, 240)
 
   const selected = options.find((o) => o.value === value)
 
-  useEffect(() => {
-    if (!open || !triggerRef.current) return
-
-    function updatePosition() {
-      const rect = triggerRef.current!.getBoundingClientRect()
-      setMenuStyle({
-        top: rect.bottom + 8,
-        left: rect.left,
-        width: Math.max(rect.width, 240),
-      })
+  function toggleOpen() {
+    if (open) {
+      setOpen(false)
+      return
     }
-
-    updatePosition()
-    window.addEventListener('resize', updatePosition)
-    window.addEventListener('scroll', updatePosition, true)
-    return () => {
-      window.removeEventListener('resize', updatePosition)
-      window.removeEventListener('scroll', updatePosition, true)
-    }
-  }, [open])
+    prepareOpen()
+    setOpen(true)
+  }
 
   useEffect(() => {
     if (!open) return
@@ -78,7 +67,7 @@ export function SelectMenu({ label, icon, value, options, onChange, accent = '#2
         ref={triggerRef}
         type="button"
         className={`select-field-trigger ${open ? 'select-field-trigger--open' : ''}`}
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggleOpen}
         aria-haspopup="listbox"
         aria-expanded={open}
       >
@@ -88,7 +77,7 @@ export function SelectMenu({ label, icon, value, options, onChange, accent = '#2
 
       {createPortal(
         <AnimatePresence>
-          {open && (
+          {open && menuStyle && (
             <motion.div
               id={`select-menu-${label}`}
               className="select-menu"

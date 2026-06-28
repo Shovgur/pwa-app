@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
+import { SeoHead } from '../components/SeoHead'
 import { motion } from 'framer-motion'
 import { SlidersHorizontal, MapPin, Calendar } from 'lucide-react'
 import { VenueCard } from '../components/ui/VenueCard'
@@ -18,7 +19,7 @@ export function CatalogPage() {
     setFilter(initialType)
   }, [initialType])
 
-  const sportItems = COURTS.filter((c) => c.available).slice(0, 4).map((c) => ({
+  const sportItems = useMemo(() => COURTS.filter((c) => c.available).slice(0, 4).map((c) => ({
     to: `/sport/${c.id}`,
     badge: c.sport,
     title: c.name,
@@ -28,9 +29,9 @@ export function CatalogPage() {
     rating: c.rating,
     gradient: c.photos[0],
     type: 'sport' as const,
-  }))
+  })), [])
 
-  const loftItems = LOFTS.map((l) => ({
+  const loftItems = useMemo(() => LOFTS.map((l) => ({
     to: `/loft/${l.id}`,
     badge: 'Лофт + услуги',
     title: l.name,
@@ -40,9 +41,9 @@ export function CatalogPage() {
     rating: l.rating,
     gradient: l.gradient,
     type: 'loft' as const,
-  }))
+  })), [])
 
-  const allItems = [...sportItems, ...loftItems]
+  const allItems = useMemo(() => [...sportItems, ...loftItems], [sportItems, loftItems])
 
   const filtered = useMemo(() => {
     if (filter === 'all') return allItems
@@ -71,6 +72,11 @@ export function CatalogPage() {
 
   return (
     <div className="site-container" style={{ paddingTop: 40, paddingBottom: 80 }}>
+      <SeoHead
+        title="Каталог площадок — спорт, лофты, переговорные"
+        description="Бронируй спортивные залы, бассейны, лофты и переговорные онлайн. Москва, Санкт-Петербург. Быстрое бронирование, выбор времени и услуг."
+        path="/catalog"
+      />
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <h1 className="page-title" style={{ fontSize: 36, fontWeight: 800, marginBottom: 8 }}>Все площадки</h1>
         <p style={{ color: colors.muted, fontSize: 16, marginBottom: 16 }}>3 партнёра · Спорт, лофты и переговорные</p>

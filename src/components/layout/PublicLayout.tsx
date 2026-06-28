@@ -8,7 +8,7 @@ import { colors } from '../../theme/tokens'
 const NAV = [
   { to: '/', label: 'Главная' },
   { to: '/catalog', label: 'Площадки' },
-  { to: '/#features', label: 'Как это работает' },
+  { to: '/how-it-works', label: 'Как это работает' },
 ]
 
 export function PublicLayout() {
@@ -22,53 +22,82 @@ export function PublicLayout() {
         className="site-header"
         style={{
           width: '100%',
-          background: 'rgba(10, 14, 23, 0.85)',
+          background: 'rgba(10, 14, 23, 0.75)',
           backdropFilter: 'blur(20px)',
-          borderBottom: `1px solid ${colors.border}`,
+          WebkitBackdropFilter: 'blur(20px)',
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
         }}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+        initial={{ opacity: 0, y: -12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
       >
         <div
-          className="site-container"
+          className="site-container site-header-inner"
           style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             paddingTop: 18,
             paddingBottom: 18,
-            gap: 24,
+            gap: 32,
           }}
         >
+          {/* Logo */}
           <Logo />
-          <nav className="hidden md:flex items-center gap-8 flex-1 justify-center">
+
+          {/* Nav — абсолютно по центру */}
+          <nav className="site-header-nav" style={{
+              position: 'absolute',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 32,
+            }}
+          >
             {NAV.map(({ to, label }) => {
-              const active = to === '/' ? pathname === '/' : pathname.startsWith(to.replace('/#', ''))
+              const active = to === '/' ? pathname === '/' : pathname.startsWith(to)
               return (
                 <Link
                   key={to}
                   to={to}
-                  style={{
-                    fontSize: 14,
-                    fontWeight: active ? 700 : 500,
-                    color: active ? colors.green : colors.text2,
-                    textDecoration: 'none',
-                    whiteSpace: 'nowrap',
-                  }}
+                  style={{ position: 'relative', textDecoration: 'none' }}
                 >
-                  {label}
+                  <span
+                    style={{
+                      fontSize: 14,
+                      fontWeight: active ? 600 : 500,
+                      color: active ? colors.text : colors.text2,
+                      transition: 'color 0.18s',
+                      letterSpacing: '-0.01em',
+                    }}
+                  >
+                    {label}
+                  </span>
+                  {active && (
+                    <motion.div
+                      layoutId="nav-indicator"
+                      style={{
+                        position: 'absolute',
+                        bottom: -22,
+                        left: 0,
+                        right: 0,
+                        height: 2,
+                        borderRadius: 2,
+                        background: colors.green,
+                      }}
+                      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                    />
+                  )}
                 </Link>
               )
             })}
           </nav>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-            <Link to="/login" style={{ textDecoration: 'none' }}>
-              <Button variant="ghost" size="sm">Войти</Button>
-            </Link>
-            <Link to="/register" style={{ textDecoration: 'none' }}>
-              <Button size="sm">Начать</Button>
-            </Link>
-          </div>
+
+          {/* Right — CTA */}
+          <Link to="/catalog" style={{ textDecoration: 'none', marginLeft: 'auto' }}>
+            <Button size="sm">Забронировать</Button>
+          </Link>
         </div>
       </motion.header>
 

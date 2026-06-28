@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
+import { SeoHead } from '../components/SeoHead'
+import type { SchemaVenue } from '../components/SeoHead'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Star, MapPin, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft, Star, MapPin, CheckCircle2, Clock, Tag } from 'lucide-react'
 import { getCourt } from '../data/venues'
 import { useBookings } from '../contexts/BookingContext'
 import { useAuth } from '../contexts/AuthContext'
 import { Button } from '../components/ui/Button'
+import { BookingSummaryPanel } from '../components/ui/BookingSummaryPanel'
 import { paths } from '../config/features'
 import { useBookingPageReset } from '../hooks/useBookingPageReset'
 import { colors } from '../theme/tokens'
@@ -51,6 +54,18 @@ export function SportBookingPage() {
     setSuccess(true)
   }
 
+  const seoTitle = `${venue.name} — бронирование ${venue.sport.toLowerCase()}`
+  const seoDesc = `${venue.description.slice(0, 130)}. Забронируй онлайн от ${venue.price.toLocaleString()} ₽/час.`
+  const schema: SchemaVenue = {
+    name: venue.name,
+    description: venue.description,
+    address: venue.location,
+    pricePerHour: venue.price,
+    rating: venue.rating,
+    type: 'SportsActivityLocation',
+    url: `https://bookingo.ru/sport/${id}`,
+  }
+
   if (success) {
     return (
       <motion.div className="page-center" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
@@ -67,6 +82,7 @@ export function SportBookingPage() {
 
   return (
     <div className="booking-layout">
+      <SeoHead title={seoTitle} description={seoDesc} path={`/sport/${id}`} schema={schema} />
       <div className="booking-main">
         <div className="site-container" style={{ paddingTop: 32, paddingBottom: 48 }}>
           <button type="button" className="booking-back" onClick={() => navigate(-1)}>
@@ -133,35 +149,27 @@ export function SportBookingPage() {
         </div>
       </div>
 
-      <aside className="booking-sidebar">
-        <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 24, color: colors.text }}>Ваш заказ</h2>
-
-        <div className="booking-summary-list">
-          <div className="booking-summary-row">
-            <span>{venue.name}</span>
-            <span>{price.toLocaleString()} ₽</span>
-          </div>
-          {selectedSlot && (
-            <motion.div className="booking-summary-row" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <span>{DAYS[selectedDay].split(' ')[1]} июня · {selectedSlot}</span>
-              <span>1 час</span>
-            </motion.div>
-          )}
-        </div>
-
-        <div className="booking-summary-divider" />
-
-        <div className="booking-summary-total">
-          <span>Итого</span>
-          <span style={{ color: colors.green }}>{price.toLocaleString()} ₽</span>
-        </div>
-
-        <div className="booking-summary-spacer" />
-
-        <Button disabled={!selectedSlot} onClick={handleBook} style={{ width: '100%' }}>
-          Забронировать →
-        </Button>
-      </aside>
+      <BookingSummaryPanel
+        venueName={venue.name}
+        venueMeta={`${venue.sport} · ${venue.location}`}
+        venueImage={venue.photos[0]}
+        metaChips={selectedSlot ? [
+          { icon: <Clock size={14} />, text: `${DAYS[selectedDay].split(' ')[1]} июня · ${selectedSlot}` },
+          { icon: <Tag size={14} />, text: '1 час' },
+        ] : []}
+        lines={[
+          {
+            id: 'rent',
+            label: 'Аренда площадки',
+            value: `${price.toLocaleString()} ₽`,
+          },
+        ]}
+        emptyMessage={!selectedSlot ? 'Время не выбрано' : undefined}
+        total={price}
+        accent="green"
+        buttonDisabled={!selectedSlot}
+        onConfirm={handleBook}
+      />
     </div>
   )
 }

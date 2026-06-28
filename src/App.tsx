@@ -8,6 +8,7 @@ import { LandingPage } from './pages/LandingPage'
 import { CatalogPage } from './pages/CatalogPage'
 import { SportBookingPage } from './pages/SportBookingPage'
 import { LoftBookingPage } from './pages/LoftBookingPage'
+import { HowItWorksPage } from './pages/HowItWorksPage'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { features, paths } from './config/features'
@@ -48,6 +49,7 @@ function AppRoutes() {
         <Route path="/catalog" element={<CatalogPage />} />
         <Route path="/sport/:id" element={<SportBookingPage />} />
         <Route path="/loft/:id" element={<LoftBookingPage />} />
+        <Route path="/how-it-works" element={<HowItWorksPage />} />
       </Route>
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
       <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />

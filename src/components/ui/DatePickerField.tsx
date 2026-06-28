@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
+import { useFloatingPosition } from '../../hooks/useFloatingPosition'
 
 interface DatePickerFieldProps {
   label: string
@@ -52,7 +53,7 @@ export function DatePickerField({ label, icon, value, onChange }: DatePickerFiel
   const [viewYear, setViewYear] = useState(selected.getFullYear())
   const [viewMonth, setViewMonth] = useState(selected.getMonth())
   const triggerRef = useRef<HTMLButtonElement>(null)
-  const [menuStyle, setMenuStyle] = useState({ top: 0, left: 0, width: 300 })
+  const { menuStyle, prepareOpen } = useFloatingPosition(triggerRef, open, 300)
 
   const todayIso = formatIso(new Date())
   const cells = useMemo(() => buildMonthGrid(viewYear, viewMonth), [viewYear, viewMonth])
@@ -62,26 +63,14 @@ export function DatePickerField({ label, icon, value, onChange }: DatePickerFiel
     year: 'numeric',
   })
 
-  useEffect(() => {
-    if (!open || !triggerRef.current) return
-
-    function updatePosition() {
-      const rect = triggerRef.current!.getBoundingClientRect()
-      setMenuStyle({
-        top: rect.bottom + 8,
-        left: rect.left,
-        width: Math.max(rect.width, 300),
-      })
+  function toggleOpen() {
+    if (open) {
+      setOpen(false)
+      return
     }
-
-    updatePosition()
-    window.addEventListener('resize', updatePosition)
-    window.addEventListener('scroll', updatePosition, true)
-    return () => {
-      window.removeEventListener('resize', updatePosition)
-      window.removeEventListener('scroll', updatePosition, true)
-    }
-  }, [open])
+    prepareOpen()
+    setOpen(true)
+  }
 
   useEffect(() => {
     if (!open) return
@@ -134,7 +123,7 @@ export function DatePickerField({ label, icon, value, onChange }: DatePickerFiel
         ref={triggerRef}
         type="button"
         className={`select-field-trigger ${open ? 'select-field-trigger--open' : ''}`}
-        onClick={() => setOpen((v) => !v)}
+        onClick={toggleOpen}
         aria-haspopup="dialog"
         aria-expanded={open}
       >
@@ -144,7 +133,7 @@ export function DatePickerField({ label, icon, value, onChange }: DatePickerFiel
 
       {createPortal(
         <AnimatePresence>
-          {open && (
+          {open && menuStyle && (
             <motion.div
               id="hero-date-picker"
               className="date-picker"

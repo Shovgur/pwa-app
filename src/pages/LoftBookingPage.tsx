@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
+import { SeoHead } from '../components/SeoHead'
+import type { SchemaVenue } from '../components/SeoHead'
 import { motion } from 'framer-motion'
 import { ArrowLeft, Star, MapPin, Sparkles, CheckCircle2, Clock, Tag } from 'lucide-react'
 import { getLoft, getAddonPrice, getAddonOption } from '../data/venues'
@@ -8,6 +10,8 @@ import { useBookings } from '../contexts/BookingContext'
 import { useAuth } from '../contexts/AuthContext'
 import { Button } from '../components/ui/Button'
 import { AddonCard } from '../components/ui/AddonCard'
+import { BookingSummaryPanel } from '../components/ui/BookingSummaryPanel'
+import type { SummaryLineItem } from '../components/ui/BookingSummaryPanel'
 import { paths } from '../config/features'
 import { useBookingPageReset } from '../hooks/useBookingPageReset'
 import { colors } from '../theme/tokens'
@@ -56,6 +60,17 @@ export function LoftBookingPage() {
   }
 
   const venue = loft
+  const seoTitle = `${venue.name} — аренда лофта`
+  const seoDesc = `${venue.description.slice(0, 130)}. Забронируй онлайн от ${venue.price.toLocaleString()} ₽/час. Услуги включены.`
+  const schema: SchemaVenue = {
+    name: venue.name,
+    description: venue.description,
+    address: venue.location,
+    pricePerHour: venue.price,
+    rating: venue.rating,
+    type: 'EventVenue',
+    url: `https://bookingo.ru/loft/${id}`,
+  }
 
   function toggleAddon(addon: AddOn) {
     setEnabledAddons((prev) => {
@@ -121,8 +136,29 @@ export function LoftBookingPage() {
 
   const selectedCount = selectedAddons.length
 
+  const summaryLines: SummaryLineItem[] = [
+    {
+      id: 'rent',
+      label: 'Аренда лофта',
+      value: `${basePrice.toLocaleString()} ₽`,
+    },
+    ...selectedAddons.map((addon) => {
+      const option = getAddonOption(addon, addonOptions[addon.id])
+      const price = getAddonPrice(addon, addonOptions[addon.id])
+      return {
+        id: addon.id,
+        label: addon.name,
+        sublabel: option?.name,
+        value: `${price.toLocaleString()} ₽`,
+        isAddon: true,
+        animated: true,
+      }
+    }),
+  ]
+
   return (
     <div className="booking-layout">
+      <SeoHead title={seoTitle} description={seoDesc} path={`/loft/${id}`} schema={schema} />
       <div className="booking-main">
         <div className="site-container" style={{ paddingTop: 32, paddingBottom: 48 }}>
           <button type="button" className="booking-back" onClick={() => navigate(-1)}>
@@ -194,76 +230,25 @@ export function LoftBookingPage() {
         </div>
       </div>
 
-      <aside className="booking-sidebar">
-        <div className="booking-summary-panel">
-          <div className="booking-summary-scroll">
-            <h2 className="booking-summary-title">Сводка заказа</h2>
-
-            <div className="booking-summary-venue">
-              <div className="booking-summary-venue-image" style={{ background: venue.gradient }} />
-              <div>
-                <p className="booking-summary-venue-name">{venue.name}</p>
-                <p className="booking-summary-venue-meta">{venue.sqm}м² · {venue.metro}</p>
-              </div>
-            </div>
-
-            <div className="booking-summary-meta-row">
-              <span><Clock size={14} /> {venue.timeSlots[selectedSlot]}</span>
-              <span><Tag size={14} /> 2 часа</span>
-            </div>
-
-            <div className="booking-summary-divider" />
-
-            <div className="booking-summary-list">
-              <div className="booking-summary-row">
-                <span>Аренда лофта</span>
-                <span>{basePrice.toLocaleString()} ₽</span>
-              </div>
-              {selectedAddons.map((addon) => {
-                const option = getAddonOption(addon, addonOptions[addon.id])
-                const price = getAddonPrice(addon, addonOptions[addon.id])
-                return (
-                  <motion.div key={addon.id} className="booking-summary-row booking-summary-row--addon" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                    <span>
-                      {addon.name}
-                      {option && <em>{option.name}</em>}
-                    </span>
-                    <span>{price.toLocaleString()} ₽</span>
-                  </motion.div>
-                )
-              })}
-              {selectedCount === 0 && (
-                <p className="booking-summary-empty">Услуги не выбраны</p>
-              )}
-            </div>
-
-            {discount > 0 && (
-              <div className="booking-summary-discount">
-                <p className="booking-summary-discount-title">Экономия 15%</p>
-                <p className="booking-summary-discount-desc">−{discount.toLocaleString()} ₽ на услуги</p>
-              </div>
-            )}
-          </div>
-
-          <div className="booking-summary-footer">
-            <div className="booking-summary-total">
-              <span>Итого</span>
-              <motion.span
-                key={total - discount}
-                className="booking-summary-total-price"
-                initial={{ scale: 1.05 }}
-                animate={{ scale: 1 }}
-              >
-                {(total - discount).toLocaleString()} ₽
-              </motion.span>
-            </div>
-            <Button variant="loft" onClick={handleBook} style={{ width: '100%' }}>
-              Подтвердить бронь →
-            </Button>
-            <p className="booking-sidebar-note">Бесплатная отмена за 24 часа</p>
-          </div>
-        </div>
-      </aside>
+      <BookingSummaryPanel
+        venueName={venue.name}
+        venueMeta={`${venue.sqm}м² · ${venue.metro}`}
+        venueImage={venue.gradient}
+        metaChips={[
+          { icon: <Clock size={14} />, text: venue.timeSlots[selectedSlot] },
+          { icon: <Tag size={14} />, text: '2 часа' },
+        ]}
+        lines={summaryLines}
+        emptyMessage={selectedCount === 0 ? 'Услуги не выбраны' : undefined}
+        discount={discount > 0 ? {
+          title: 'Экономия 15%',
+          description: `−${discount.toLocaleString()} ₽ на услуги`,
+        } : null}
+        total={total - discount}
+        accent="loft"
+        buttonVariant="loft"
+        onConfirm={handleBook}
+      />
     </div>
   )
 }
