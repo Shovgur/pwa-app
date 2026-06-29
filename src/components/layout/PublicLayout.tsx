@@ -149,7 +149,7 @@ function UserMenu() {
               <DropItem
                 icon={<LayoutDashboard size={15} />}
                 label="Личный кабинет"
-                onClick={() => { setOpen(false); navigate('/dashboard') }}
+                onClick={() => { setOpen(false); navigate('/dashboard/profile') }}
               />
               <DropItem
                 icon={<HelpCircle size={15} />}
@@ -555,7 +555,7 @@ function MobileUserSection({ closeMobile }: { closeMobile: () => void }) {
           icon: <CalendarCheck size={15} />, label: 'Мои брони',
           badge: activeCount, path: '/dashboard/bookings',
         },
-        { icon: <LayoutDashboard size={15} />, label: 'Личный кабинет', path: '/dashboard' },
+        { icon: <LayoutDashboard size={15} />, label: 'Личный кабинет', path: '/dashboard/profile' },
         { icon: <Settings size={15} />, label: 'Настройки', path: '/dashboard/settings' },
       ].map(({ icon, label, badge, path }) => (
         <button

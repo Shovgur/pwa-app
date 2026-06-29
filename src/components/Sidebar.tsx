@@ -200,59 +200,50 @@ function NavItem({ item, collapsed }: { item: NavEntry; collapsed: boolean }) {
   return (
     <NavLink to={item.to} end={item.to === '/dashboard'} style={{ textDecoration: 'none' }}>
       {({ isActive }) => (
-        <motion.div
+        <div
           style={{
             display: 'flex', alignItems: 'center', gap: 10,
-            padding: '10px 12px', borderRadius: 12,
-            background: isActive ? `${item.color}18` : 'transparent',
-            border: isActive ? `1px solid ${item.color}28` : '1px solid transparent',
+            padding: '9px 12px', borderRadius: 12,
+            background: isActive ? `${item.color}1a` : 'transparent',
             cursor: 'pointer', position: 'relative',
-            overflow: 'hidden',
+            transition: 'background 0.15s',
           }}
-          whileHover={{ background: isActive ? `${item.color}20` : `${item.color}0d` }}
-          transition={{ duration: 0.15 }}
         >
-          {/* Active indicator bar */}
+          {/* Active bar */}
           {isActive && (
-            <motion.div
-              layoutId="sidebarActive"
-              style={{
-                position: 'absolute', left: 0,
-                top: '50%', transform: 'translateY(-50%)',
-                width: 3, height: 20,
-                borderRadius: '0 3px 3px 0',
-                background: item.color,
-              }}
-            />
+            <div style={{
+              position: 'absolute', left: 0,
+              top: '50%', transform: 'translateY(-50%)',
+              width: 3, height: 18,
+              borderRadius: '0 3px 3px 0',
+              background: item.color,
+            }} />
           )}
 
-          {/* Icon with badge */}
+          {/* Icon + badge */}
           <div style={{ position: 'relative', flexShrink: 0 }}>
-            <Icon size={18} color={isActive ? item.color : '#64748b'} />
+            <Icon size={17} color={isActive ? item.color : '#64748b'} />
             {item.badge != null && item.badge > 0 && (
-              <motion.span
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                style={{
-                  position: 'absolute', top: -5, right: -6,
-                  minWidth: 15, height: 15, borderRadius: 8,
-                  background: item.color, color: '#fff',
-                  fontSize: 8, fontWeight: 800,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  padding: '0 3px',
-                }}
-              >
+              <span style={{
+                position: 'absolute', top: -5, right: -6,
+                minWidth: 14, height: 14, borderRadius: 7,
+                background: item.color, color: '#fff',
+                fontSize: 8, fontWeight: 800,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                padding: '0 3px', lineHeight: 1,
+              }}>
                 {item.badge}
-              </motion.span>
+              </span>
             )}
           </div>
 
           <AnimatePresence>
             {!collapsed && (
               <motion.span
-                initial={{ opacity: 0, x: -8 }}
+                initial={{ opacity: 0, x: -6 }}
                 animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -8 }}
+                exit={{ opacity: 0, x: -6 }}
+                transition={{ duration: 0.15 }}
                 style={{
                   fontSize: 14,
                   fontWeight: isActive ? 600 : 400,
@@ -265,7 +256,7 @@ function NavItem({ item, collapsed }: { item: NavEntry; collapsed: boolean }) {
               </motion.span>
             )}
           </AnimatePresence>
-        </motion.div>
+        </div>
       )}
     </NavLink>
   )

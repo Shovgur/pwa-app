@@ -1,5 +1,5 @@
 import { Routes, Route, Link, useLocation } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { Globe } from 'lucide-react'
 import { AmbientBg } from '../components/AmbientBg'
 import { Sidebar } from '../components/Sidebar'
@@ -12,13 +12,13 @@ import { ProfileTab } from '../components/tabs/ProfileTab'
 import { NotificationsTab } from '../components/tabs/NotificationsTab'
 import { SettingsTab } from '../components/tabs/SettingsTab'
 
+/* Простой fade — не конфликтует с внутренними анимациями табов */
 function TabPage({ children }: { children: React.ReactNode }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 14 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      transition={{ duration: 0.2, ease: 'easeOut' }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.18 }}
       style={{ minHeight: '100%' }}
     >
       {children}
@@ -45,17 +45,15 @@ export function DashboardPage() {
           </Link>
         </div>
 
-        <AnimatePresence mode="wait" initial={false}>
-          <Routes location={location} key={location.pathname}>
-            <Route index element={<TabPage><HomeTab /></TabPage>} />
-            <Route path="courts" element={<TabPage><CourtsTab /></TabPage>} />
-            <Route path="bookings" element={<TabPage><BookingsTab /></TabPage>} />
-            <Route path="map" element={<TabPage><MapTab /></TabPage>} />
-            <Route path="profile" element={<TabPage><ProfileTab /></TabPage>} />
-            <Route path="notifications" element={<TabPage><NotificationsTab /></TabPage>} />
-            <Route path="settings" element={<TabPage><SettingsTab /></TabPage>} />
-          </Routes>
-        </AnimatePresence>
+        <Routes location={location} key={location.pathname}>
+          <Route index element={<TabPage><HomeTab /></TabPage>} />
+          <Route path="courts" element={<TabPage><CourtsTab /></TabPage>} />
+          <Route path="bookings" element={<TabPage><BookingsTab /></TabPage>} />
+          <Route path="map" element={<TabPage><MapTab /></TabPage>} />
+          <Route path="profile" element={<TabPage><ProfileTab /></TabPage>} />
+          <Route path="notifications" element={<TabPage><NotificationsTab /></TabPage>} />
+          <Route path="settings" element={<TabPage><SettingsTab /></TabPage>} />
+        </Routes>
       </main>
 
       <MobileNav />
