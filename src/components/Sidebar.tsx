@@ -49,25 +49,15 @@ export function Sidebar() {
         flexShrink: 0,
       }}
     >
-      {/* Collapse button */}
-      <motion.button
-        onClick={() => setCollapsed(!collapsed)}
-        className="ns -right-3.5 top-7 z-50 w-7 h-7 rounded-full flex items-center justify-center"
-        style={{
-          background: '#1a2840',
-          border: '1px solid rgba(255,255,255,0.12)',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
-        }}
-        whileHover={{ scale: 1.12 }}
-        whileTap={{ scale: 0.9 }}
-      >
-        <motion.div animate={{ rotate: collapsed ? 0 : 180 }}>
-          <ChevronLeft size={13} color="#94a3b8" />
-        </motion.div>
-      </motion.button>
-
-      {/* Logo */}
-      <div style={{ padding: '20px 16px 16px', display: 'flex', alignItems: 'center', gap: 12, overflow: 'hidden' }}>
+      {/* Logo + collapse in one row */}
+      <div style={{
+        padding: '16px 12px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: 10,
+        overflow: 'hidden',
+        flexShrink: 0,
+      }}>
         <div style={{
           width: 36, height: 36, borderRadius: 12, flexShrink: 0,
           background: 'linear-gradient(135deg, #22c55e, #16a34a)',
@@ -76,18 +66,46 @@ export function Sidebar() {
         }}>
           ⚡
         </div>
+
         <AnimatePresence>
           {!collapsed && (
             <motion.div
-              initial={{ opacity: 0, x: -10 }}
+              initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -10 }}
+              exit={{ opacity: 0, x: -8 }}
+              transition={{ duration: 0.16 }}
+              style={{ flex: 1, minWidth: 0 }}
             >
-              <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', whiteSpace: 'nowrap' }}>BookinGo</div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', whiteSpace: 'nowrap' }}>BookinGo</div>
               <div style={{ fontSize: 10, color: '#22c55e', fontWeight: 600, letterSpacing: '0.06em' }}>КАБИНЕТ</div>
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* Collapse toggle — always visible, stays inside sidebar */}
+        <motion.button
+          onClick={() => setCollapsed(v => !v)}
+          whileHover={{ background: 'rgba(255,255,255,0.1)' }}
+          whileTap={{ scale: 0.9 }}
+          style={{
+            width: 28, height: 28,
+            borderRadius: 8,
+            border: '1px solid rgba(255,255,255,0.1)',
+            background: 'rgba(255,255,255,0.05)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer',
+            flexShrink: 0,
+            marginLeft: collapsed ? 'auto' : 0,
+          }}
+          aria-label={collapsed ? 'Развернуть' : 'Свернуть'}
+        >
+          <motion.div
+            animate={{ rotate: collapsed ? 180 : 0 }}
+            transition={{ duration: 0.22, ease: 'easeInOut' }}
+          >
+            <ChevronLeft size={14} color="#94a3b8" />
+          </motion.div>
+        </motion.button>
       </div>
 
       <div style={{ height: 1, margin: '0 12px 12px', background: 'rgba(255,255,255,0.06)' }} />
