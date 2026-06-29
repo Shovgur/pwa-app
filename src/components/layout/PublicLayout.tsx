@@ -402,36 +402,38 @@ export function PublicLayout() {
                     </button>
                   </div>
 
-                  {/* Nav links */}
-                  <nav style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 16 }}>
-                    {NAV.map(({ to, label }, i) => {
-                      const active = to === '/' ? pathname === '/' : pathname.startsWith(to)
-                      return (
-                        <motion.div
-                          key={to}
-                          initial={{ opacity: 0, x: -12 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: i * 0.05 + 0.05 }}
-                        >
-                          <Link
-                            to={to}
-                            onClick={closeMobile}
-                            style={{
-                              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                              padding: '14px 18px', borderRadius: 16, textDecoration: 'none',
-                              fontSize: 17, fontWeight: active ? 700 : 500,
-                              color: active ? '#fff' : colors.text2,
-                              background: active ? 'rgba(34,197,94,0.1)' : 'transparent',
-                              border: `1px solid ${active ? 'rgba(34,197,94,0.2)' : 'transparent'}`,
-                            }}
+                  {/* Nav links — только если не авторизован */}
+                  {!isAuthenticated && (
+                    <nav style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 16 }}>
+                      {NAV.map(({ to, label }, i) => {
+                        const active = to === '/' ? pathname === '/' : pathname.startsWith(to)
+                        return (
+                          <motion.div
+                            key={to}
+                            initial={{ opacity: 0, x: -12 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: i * 0.05 + 0.05 }}
                           >
-                            {label}
-                            {active && <ArrowRight size={16} color={colors.green} />}
-                          </Link>
-                        </motion.div>
-                      )
-                    })}
-                  </nav>
+                            <Link
+                              to={to}
+                              onClick={closeMobile}
+                              style={{
+                                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                padding: '14px 18px', borderRadius: 16, textDecoration: 'none',
+                                fontSize: 17, fontWeight: active ? 700 : 500,
+                                color: active ? '#fff' : colors.text2,
+                                background: active ? 'rgba(34,197,94,0.1)' : 'transparent',
+                                border: `1px solid ${active ? 'rgba(34,197,94,0.2)' : 'transparent'}`,
+                              }}
+                            >
+                              {label}
+                              {active && <ArrowRight size={16} color={colors.green} />}
+                            </Link>
+                          </motion.div>
+                        )
+                      })}
+                    </nav>
+                  )}
 
                   {/* CTA кнопки */}
                   <motion.div

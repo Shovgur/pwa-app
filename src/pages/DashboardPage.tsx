@@ -16,6 +16,7 @@ import { SettingsTab } from '../components/tabs/SettingsTab'
 function TabPage({ children }: { children: React.ReactNode }) {
   return (
     <motion.div
+      className="dashboard-tab-content"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.18 }}

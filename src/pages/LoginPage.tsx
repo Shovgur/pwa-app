@@ -75,7 +75,7 @@ export function LoginPage() {
       </div>
 
       {/* Правая панель — форма */}
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 24px', position: 'relative', zIndex: 10 }}>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 24px', paddingTop: 'calc(80px + env(safe-area-inset-top, 0px))', position: 'relative', zIndex: 10 }}>
         <motion.div
           style={{ width: '100%', maxWidth: 420 }}
           initial={{ opacity: 0, y: 24 }}

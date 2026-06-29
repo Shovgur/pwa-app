@@ -660,6 +660,13 @@ input:-webkit-autofill:focus {
   justify-content: center;
 }
 
+/* Отступ снизу для всех табов дашборда на мобилке */
+@media (max-width: 767px) {
+  .dashboard-tab-content {
+    padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+}
+
 .dashboard-topbar {
   display: flex;
   align-items: center;
