@@ -49,9 +49,9 @@ export function Sidebar() {
         flexShrink: 0,
       }}
     >
-      {/* Logo + collapse in one row */}
+      {/* Logo row */}
       <div style={{
-        padding: '16px 12px',
+        padding: '16px 16px 14px',
         display: 'flex',
         alignItems: 'center',
         gap: 10,
@@ -66,46 +66,20 @@ export function Sidebar() {
         }}>
           ⚡
         </div>
-
         <AnimatePresence>
           {!collapsed && (
             <motion.div
               initial={{ opacity: 0, x: -8 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -8 }}
-              transition={{ duration: 0.16 }}
-              style={{ flex: 1, minWidth: 0 }}
+              transition={{ duration: 0.15 }}
+              style={{ minWidth: 0 }}
             >
               <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', whiteSpace: 'nowrap' }}>BookinGo</div>
               <div style={{ fontSize: 10, color: '#22c55e', fontWeight: 600, letterSpacing: '0.06em' }}>КАБИНЕТ</div>
             </motion.div>
           )}
         </AnimatePresence>
-
-        {/* Collapse toggle — always visible, stays inside sidebar */}
-        <motion.button
-          onClick={() => setCollapsed(v => !v)}
-          whileHover={{ background: 'rgba(255,255,255,0.1)' }}
-          whileTap={{ scale: 0.9 }}
-          style={{
-            width: 28, height: 28,
-            borderRadius: 8,
-            border: '1px solid rgba(255,255,255,0.1)',
-            background: 'rgba(255,255,255,0.05)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer',
-            flexShrink: 0,
-            marginLeft: collapsed ? 'auto' : 0,
-          }}
-          aria-label={collapsed ? 'Развернуть' : 'Свернуть'}
-        >
-          <motion.div
-            animate={{ rotate: collapsed ? 180 : 0 }}
-            transition={{ duration: 0.22, ease: 'easeInOut' }}
-          >
-            <ChevronLeft size={14} color="#94a3b8" />
-          </motion.div>
-        </motion.button>
       </div>
 
       <div style={{ height: 1, margin: '0 12px 12px', background: 'rgba(255,255,255,0.06)' }} />
@@ -122,7 +96,50 @@ export function Sidebar() {
         {BOTTOM.map(item => <NavItem key={item.to} item={item} collapsed={collapsed} />)}
       </div>
 
-      <div style={{ height: 1, margin: '0 12px 10px', background: 'rgba(255,255,255,0.06)' }} />
+      <div style={{ height: 1, margin: '0 12px 8px', background: 'rgba(255,255,255,0.06)' }} />
+
+      {/* Collapse / expand button */}
+      <div style={{ padding: '0 8px 4px' }}>
+        <motion.button
+          onClick={() => setCollapsed(v => !v)}
+          whileHover={{ background: 'rgba(255,255,255,0.07)' }}
+          whileTap={{ scale: 0.97 }}
+          style={{
+            width: '100%',
+            display: 'flex', alignItems: 'center',
+            gap: 10, padding: '9px 12px',
+            borderRadius: 12,
+            border: '1px solid rgba(255,255,255,0.07)',
+            background: 'transparent',
+            cursor: 'pointer',
+            overflow: 'hidden',
+          }}
+          aria-label={collapsed ? 'Развернуть' : 'Свернуть'}
+        >
+          <motion.div
+            animate={{ rotate: collapsed ? 180 : 0 }}
+            transition={{ duration: 0.22, ease: 'easeInOut' }}
+            style={{ flexShrink: 0, display: 'flex', alignItems: 'center' }}
+          >
+            <ChevronLeft size={16} color="#64748b" />
+          </motion.div>
+          <AnimatePresence>
+            {!collapsed && (
+              <motion.span
+                initial={{ opacity: 0, x: -6 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -6 }}
+                transition={{ duration: 0.13 }}
+                style={{ fontSize: 13, fontWeight: 500, color: '#64748b', whiteSpace: 'nowrap' }}
+              >
+                Свернуть
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </motion.button>
+      </div>
+
+      <div style={{ height: 1, margin: '4px 12px 8px', background: 'rgba(255,255,255,0.06)' }} />
 
       {/* На сайт */}
       <div style={{ padding: '0 8px 8px' }}>
