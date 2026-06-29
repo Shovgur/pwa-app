@@ -99,15 +99,15 @@ export function Sidebar() {
       <div style={{ height: 1, margin: '0 12px 8px', background: 'rgba(255,255,255,0.06)' }} />
 
       {/* Collapse / expand button */}
-      <div style={{ padding: '0 8px 4px' }}>
+      <div style={{ padding: '0 8px 4px', display: 'flex', justifyContent: collapsed ? 'center' : 'stretch' }}>
         <motion.button
           onClick={() => setCollapsed(v => !v)}
           whileHover={{ background: 'rgba(255,255,255,0.07)' }}
           whileTap={{ scale: 0.97 }}
           style={{
-            width: '100%',
-            display: 'flex', alignItems: 'center',
-            gap: 10, padding: '9px 12px',
+            width: collapsed ? 40 : '100%',
+            display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start',
+            gap: 10, padding: collapsed ? '9px 0' : '9px 12px',
             borderRadius: 12,
             border: '1px solid rgba(255,255,255,0.07)',
             background: 'transparent',
@@ -142,13 +142,17 @@ export function Sidebar() {
       <div style={{ height: 1, margin: '4px 12px 8px', background: 'rgba(255,255,255,0.06)' }} />
 
       {/* На сайт */}
-      <div style={{ padding: '0 8px 8px' }}>
-        <NavLink to="/" style={{ textDecoration: 'none' }}>
+      <div style={{ padding: '0 8px 8px', display: 'flex', justifyContent: collapsed ? 'center' : 'stretch' }}>
+        <NavLink to="/" style={{ textDecoration: 'none', width: '100%' }}>
           {() => (
             <motion.div
               style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                padding: '9px 12px', borderRadius: 12,
+                display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start',
+                gap: 10,
+                padding: collapsed ? '9px 0' : '9px 12px',
+                width: collapsed ? 40 : '100%',
+                margin: collapsed ? '0 auto' : 0,
+                borderRadius: 12,
                 background: 'rgba(34,197,94,0.07)',
                 border: '1px solid rgba(34,197,94,0.18)',
                 cursor: 'pointer', overflow: 'hidden',
@@ -162,35 +166,27 @@ export function Sidebar() {
                     initial={{ opacity: 0, x: -8 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -8 }}
-                    style={{ fontSize: 13, fontWeight: 600, color: '#22c55e', whiteSpace: 'nowrap' }}
+                    style={{ fontSize: 13, fontWeight: 600, color: '#22c55e', whiteSpace: 'nowrap', flex: 1 }}
                   >
                     На сайт
                   </motion.span>
                 )}
               </AnimatePresence>
-              <AnimatePresence>
-                {!collapsed && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    style={{ marginLeft: 'auto' }}
-                  >
-                    <ChevronRight size={13} color="rgba(34,197,94,0.5)" />
-                  </motion.div>
-                )}
-              </AnimatePresence>
+              {!collapsed && <ChevronRight size={13} color="rgba(34,197,94,0.5)" />}
             </motion.div>
           )}
         </NavLink>
       </div>
 
       {/* Пользователь + выход */}
-      <div style={{ padding: '0 8px 16px' }}>
+      <div style={{ padding: '0 8px 16px', display: 'flex', justifyContent: collapsed ? 'center' : 'stretch' }}>
         <motion.div
           style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            padding: '10px 12px', borderRadius: 14,
+            display: 'flex', alignItems: 'center', justifyContent: collapsed ? 'center' : 'flex-start',
+            gap: 10,
+            padding: collapsed ? '8px 0' : '10px 12px',
+            width: collapsed ? 40 : '100%',
+            borderRadius: 14,
             cursor: 'pointer', overflow: 'hidden',
             border: '1px solid rgba(255,255,255,0.05)',
           }}
@@ -233,19 +229,22 @@ export function Sidebar() {
 function NavItem({ item, collapsed }: { item: NavEntry; collapsed: boolean }) {
   const Icon = item.icon
   return (
-    <NavLink to={item.to} end={item.to === '/dashboard'} style={{ textDecoration: 'none' }}>
+    <NavLink
+      to={item.to}
+      end={item.to === '/dashboard'}
+      style={{ textDecoration: 'none', display: 'block' }}
+    >
       {({ isActive }) => (
-        <div
-          style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            padding: '9px 12px', borderRadius: 12,
-            background: isActive ? `${item.color}1a` : 'transparent',
-            cursor: 'pointer', position: 'relative',
-            transition: 'background 0.15s',
-          }}
-        >
-          {/* Active bar */}
-          {isActive && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: collapsed ? 'center' : 'flex-start',
+          padding: collapsed ? '4px 0' : '2px 0',
+          position: 'relative',
+          cursor: 'pointer',
+        }}>
+          {/* Active bar — only when expanded */}
+          {isActive && !collapsed && (
             <div style={{
               position: 'absolute', left: 0,
               top: '50%', transform: 'translateY(-50%)',
@@ -255,42 +254,66 @@ function NavItem({ item, collapsed }: { item: NavEntry; collapsed: boolean }) {
             }} />
           )}
 
-          {/* Icon + badge */}
-          <div style={{ position: 'relative', flexShrink: 0 }}>
-            <Icon size={17} color={isActive ? item.color : '#64748b'} />
-            {item.badge != null && item.badge > 0 && (
-              <span style={{
-                position: 'absolute', top: -5, right: -6,
-                minWidth: 14, height: 14, borderRadius: 7,
-                background: item.color, color: '#fff',
-                fontSize: 8, fontWeight: 800,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                padding: '0 3px', lineHeight: 1,
-              }}>
-                {item.badge}
-              </span>
+          {/* Icon container — background always fits the icon */}
+          <div style={{
+            position: 'relative',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            width: collapsed ? 40 : '100%',
+            padding: collapsed ? '8px 0' : '8px 12px',
+            borderRadius: 12,
+            background: isActive ? `${item.color}1a` : 'transparent',
+            gap: 10,
+            transition: 'background 0.15s',
+            flexShrink: collapsed ? 0 : undefined,
+          }}>
+            {/* Active bar when collapsed — on icon box */}
+            {isActive && collapsed && (
+              <div style={{
+                position: 'absolute', left: 0,
+                top: '50%', transform: 'translateY(-50%)',
+                width: 3, height: 18,
+                borderRadius: '0 3px 3px 0',
+                background: item.color,
+              }} />
             )}
-          </div>
 
-          <AnimatePresence>
-            {!collapsed && (
-              <motion.span
-                initial={{ opacity: 0, x: -6 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -6 }}
-                transition={{ duration: 0.15 }}
-                style={{
-                  fontSize: 14,
-                  fontWeight: isActive ? 600 : 400,
-                  color: isActive ? item.color : '#94a3b8',
-                  whiteSpace: 'nowrap',
-                  flex: 1,
-                }}
-              >
-                {item.label}
-              </motion.span>
-            )}
-          </AnimatePresence>
+            {/* Icon + badge */}
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              <Icon size={17} color={isActive ? item.color : '#64748b'} />
+              {item.badge != null && item.badge > 0 && (
+                <span style={{
+                  position: 'absolute', top: -5, right: -6,
+                  minWidth: 14, height: 14, borderRadius: 7,
+                  background: item.color, color: '#fff',
+                  fontSize: 8, fontWeight: 800,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  padding: '0 3px', lineHeight: 1,
+                }}>
+                  {item.badge}
+                </span>
+              )}
+            </div>
+
+            <AnimatePresence>
+              {!collapsed && (
+                <motion.span
+                  initial={{ opacity: 0, x: -6 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -6 }}
+                  transition={{ duration: 0.15 }}
+                  style={{
+                    fontSize: 14,
+                    fontWeight: isActive ? 600 : 400,
+                    color: isActive ? item.color : '#94a3b8',
+                    whiteSpace: 'nowrap',
+                    flex: 1,
+                  }}
+                >
+                  {item.label}
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
       )}
     </NavLink>
