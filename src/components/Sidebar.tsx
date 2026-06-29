@@ -1,93 +1,148 @@
 import { useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Home, Search, CalendarCheck, MapPin, User, Settings, Bell, LogOut, ChevronLeft, Globe } from 'lucide-react'
+import {
+  Home, Search, CalendarCheck, MapPin, User,
+  Settings, Bell, LogOut, ChevronLeft, Globe, ChevronRight,
+} from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { useBookings } from '../contexts/BookingContext'
 
-const NAV = [
-  { to: '/dashboard', icon: Home, label: 'Главная', color: '#22c55e' },
-  { to: '/dashboard/courts', icon: Search, label: 'Площадки', color: '#3b82f6' },
-  { to: '/dashboard/bookings', icon: CalendarCheck, label: 'Бронирования', color: '#f97316', badge: 2 },
-  { to: '/dashboard/map', icon: MapPin, label: 'Карта', color: '#a855f7' },
-  { to: '/dashboard/profile', icon: User, label: 'Профиль', color: '#06b6d4' },
-]
-
-const BOTTOM = [
-  { to: '/dashboard/notifications', icon: Bell, label: 'Уведомления', color: '#94a3b8', badge: 3 },
-  { to: '/dashboard/settings', icon: Settings, label: 'Настройки', color: '#94a3b8' },
-]
+type NavEntry = {
+  to: string
+  icon: React.FC<{ size?: number; color?: string }>
+  label: string
+  color: string
+  badge?: number
+}
 
 export function Sidebar() {
   const [collapsed, setCollapsed] = useState(false)
   const { user, logout } = useAuth()
+  const { bookings } = useBookings()
   const navigate = useNavigate()
+
+  const upcomingCount = bookings.filter(b => b.status === 'upcoming').length
+  const notifCount = 3
+
+  const NAV: NavEntry[] = [
+    { to: '/dashboard',          icon: Home,          label: 'Главная',      color: '#22c55e' },
+    { to: '/dashboard/courts',   icon: Search,        label: 'Площадки',     color: '#3b82f6' },
+    { to: '/dashboard/bookings', icon: CalendarCheck, label: 'Бронирования', color: '#f97316', badge: upcomingCount },
+    { to: '/dashboard/map',      icon: MapPin,        label: 'Карта',        color: '#a855f7' },
+    { to: '/dashboard/profile',  icon: User,          label: 'Профиль',      color: '#06b6d4' },
+  ]
+
+  const BOTTOM: NavEntry[] = [
+    { to: '/dashboard/notifications', icon: Bell,     label: 'Уведомления',  color: '#94a3b8', badge: notifCount },
+    { to: '/dashboard/settings',      icon: Settings, label: 'Настройки',    color: '#94a3b8' },
+  ]
 
   return (
     <motion.aside
       animate={{ width: collapsed ? 68 : 224 }}
       transition={{ type: 'spring', stiffness: 300, damping: 30 }}
       className="flex flex-col h-full relative"
-      style={{ background: '#141f2e', borderRight: '1px solid rgba(255,255,255,0.07)', flexShrink: 0 }}
+      style={{
+        background: 'linear-gradient(180deg, #111827 0%, #0f1623 100%)',
+        borderRight: '1px solid rgba(255,255,255,0.07)',
+        flexShrink: 0,
+      }}
     >
+      {/* Collapse button */}
       <motion.button
         onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-3.5 top-7 z-50 w-7 h-7 rounded-full flex items-center justify-center"
-        style={{ background: '#1a2840', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}
-        whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}
+        className="ns -right-3.5 top-7 z-50 w-7 h-7 rounded-full flex items-center justify-center"
+        style={{
+          background: '#1a2840',
+          border: '1px solid rgba(255,255,255,0.12)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
+        }}
+        whileHover={{ scale: 1.12 }}
+        whileTap={{ scale: 0.9 }}
       >
         <motion.div animate={{ rotate: collapsed ? 0 : 180 }}>
           <ChevronLeft size={13} color="#94a3b8" />
         </motion.div>
       </motion.button>
 
-      {/* Лого */}
-      <div style={{ padding: '20px 16px', display: 'flex', alignItems: 'center', gap: 12, overflow: 'hidden' }}>
-        <div style={{ width: 36, height: 36, borderRadius: 12, background: 'linear-gradient(135deg, #22c55e, #16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>⚡</div>
+      {/* Logo */}
+      <div style={{ padding: '20px 16px 16px', display: 'flex', alignItems: 'center', gap: 12, overflow: 'hidden' }}>
+        <div style={{
+          width: 36, height: 36, borderRadius: 12, flexShrink: 0,
+          background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 18, boxShadow: '0 4px 12px rgba(34,197,94,0.3)',
+        }}>
+          ⚡
+        </div>
         <AnimatePresence>
           {!collapsed && (
-            <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }}>
+            <motion.div
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -10 }}
+            >
               <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', whiteSpace: 'nowrap' }}>BookinGo</div>
-              <div style={{ fontSize: 10, color: '#22c55e', fontWeight: 600, letterSpacing: 0.5 }}>БРОНИРОВАНИЕ</div>
+              <div style={{ fontSize: 10, color: '#22c55e', fontWeight: 600, letterSpacing: '0.06em' }}>КАБИНЕТ</div>
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      <div style={{ height: 1, margin: '0 16px 12px', background: 'rgba(255,255,255,0.06)' }} />
+      <div style={{ height: 1, margin: '0 12px 12px', background: 'rgba(255,255,255,0.06)' }} />
 
       {/* Основная навигация */}
       <nav style={{ flex: 1, padding: '0 8px', display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto' }}>
         {NAV.map(item => <NavItem key={item.to} item={item} collapsed={collapsed} />)}
       </nav>
 
-      <div style={{ height: 1, margin: '8px 16px', background: 'rgba(255,255,255,0.06)' }} />
+      <div style={{ height: 1, margin: '8px 12px', background: 'rgba(255,255,255,0.06)' }} />
 
       {/* Нижние пункты */}
       <div style={{ padding: '0 8px 8px', display: 'flex', flexDirection: 'column', gap: 2 }}>
         {BOTTOM.map(item => <NavItem key={item.to} item={item} collapsed={collapsed} />)}
       </div>
 
-      <div style={{ height: 1, margin: '0 16px 12px', background: 'rgba(255,255,255,0.06)' }} />
+      <div style={{ height: 1, margin: '0 12px 10px', background: 'rgba(255,255,255,0.06)' }} />
 
+      {/* На сайт */}
       <div style={{ padding: '0 8px 8px' }}>
         <NavLink to="/" style={{ textDecoration: 'none' }}>
           {() => (
             <motion.div
               style={{
-                display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 12,
-                background: 'rgba(34,197,94,0.08)',
-                border: '1px solid rgba(34,197,94,0.2)',
-                cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '9px 12px', borderRadius: 12,
+                background: 'rgba(34,197,94,0.07)',
+                border: '1px solid rgba(34,197,94,0.18)',
+                cursor: 'pointer', overflow: 'hidden',
               }}
-              whileHover={{ background: 'rgba(34,197,94,0.14)', x: 2 }}
+              whileHover={{ background: 'rgba(34,197,94,0.13)' }}
             >
-              <Globe size={18} color="#22c55e" />
+              <Globe size={17} color="#22c55e" style={{ flexShrink: 0 }} />
               <AnimatePresence>
                 {!collapsed && (
-                  <motion.span initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -8 }}
-                    style={{ fontSize: 14, fontWeight: 600, color: '#22c55e', whiteSpace: 'nowrap' }}>
+                  <motion.span
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -8 }}
+                    style={{ fontSize: 13, fontWeight: 600, color: '#22c55e', whiteSpace: 'nowrap' }}
+                  >
                     На сайт
                   </motion.span>
+                )}
+              </AnimatePresence>
+              <AnimatePresence>
+                {!collapsed && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    style={{ marginLeft: 'auto' }}
+                  >
+                    <ChevronRight size={13} color="rgba(34,197,94,0.5)" />
+                  </motion.div>
                 )}
               </AnimatePresence>
             </motion.div>
@@ -95,21 +150,41 @@ export function Sidebar() {
         </NavLink>
       </div>
 
-      {/* Юзер */}
+      {/* Пользователь + выход */}
       <div style={{ padding: '0 8px 16px' }}>
         <motion.div
-          style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 14, cursor: 'pointer', overflow: 'hidden', border: '1px solid rgba(255,255,255,0.05)' }}
-          whileHover={{ background: 'rgba(255,255,255,0.05)' }}
-          onClick={() => { logout(); navigate('/login') }}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '10px 12px', borderRadius: 14,
+            cursor: 'pointer', overflow: 'hidden',
+            border: '1px solid rgba(255,255,255,0.05)',
+          }}
+          whileHover={{ background: 'rgba(255,255,255,0.04)' }}
+          onClick={() => { logout(); navigate('/') }}
+          title="Выйти"
         >
-          <div style={{ width: 32, height: 32, borderRadius: 10, background: 'linear-gradient(135deg, #22c55e, #3b82f6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
+          <div style={{
+            width: 32, height: 32, borderRadius: 10, flexShrink: 0,
+            background: 'linear-gradient(135deg, #22c55e, #3b82f6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 12, fontWeight: 700, color: '#fff',
+          }}>
             {user?.avatar ?? 'U'}
           </div>
           <AnimatePresence>
             {!collapsed && (
-              <motion.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} style={{ flex: 1, minWidth: 0 }}>
-                <p style={{ fontSize: 13, fontWeight: 600, color: '#e2e8f0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.name}</p>
-                <p style={{ fontSize: 11, color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.email}</p>
+              <motion.div
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -10 }}
+                style={{ flex: 1, minWidth: 0 }}
+              >
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#e2e8f0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>
+                  {user?.name}
+                </p>
+                <p style={{ fontSize: 11, color: '#64748b', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', margin: 0 }}>
+                  {user?.email}
+                </p>
               </motion.div>
             )}
           </AnimatePresence>
@@ -120,40 +195,72 @@ export function Sidebar() {
   )
 }
 
-function NavItem({ item, collapsed }: {
-  item: { to: string; icon: React.FC<{ size?: number; color?: string }>; label: string; color: string; badge?: number }
-  collapsed: boolean
-}) {
+function NavItem({ item, collapsed }: { item: NavEntry; collapsed: boolean }) {
   const Icon = item.icon
   return (
     <NavLink to={item.to} end={item.to === '/dashboard'} style={{ textDecoration: 'none' }}>
       {({ isActive }) => (
         <motion.div
           style={{
-            display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 12,
+            display: 'flex', alignItems: 'center', gap: 10,
+            padding: '10px 12px', borderRadius: 12,
             background: isActive ? `${item.color}18` : 'transparent',
-            border: isActive ? `1px solid ${item.color}30` : '1px solid transparent',
+            border: isActive ? `1px solid ${item.color}28` : '1px solid transparent',
             cursor: 'pointer', position: 'relative',
+            overflow: 'hidden',
           }}
-          whileHover={{ background: `${item.color}10`, x: 2 }}
+          whileHover={{ background: isActive ? `${item.color}20` : `${item.color}0d` }}
           transition={{ duration: 0.15 }}
         >
+          {/* Active indicator bar */}
           {isActive && (
-            <motion.div layoutId="sidebarActive"
-              style={{ position: 'absolute', left: 0, top: '50%', transform: 'translateY(-50%)', width: 3, height: 20, borderRadius: '0 3px 3px 0', background: item.color }} />
+            <motion.div
+              layoutId="sidebarActive"
+              style={{
+                position: 'absolute', left: 0,
+                top: '50%', transform: 'translateY(-50%)',
+                width: 3, height: 20,
+                borderRadius: '0 3px 3px 0',
+                background: item.color,
+              }}
+            />
           )}
+
+          {/* Icon with badge */}
           <div style={{ position: 'relative', flexShrink: 0 }}>
             <Icon size={18} color={isActive ? item.color : '#64748b'} />
-            {item.badge && (
-              <span style={{ position: 'absolute', top: -5, right: -5, width: 14, height: 14, borderRadius: '50%', background: item.color, color: '#fff', fontSize: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
+            {item.badge != null && item.badge > 0 && (
+              <motion.span
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                style={{
+                  position: 'absolute', top: -5, right: -6,
+                  minWidth: 15, height: 15, borderRadius: 8,
+                  background: item.color, color: '#fff',
+                  fontSize: 8, fontWeight: 800,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  padding: '0 3px',
+                }}
+              >
                 {item.badge}
-              </span>
+              </motion.span>
             )}
           </div>
+
           <AnimatePresence>
             {!collapsed && (
-              <motion.span initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -8 }}
-                style={{ fontSize: 14, fontWeight: isActive ? 600 : 400, color: isActive ? item.color : '#94a3b8', whiteSpace: 'nowrap' }}>
+              <motion.span
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -8 }}
+                style={{
+                  fontSize: 14,
+                  fontWeight: isActive ? 600 : 400,
+                  color: isActive ? item.color : '#94a3b8',
+                  whiteSpace: 'nowrap',
+                  flex: 1,
+                }}
+              >
                 {item.label}
               </motion.span>
             )}

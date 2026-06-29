@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { CalendarCheck, MapPin, Clock, Star, TrendingUp, Users, ChevronRight } from 'lucide-react'
+import { CalendarCheck, MapPin, Clock, Star, TrendingUp, Users, ChevronRight, Globe } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useBookings, COURTS } from '../../contexts/BookingContext'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { CourtDetailSheet } from '../CourtDetailSheet'
 import type { Court } from '../../contexts/BookingContext'
 
@@ -39,15 +39,27 @@ export function HomeTab() {
             <p style={{ color: '#64748b', fontSize: 14, marginBottom: 4 }}>{greeting} 👋</p>
             <h1 style={{ fontSize: 26, fontWeight: 800, color: '#f1f5f9', margin: 0 }}>{user?.name?.split(' ')[0]}</h1>
           </div>
-          <motion.div
-            style={{ padding: '8px 16px', borderRadius: 100, background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)', cursor: 'pointer', flexShrink: 0 }}
-            onClick={() => navigate('/dashboard/bookings')}
-            whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
-            animate={{ boxShadow: ['0 0 0 rgba(34,197,94,0)', '0 0 12px rgba(34,197,94,0.3)', '0 0 0 rgba(34,197,94,0)'] }}
-            transition={{ boxShadow: { duration: 2.5, repeat: Infinity } }}
-          >
-            <span style={{ color: '#22c55e', fontSize: 13, fontWeight: 700 }}>+ Забронировать</span>
-          </motion.div>
+          <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+            {/* На сайт — только мобилка */}
+            <Link to="/" style={{ textDecoration: 'none' }} className="md:hidden">
+              <motion.div
+                style={{ padding: '8px 14px', borderRadius: 100, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}
+                whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
+              >
+                <Globe size={13} color="#94a3b8" />
+                <span style={{ color: '#94a3b8', fontSize: 12, fontWeight: 600 }}>Сайт</span>
+              </motion.div>
+            </Link>
+            <motion.div
+              style={{ padding: '8px 16px', borderRadius: 100, background: 'rgba(34,197,94,0.15)', border: '1px solid rgba(34,197,94,0.3)', cursor: 'pointer' }}
+              onClick={() => navigate('/dashboard/courts')}
+              whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}
+              animate={{ boxShadow: ['0 0 0 rgba(34,197,94,0)', '0 0 12px rgba(34,197,94,0.3)', '0 0 0 rgba(34,197,94,0)'] }}
+              transition={{ boxShadow: { duration: 2.5, repeat: Infinity } }}
+            >
+              <span style={{ color: '#22c55e', fontSize: 13, fontWeight: 700 }}>+ Забронировать</span>
+            </motion.div>
+          </div>
         </div>
       </motion.div>
 

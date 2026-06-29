@@ -159,7 +159,7 @@ function UserMenu() {
               <DropItem
                 icon={<Settings size={15} />}
                 label="Настройки"
-                onClick={() => { setOpen(false); navigate('/dashboard/profile') }}
+                onClick={() => { setOpen(false); navigate('/dashboard/settings') }}
               />
             </div>
 
@@ -556,7 +556,7 @@ function MobileUserSection({ closeMobile }: { closeMobile: () => void }) {
           badge: activeCount, path: '/dashboard/bookings',
         },
         { icon: <LayoutDashboard size={15} />, label: 'Личный кабинет', path: '/dashboard' },
-        { icon: <Settings size={15} />, label: 'Настройки', path: '/dashboard/profile' },
+        { icon: <Settings size={15} />, label: 'Настройки', path: '/dashboard/settings' },
       ].map(({ icon, label, badge, path }) => (
         <button
           key={path}
