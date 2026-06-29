@@ -286,9 +286,10 @@ input:-webkit-autofill:focus {
 }
 
 @media (max-width: 900px) {
-  .site-header-nav  { display: none !important; }
-  .site-header-cta  { display: none !important; }
-  .site-header-burger { display: flex !important; }
+  .site-header-nav      { display: none !important; }
+  .site-header-cta      { display: none !important; }
+  .site-header-user-menu { display: none !important; }
+  .site-header-burger   { display: flex !important; }
 }
 
 .site-footer {

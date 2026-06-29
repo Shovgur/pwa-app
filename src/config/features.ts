@@ -1,6 +1,6 @@
 /** Feature flags — flip when sections are ready for production. */
 export const features = {
-  dashboard: false,
+  dashboard: true,
 } as const
 
 export const paths = {
