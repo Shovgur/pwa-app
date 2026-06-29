@@ -33,7 +33,7 @@ export function RegisterPage() {
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 24px', position: 'relative', background: 'linear-gradient(160deg, #0a1628 0%, #0f1e35 50%, #0d1f2d 100%)', boxSizing: 'border-box' }}>
       <ParticleField />
 
-      <div style={{ position: 'fixed', top: 24, left: 24, zIndex: 50 }}>
+      <div style={{ position: 'fixed', top: 'calc(24px + env(safe-area-inset-top, 0px))', left: 24, zIndex: 50 }}>
         <BackToSiteLink />
       </div>
 

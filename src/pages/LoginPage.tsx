@@ -34,7 +34,7 @@ export function LoginPage() {
     }}>
       <ParticleField />
 
-      <div style={{ position: 'fixed', top: 24, left: 24, zIndex: 50 }}>
+      <div style={{ position: 'fixed', top: 'calc(24px + env(safe-area-inset-top, 0px))', left: 24, zIndex: 50 }}>
         <BackToSiteLink />
       </div>
 
