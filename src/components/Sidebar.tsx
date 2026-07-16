@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useBookings } from '../contexts/BookingContext'
+import { APP_ICON_SRC } from '../config/branding'
 
 type NavEntry = {
   to: string
@@ -59,7 +60,7 @@ export function Sidebar() {
         flexShrink: 0,
       }}>
         <img
-          src="/icon-192.png"
+          src={APP_ICON_SRC}
           alt="BookinGo"
           width={36}
           height={36}

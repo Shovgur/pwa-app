@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
+import { APP_ICON_SRC } from '../../config/branding'
 
 interface LogoProps {
   to?: string
@@ -21,7 +22,7 @@ export function Logo({ to = '/', size = 'md' }: LogoProps) {
       whileTap={{ scale: 0.98 }}
     >
       <img
-        src="/icon-192.png"
+        src={APP_ICON_SRC}
         alt="BookinGo"
         width={s.mark}
         height={s.mark}
