@@ -1,6 +1,6 @@
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useLayoutEffect, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import {
   Menu, X, ArrowRight, LogOut, Settings,
@@ -18,6 +18,87 @@ const NAV = [
   { to: '/catalog', label: 'Площадки' },
   { to: '/how-it-works', label: 'Как это работает' },
 ]
+
+function isNavActive(pathname: string, to: string) {
+  return to === '/' ? pathname === '/' : pathname.startsWith(to)
+}
+
+/** Desktop nav with a single sliding underline — avoids layoutId glitches when header is sticky/scrolled. */
+function DesktopNav({ pathname }: { pathname: string }) {
+  const navRef = useRef<HTMLElement>(null)
+  const linkRefs = useRef(new Map<string, HTMLAnchorElement>())
+  const [indicator, setIndicator] = useState({ left: 0, width: 0 })
+
+  const updateIndicator = useCallback(() => {
+    const nav = navRef.current
+    if (!nav) return
+    const active = NAV.find(({ to }) => isNavActive(pathname, to))
+    if (!active) return
+    const link = linkRefs.current.get(active.to)
+    if (!link) return
+    const navRect = nav.getBoundingClientRect()
+    const linkRect = link.getBoundingClientRect()
+    setIndicator({
+      left: linkRect.left - navRect.left,
+      width: linkRect.width,
+    })
+  }, [pathname])
+
+  useLayoutEffect(() => {
+    updateIndicator()
+    const raf = requestAnimationFrame(updateIndicator)
+    return () => cancelAnimationFrame(raf)
+  }, [updateIndicator])
+
+  useEffect(() => {
+    window.addEventListener('resize', updateIndicator)
+    return () => window.removeEventListener('resize', updateIndicator)
+  }, [updateIndicator])
+
+  return (
+    <nav ref={navRef} className="site-header-nav">
+      {NAV.map(({ to, label }) => {
+        const active = isNavActive(pathname, to)
+        return (
+          <Link
+            key={to}
+            ref={(el) => {
+              if (el) linkRefs.current.set(to, el)
+              else linkRefs.current.delete(to)
+            }}
+            to={to}
+            style={{ position: 'relative', textDecoration: 'none' }}
+          >
+            <span style={{
+              fontSize: 14,
+              fontWeight: active ? 600 : 500,
+              color: active ? colors.text : colors.text2,
+              transition: 'color 0.18s',
+              letterSpacing: '-0.01em',
+            }}>
+              {label}
+            </span>
+          </Link>
+        )
+      })}
+      {indicator.width > 0 && (
+        <motion.div
+          animate={{ left: indicator.left, width: indicator.width }}
+          initial={false}
+          transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+          style={{
+            position: 'absolute',
+            bottom: -19,
+            height: 2,
+            borderRadius: 2,
+            background: colors.green,
+            pointerEvents: 'none',
+          }}
+        />
+      )}
+    </nav>
+  )
+}
 
 /* ── Аватар-кнопка + выпадающее меню пользователя ─────────────────── */
 function UserMenu() {
@@ -276,36 +357,7 @@ export function PublicLayout() {
           >
             <Logo />
 
-            {/* Desktop nav */}
-            <nav className="site-header-nav">
-              {NAV.map(({ to, label }) => {
-                const active = to === '/' ? pathname === '/' : pathname.startsWith(to)
-                return (
-                  <Link key={to} to={to} style={{ position: 'relative', textDecoration: 'none' }}>
-                    <span style={{
-                      fontSize: 14,
-                      fontWeight: active ? 600 : 500,
-                      color: active ? colors.text : colors.text2,
-                      transition: 'color 0.18s',
-                      letterSpacing: '-0.01em',
-                    }}>
-                      {label}
-                    </span>
-                    {active && (
-                      <motion.div
-                        layoutId="nav-indicator"
-                        style={{
-                          position: 'absolute', bottom: -19,
-                          left: 0, right: 0, height: 2,
-                          borderRadius: 2, background: colors.green,
-                        }}
-                        transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                      />
-                    )}
-                  </Link>
-                )
-              })}
-            </nav>
+            <DesktopNav pathname={pathname} />
 
             {/* Right side actions */}
             <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>

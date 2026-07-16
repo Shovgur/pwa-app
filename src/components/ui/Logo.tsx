@@ -1,7 +1,5 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { MapPin } from 'lucide-react'
-import { gradients } from '../../theme/tokens'
 
 interface LogoProps {
   to?: string
@@ -9,9 +7,9 @@ interface LogoProps {
 }
 
 const sizes = {
-  sm: { mark: 32, icon: 16, text: 18 },
-  md: { mark: 36, icon: 18, text: 22 },
-  lg: { mark: 44, icon: 22, text: 26 },
+  sm: { mark: 32, text: 18 },
+  md: { mark: 36, text: 22 },
+  lg: { mark: 44, text: 26 },
 }
 
 export function Logo({ to = '/', size = 'md' }: LogoProps) {
@@ -22,20 +20,19 @@ export function Logo({ to = '/', size = 'md' }: LogoProps) {
       whileHover={{ scale: 1.02 }}
       whileTap={{ scale: 0.98 }}
     >
-      <div
+      <img
+        src="/icon-192.png"
+        alt="BookinGo"
+        width={s.mark}
+        height={s.mark}
         style={{
           width: s.mark,
           height: s.mark,
-          borderRadius: 12,
-          background: gradients.hero,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxShadow: '0 4px 16px rgba(34,197,94,0.3)',
+          borderRadius: s.mark * 0.22,
+          display: 'block',
+          flexShrink: 0,
         }}
-      >
-        <MapPin size={s.icon} color="#fff" strokeWidth={2.5} />
-      </div>
+      />
       <span className="logo-text" style={{ fontSize: s.text, fontWeight: 800, color: '#F1F5F9', letterSpacing: '-0.03em' }}>
         BookinGo
       </span>

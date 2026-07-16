@@ -58,14 +58,19 @@ export function Sidebar() {
         overflow: 'hidden',
         flexShrink: 0,
       }}>
-        <div style={{
-          width: 36, height: 36, borderRadius: 12, flexShrink: 0,
-          background: 'linear-gradient(135deg, #22c55e, #16a34a)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 18, boxShadow: '0 4px 12px rgba(34,197,94,0.3)',
-        }}>
-          ⚡
-        </div>
+        <img
+          src="/icon-192.png"
+          alt="BookinGo"
+          width={36}
+          height={36}
+          style={{
+            width: 36,
+            height: 36,
+            borderRadius: 8,
+            flexShrink: 0,
+            display: 'block',
+          }}
+        />
         <AnimatePresence>
           {!collapsed && (
             <motion.div

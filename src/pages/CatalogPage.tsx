@@ -6,6 +6,7 @@ import { SlidersHorizontal, MapPin, Calendar } from 'lucide-react'
 import { VenueCard } from '../components/ui/VenueCard'
 import { COURTS } from '../contexts/BookingContext'
 import { LOFTS } from '../data/venues'
+import { POOLS } from '../data/pools'
 import { colors } from '../theme/tokens'
 
 export function CatalogPage() {
@@ -28,6 +29,7 @@ export function CatalogPage() {
     price: `${c.price.toLocaleString()} ₽/час`,
     rating: c.rating,
     gradient: c.photos[0],
+    image: undefined as string | undefined,
     type: 'sport' as const,
   })), [])
 
@@ -40,22 +42,38 @@ export function CatalogPage() {
     price: `${l.price.toLocaleString()} ₽/час`,
     rating: l.rating,
     gradient: l.gradient,
+    image: undefined as string | undefined,
     type: 'loft' as const,
   })), [])
 
-  const allItems = useMemo(() => [...sportItems, ...loftItems], [sportItems, loftItems])
+  const poolItems = useMemo(() => POOLS.map((p) => ({
+    to: `/pools/${p.id}`,
+    badge: '🏊 Бассейн',
+    title: p.name,
+    location: `${p.address} · ${p.city}`,
+    description: `${p.sauna ? 'Сауна · ' : ''}${p.medCert ? 'Мед. справка' : 'Без справки'}`,
+    price: `от ${p.price}`,
+    rating: 4.7,
+    gradient: 'linear-gradient(135deg, #0c4a6e 0%, #0e7490 100%)',
+    image: p.image,
+    type: 'pool' as const,
+  })), [])
+
+  const allItems = useMemo(() => [...sportItems, ...loftItems, ...poolItems], [sportItems, loftItems, poolItems])
 
   const filtered = useMemo(() => {
     if (filter === 'all') return allItems
     if (filter === 'sport') return allItems.filter((i) => i.type === 'sport')
     if (filter === 'loft') return allItems.filter((i) => i.type === 'loft')
+    if (filter === 'pool') return allItems.filter((i) => i.type === 'pool')
     return allItems
   }, [filter, allItems])
 
   const pills = [
     { id: 'all', emoji: '✨', label: `Все · ${allItems.length}` },
-    { id: 'sport', emoji: '🏊', label: `Спорт · ${sportItems.length}` },
+    { id: 'sport', emoji: '🏅', label: `Спорт · ${sportItems.length}` },
     { id: 'loft', emoji: '🏢', label: `Лофты · ${loftItems.length}` },
+    { id: 'pool', emoji: '🏊', label: `Бассейны · ${poolItems.length}` },
   ]
 
   function setFilterAndUrl(id: string) {
@@ -79,7 +97,7 @@ export function CatalogPage() {
       />
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <h1 className="page-title" style={{ fontSize: 36, fontWeight: 800, marginBottom: 8 }}>Все площадки</h1>
-        <p style={{ color: colors.muted, fontSize: 16, marginBottom: 16 }}>3 партнёра · Спорт, лофты и переговорные</p>
+        <p style={{ color: colors.muted, fontSize: 16, marginBottom: 16 }}>Спорт, лофты, бассейны и переговорные</p>
         {(city || dateLabel) && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
             {city && (
@@ -123,7 +141,7 @@ export function CatalogPage() {
         layout
       >
         {filtered.map((item, i) => (
-          <VenueCard key={item.to} {...item} variant="featured" delay={i * 0.05} />
+          <VenueCard key={item.to} {...item} image={item.image} variant="featured" delay={i * 0.05} />
         ))}
       </motion.div>
 

@@ -8,7 +8,7 @@ const PINS = [
   { id: 3, emoji: '🏀', name: 'Arena ЦСКА', price: 900, x: 42, y: 55, color: '#f97316', available: true },
   { id: 4, emoji: '🏸', name: 'Бадминтон Plaza', price: 700, x: 72, y: 20, color: '#a855f7', available: false },
   { id: 5, emoji: '🎾', name: 'Лужники Корт 1', price: 3000, x: 18, y: 65, color: '#22c55e', available: true },
-  { id: 6, emoji: '🏊', name: 'Aqua Sport', price: 600, x: 80, y: 68, color: '#f59e0b', available: true },
+  { id: 6, emoji: '🏊', name: 'Бассейн «Лужники»', price: 1190, x: 80, y: 68, color: '#0e7490', available: true },
 ]
 
 const AREAS = [

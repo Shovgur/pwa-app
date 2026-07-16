@@ -269,6 +269,8 @@ input:-webkit-autofill:focus {
   transform: translateX(-50%);
   align-items: center;
   gap: 32px;
+  /* Anchor for the sliding underline */
+  isolation: isolate;
 }
 
 .site-header-burger {

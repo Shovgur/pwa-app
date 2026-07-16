@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Star, MapPin, ArrowUpRight } from 'lucide-react'
 import { scrollToTop } from '../../utils/scroll'
+import { FadeImg } from './FadeImg'
 
 export interface VenueCardProps {
   to: string
@@ -11,6 +12,7 @@ export interface VenueCardProps {
   price: string
   rating: number
   gradient: string
+  image?: string
   delay?: number
   variant?: 'default' | 'featured'
   description?: string
@@ -24,6 +26,7 @@ export function VenueCard({
   price,
   rating,
   gradient,
+  image,
   delay = 0,
   variant = 'default',
   description,
@@ -53,8 +56,15 @@ export function VenueCard({
         >
           <div
             className="venue-card-media"
-            style={{ background: gradient }}
+            style={{ background: gradient, position: 'relative', overflow: 'hidden' }}
           >
+            {image && (
+              <FadeImg
+                src={image}
+                alt={title}
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+            )}
             <div className="venue-card-media-overlay" />
             <span className="venue-card-badge">{badge.replace(/^[^\s]+\s/, '') || badge}</span>
             {featured && (

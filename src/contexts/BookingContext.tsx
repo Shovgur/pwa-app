@@ -113,21 +113,6 @@ export const COURTS: Court[] = [
     lat: 55.72, lng: 37.56,
   },
   {
-    id: 6, emoji: '🏊', sport: 'Бассейн', name: 'Aqua Sport',
-    location: 'Измайлово', address: 'Измайловское ш., 71, Москва',
-    rating: 4.5, reviews: 312, price: 600, color: '#f59e0b',
-    available: true, distance: '6.3 км',
-    amenities: ['50-метровая дорожка', 'Раздевалки', 'Сауна', 'Тренер по плаванию'],
-    description: 'Олимпийский бассейн 50м с 8 дорожками. Подходит для профессиональных тренировок и любительского плавания.',
-    photos: [
-      'linear-gradient(135deg, #1c1917 0%, #d97706 50%, #f59e0b 100%)',
-      'linear-gradient(135deg, #451a03 0%, #b45309 100%)',
-      'linear-gradient(135deg, #1c0a00 0%, #d97706 100%)',
-    ],
-    slots: ['06:00', '08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'],
-    lat: 55.78, lng: 37.75,
-  },
-  {
     id: 7, emoji: '🏐', sport: 'Волейбол', name: 'Динамо Волей',
     location: 'Динамо', address: 'Ленинградский пр., 36, Москва',
     rating: 4.4, reviews: 43, price: 1200, color: '#06b6d4',

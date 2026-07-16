@@ -9,7 +9,7 @@ import { Button } from '../components/ui/Button'
 import { VenueCard } from '../components/ui/VenueCard'
 import { CategoryCard } from '../components/ui/CategoryCard'
 import { PARTNERS, FEATURES, LOFTS } from '../data/venues'
-import { COURTS } from '../contexts/BookingContext'
+import { POOLS } from '../data/pools'
 import { colors } from '../theme/tokens'
 import { fadeUpContainer, fadeUpItem } from '../utils/variants'
 
@@ -25,14 +25,15 @@ const CATEGORY_ITEMS = [
 export function LandingPage() {
   const partnerCards = [
     {
-      ...PARTNERS[0],
-      to: `/sport/${COURTS.find(c => c.sport === 'Бассейн')?.id ?? 6}`,
-      title: 'AquaSport Arena',
-      badge: 'Спорт',
-      price: '1 200 ₽/час',
+      gradient: 'linear-gradient(135deg, #0c4a6e 0%, #0e7490 100%)',
+      to: `/pools/${POOLS[0].id}`,
+      title: POOLS[0].name,
+      badge: '🏊 Бассейн',
+      price: POOLS[0].price,
       rating: 4.8,
-      location: 'Москва',
-      description: '12 бассейнов и спортивных кортов — от любительских до профессиональных.',
+      location: POOLS[0].city,
+      description: `Олимпийский комплекс Лужники. Свободное плавание, сауна${POOLS[0].medCert ? '' : ', без справки'}.`,
+      image: POOLS[0].image,
     },
     {
       ...PARTNERS[1],
@@ -126,8 +127,72 @@ export function LandingPage() {
         </div>
       </section>
 
+      {/* Pools banner */}
+      <section className="site-container" style={{ paddingTop: 32, paddingBottom: 48 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          style={{
+            borderRadius: 28,
+            background: 'linear-gradient(135deg, #0c4a6e 0%, #0e7490 50%, #164e63 100%)',
+            border: '1px solid rgba(14,116,144,0.4)',
+            padding: '48px 40px',
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 32,
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+        >
+          <div style={{ position: 'absolute', right: -60, top: -60, fontSize: 200, opacity: 0.06, userSelect: 'none', lineHeight: 1 }}>🏊</div>
+          <div style={{ flex: 1, minWidth: 260, position: 'relative' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, background: 'rgba(255,255,255,0.12)', borderRadius: 100, padding: '6px 14px', marginBottom: 16 }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>🎉 Новое на BookinGo</span>
+            </div>
+            <h2 style={{ fontSize: 'clamp(24px, 3vw, 36px)', fontWeight: 800, color: '#fff', marginBottom: 12, lineHeight: 1.2 }}>
+              Бассейны — {POOLS.length}+ площадок
+            </h2>
+            <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: 16, marginBottom: 0, lineHeight: 1.6 }}>
+              Сеансы свободного плавания, абонементы и тренеры.<br />
+              Москва, Омск, Красноярск и другие города.
+            </p>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12, position: 'relative' }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              {POOLS.slice(0, 3).map((pool) => (
+                <Link
+                  key={pool.id}
+                  to={`/pools/${pool.id}`}
+                  style={{
+                    background: 'rgba(255,255,255,0.12)',
+                    backdropFilter: 'blur(8px)',
+                    borderRadius: 12,
+                    padding: '8px 14px',
+                    color: '#fff',
+                    textDecoration: 'none',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    border: '1px solid rgba(255,255,255,0.15)',
+                  }}
+                >
+                  {pool.name.replace('Бассейн ', '').replace('«', '').replace('»', '')}
+                </Link>
+              ))}
+            </div>
+            <Link to="/catalog?type=pool">
+              <Button icon={<ArrowRight size={16} />} size="md">
+                Все бассейны
+              </Button>
+            </Link>
+          </div>
+        </motion.div>
+      </section>
+
       {/* Categories */}
-      <section className="site-container" style={{ paddingTop: 32, paddingBottom: 80 }}>
+      <section className="site-container" style={{ paddingTop: 0, paddingBottom: 80 }}>
         <div className="section-heading">
           <h2>Категории</h2>
           <p>Выберите формат — от спортивных залов до лофтов с кейтерингом</p>
@@ -153,7 +218,7 @@ export function LandingPage() {
         <div className="site-grid-3">
           {partnerCards.map((p, i) => (
             <VenueCard
-              key={p.id}
+              key={p.to}
               variant="featured"
               to={p.to}
               badge={p.badge}
@@ -163,6 +228,7 @@ export function LandingPage() {
               price={p.price}
               rating={p.rating}
               gradient={p.gradient}
+              image={'image' in p ? p.image : undefined}
               delay={i * 0.1}
             />
           ))}
