@@ -5,29 +5,23 @@ import { Eye, EyeOff, UserPlus } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { ParticleField } from '../components/ParticleField'
 import { BackToSiteLink } from '../components/ui/BackToSiteLink'
-import { paths } from '../config/features'
 
 export function RegisterPage() {
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
+  const [name, setName]         = useState('')
+  const [email, setEmail]       = useState('')
   const [password, setPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
-  const [error, setError] = useState('')
+  const [error, setError]       = useState('')
   const { register, isLoading } = useAuth()
-  const navigate = useNavigate()
+  const navigate                = useNavigate()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
     const result = await register(name, email, password)
-    if (result.success) navigate(paths.postAuth, { replace: true })
+    if (result.success) navigate('/dashboard', { replace: true })
     else setError(result.error ?? 'Ошибка регистрации')
   }
-
-  const fields = [
-    { label: 'ИМЯ', value: name, set: setName, type: 'text', placeholder: 'Ваше имя' },
-    { label: 'EMAIL', value: email, set: setEmail, type: 'email', placeholder: 'you@example.com' },
-  ]
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 24px', paddingTop: 'calc(80px + env(safe-area-inset-top, 0px))', position: 'relative', background: 'linear-gradient(160deg, #0a1628 0%, #0f1e35 50%, #0d1f2d 100%)', boxSizing: 'border-box' }}>
@@ -60,18 +54,25 @@ export function RegisterPage() {
           <p style={{ color: '#64748b', fontSize: 13, marginBottom: 24 }}>Начните бронировать площадки прямо сейчас</p>
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-            {fields.map(f => (
-              <div key={f.label}>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#94a3b8', marginBottom: 7, letterSpacing: 0.5 }}>{f.label}</label>
-                <input type={f.type} value={f.value} onChange={e => f.set(e.target.value)} placeholder={f.placeholder} required
-                  style={{ width: '100%', padding: '13px 16px', borderRadius: 12, background: '#243354', border: '1px solid rgba(255,255,255,0.08)', color: '#fff', fontSize: 14, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }} />
-              </div>
-            ))}
+            {/* Имя */}
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#94a3b8', marginBottom: 7, letterSpacing: 0.5 }}>ИМЯ</label>
+              <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Ваше имя" required autoComplete="name"
+                style={{ width: '100%', padding: '13px 16px', borderRadius: 12, background: '#243354', border: '1px solid rgba(255,255,255,0.08)', color: '#fff', fontSize: 14, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+            </div>
 
+            {/* Email */}
+            <div>
+              <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#94a3b8', marginBottom: 7, letterSpacing: 0.5 }}>EMAIL</label>
+              <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" required autoComplete="email"
+                style={{ width: '100%', padding: '13px 16px', borderRadius: 12, background: '#243354', border: '1px solid rgba(255,255,255,0.08)', color: '#fff', fontSize: 14, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }} />
+            </div>
+
+            {/* Пароль */}
             <div>
               <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#94a3b8', marginBottom: 7, letterSpacing: 0.5 }}>ПАРОЛЬ</label>
               <div style={{ position: 'relative' }}>
-                <input type={showPass ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="Минимум 6 символов" required minLength={6}
+                <input type={showPass ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="Минимум 6 символов" required minLength={6} autoComplete="new-password"
                   style={{ width: '100%', padding: '13px 48px 13px 16px', borderRadius: 12, background: '#243354', border: '1px solid rgba(255,255,255,0.08)', color: '#fff', fontSize: 14, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }} />
                 <button type="button" onClick={() => setShowPass(!showPass)}
                   style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', display: 'flex' }}>
@@ -90,8 +91,8 @@ export function RegisterPage() {
             </AnimatePresence>
 
             <motion.button type="submit" disabled={isLoading}
-              style={{ width: '100%', padding: 15, borderRadius: 12, marginTop: 4, background: 'linear-gradient(135deg, #22c55e, #16a34a)', border: 'none', color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 8px 24px rgba(34,197,94,0.3)' }}
-              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.97 }}>
+              style={{ width: '100%', padding: 15, borderRadius: 12, marginTop: 4, background: 'linear-gradient(135deg, #22c55e, #16a34a)', border: 'none', color: '#fff', fontSize: 15, fontWeight: 700, cursor: isLoading ? 'default' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 8px 24px rgba(34,197,94,0.3)', opacity: isLoading ? 0.8 : 1 }}
+              whileHover={isLoading ? {} : { scale: 1.02 }} whileTap={isLoading ? {} : { scale: 0.97 }}>
               {isLoading
                 ? <motion.div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff' }} animate={{ rotate: 360 }} transition={{ duration: 0.7, repeat: Infinity, ease: 'linear' }} />
                 : <><UserPlus size={17} /><span>Создать аккаунт</span></>}

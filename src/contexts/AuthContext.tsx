@@ -1,14 +1,25 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  type ReactNode,
+} from 'react'
 
-interface User {
-  id: string
+const API = 'http://193.187.93.129:3000'
+const TOKEN_KEY = 'authToken'
+const USER_KEY  = 'authUser'
+
+// ─── types ───────────────────────────────────────────────
+export interface User {
+  id: number
   name: string
   email: string
   avatar: string
-  role: string
 }
 
-interface AuthContextType {
+interface AuthCtx {
   user: User | null
   isAuthenticated: boolean
   isLoading: boolean
@@ -17,90 +28,110 @@ interface AuthContextType {
   logout: () => void
 }
 
-const AuthContext = createContext<AuthContextType | null>(null)
-
-const MOCK_USERS: Array<User & { password: string }> = [
-  {
-    id: '1',
-    name: 'Demo User',
-    email: 'demo@bookingo.app',
-    password: 'demo123',
-    avatar: 'BG',
-    role: 'Administrator',
-  },
-]
-
-function delay(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms))
+// ─── helpers ─────────────────────────────────────────────
+function saveSession(token: string, user: User) {
+  localStorage.setItem(TOKEN_KEY, token)
+  localStorage.setItem(USER_KEY, JSON.stringify(user))
 }
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => {
-    const legacy = localStorage.getItem('nexus_user')
-    const stored = localStorage.getItem('bookingo_user') ?? legacy
-    if (legacy && !localStorage.getItem('bookingo_user')) {
-      localStorage.setItem('bookingo_user', legacy)
-      localStorage.removeItem('nexus_user')
-    }
-    return stored ? JSON.parse(stored) : null
+function clearSession() {
+  localStorage.removeItem(TOKEN_KEY)
+  localStorage.removeItem(USER_KEY)
+  // clean up legacy keys
+  localStorage.removeItem('bookingo_user')
+  localStorage.removeItem('nexus_user')
+}
+
+function loadSession(): User | null {
+  try {
+    const raw = localStorage.getItem(USER_KEY)
+    return raw ? (JSON.parse(raw) as User) : null
+  } catch {
+    return null
+  }
+}
+
+function makeAvatar(name?: string | null): string {
+  if (!name) return '?'
+  return name.trim().slice(0, 2).toUpperCase()
+}
+
+async function apiFetch<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
   })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data?.message ?? `Ошибка ${res.status}`)
+  return data as T
+}
+
+// ─── context ─────────────────────────────────────────────
+const AuthContext = createContext<AuthCtx | null>(null)
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  // Restore session instantly from localStorage — no network request
+  const [user, setUser] = useState<User | null>(() => loadSession())
   const [isLoading, setIsLoading] = useState(false)
+
+  // Clean up legacy keys once on mount
+  useEffect(() => {
+    const legacy = localStorage.getItem('bookingo_user') ?? localStorage.getItem('nexus_user')
+    if (legacy && !localStorage.getItem(USER_KEY)) {
+      if (!localStorage.getItem(TOKEN_KEY)) clearSession()
+    }
+  }, [])
 
   const login = useCallback(async (email: string, password: string) => {
     setIsLoading(true)
-    await delay(1200)
-
-    const found = MOCK_USERS.find(
-      (u) => u.email.toLowerCase() === email.toLowerCase() && u.password === password
-    )
-
-    setIsLoading(false)
-
-    if (!found) {
-      return { success: false, error: 'Неверный email или пароль' }
+    try {
+      const data = await apiFetch<{ token: string; userId: number; email: string; name: string }>(
+        '/api/auth/login',
+        { email, password },
+      )
+      const u: User = {
+        id:     data.userId,
+        name:   data.name  ?? email,
+        email:  data.email,
+        avatar: makeAvatar(data.name ?? email),
+      }
+      setUser(u)
+      saveSession(data.token, u)
+      return { success: true }
+    } catch (e) {
+      return { success: false, error: e instanceof Error ? e.message : 'Ошибка входа' }
+    } finally {
+      setIsLoading(false)
     }
-
-    const userData: User = {
-      id: found.id,
-      name: found.name,
-      email: found.email,
-      avatar: found.avatar,
-      role: found.role,
-    }
-    setUser(userData)
-    localStorage.setItem('bookingo_user', JSON.stringify(userData))
-    return { success: true }
   }, [])
 
   const register = useCallback(async (name: string, email: string, password: string) => {
     setIsLoading(true)
-    await delay(1500)
-
-    const exists = MOCK_USERS.find((u) => u.email.toLowerCase() === email.toLowerCase())
-
-    if (exists) {
+    try {
+      const data = await apiFetch<{ token: string; userId: number; email: string; name: string }>(
+        '/api/auth/register',
+        { name, email, password },
+      )
+      const u: User = {
+        id:     data.userId,
+        name:   data.name  ?? name,
+        email:  data.email,
+        avatar: makeAvatar(data.name ?? name),
+      }
+      setUser(u)
+      saveSession(data.token, u)
+      return { success: true }
+    } catch (e) {
+      return { success: false, error: e instanceof Error ? e.message : 'Ошибка регистрации' }
+    } finally {
       setIsLoading(false)
-      return { success: false, error: 'Пользователь с таким email уже существует' }
     }
-
-    const newUser: User = {
-      id: String(Date.now()),
-      name,
-      email,
-      avatar: name.slice(0, 2).toUpperCase(),
-      role: 'User',
-    }
-
-    MOCK_USERS.push({ ...newUser, password })
-    setUser(newUser)
-    localStorage.setItem('bookingo_user', JSON.stringify(newUser))
-    setIsLoading(false)
-    return { success: true }
   }, [])
 
   const logout = useCallback(() => {
     setUser(null)
-    localStorage.removeItem('bookingo_user')
+    clearSession()
   }, [])
 
   return (
@@ -112,6 +143,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const ctx = useContext(AuthContext)
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider')
+  if (!ctx) throw new Error('useAuth must be used within <AuthProvider>')
   return ctx
 }

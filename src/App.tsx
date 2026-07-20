@@ -13,39 +13,30 @@ import { PoolsPage } from './pages/PoolsPage'
 import { PoolDetailPage } from './pages/PoolDetailPage'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
-import { features, paths } from './config/features'
+import { ProfilePage } from './pages/ProfilePage'
 
 const DashboardPage = lazy(() =>
   import('./pages/DashboardPage').then((m) => ({ default: m.DashboardPage })),
 )
 
+// Показывает children только залогиненным, иначе → /login
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth()
+  const { isAuthenticated, isLoading } = useAuth()
+  if (isLoading) return null            // ждём восстановления сессии из localStorage
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />
 }
 
-function PublicRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth()
-  if (!isAuthenticated) return <>{children}</>
-  return <Navigate to={features.dashboard ? '/dashboard' : paths.postAuth} replace />
-}
-
-function DashboardRoute() {
-  if (!features.dashboard) {
-    return <Navigate to={paths.catalog} replace />
-  }
-  return (
-    <ProtectedRoute>
-      <Suspense fallback={null}>
-        <DashboardPage />
-      </Suspense>
-    </ProtectedRoute>
-  )
+// Гостевой маршрут: если уже залогинен → /dashboard
+function GuestRoute({ children }: { children: React.ReactNode }) {
+  const { isAuthenticated, isLoading } = useAuth()
+  if (isLoading) return null
+  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <>{children}</>
 }
 
 function AppRoutes() {
   return (
     <Routes>
+      {/* Публичный сайт */}
       <Route element={<PublicLayout />}>
         <Route path="/" element={<LandingPage />} />
         <Route path="/catalog" element={<CatalogPage />} />
@@ -55,9 +46,23 @@ function AppRoutes() {
         <Route path="/pools" element={<PoolsPage />} />
         <Route path="/pools/:id" element={<PoolDetailPage />} />
       </Route>
-      <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
-      <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
-      <Route path="/dashboard/*" element={<DashboardRoute />} />
+
+      {/* Аутентификация — гостевые маршруты */}
+      <Route path="/login"    element={<GuestRoute><LoginPage /></GuestRoute>} />
+      <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
+
+      {/* Профиль — защищённый маршрут */}
+      <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+
+      {/* Дашборд — защищённый маршрут */}
+      <Route path="/dashboard/*" element={
+        <ProtectedRoute>
+          <Suspense fallback={null}>
+            <DashboardPage />
+          </Suspense>
+        </ProtectedRoute>
+      } />
+
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
