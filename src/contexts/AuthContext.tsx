@@ -6,8 +6,8 @@ import {
   useCallback,
   type ReactNode,
 } from 'react'
+import { API_BASE } from '../config/api'
 
-const API = 'http://193.187.93.129:3000'
 const TOKEN_KEY = 'authToken'
 const USER_KEY  = 'authUser'
 
@@ -57,7 +57,7 @@ function makeAvatar(name?: string | null): string {
 }
 
 async function apiFetch<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(`${API}${path}`, {
+  const res = await fetch(`${API_BASE}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -87,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true)
     try {
       const data = await apiFetch<{ token: string; userId: number; email: string; name: string }>(
-        '/api/auth/login',
+        '/auth/login',
         { email, password },
       )
       const u: User = {
@@ -110,7 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true)
     try {
       const data = await apiFetch<{ token: string; userId: number; email: string; name: string }>(
-        '/api/auth/register',
+        '/auth/register',
         { name, email, password },
       )
       const u: User = {

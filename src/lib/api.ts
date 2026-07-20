@@ -1,4 +1,4 @@
-const BASE_URL = 'http://193.187.93.129:3000'
+import { API_BASE } from '../config/api'
 
 const TOKEN_KEY = 'bookingo_token'
 
@@ -29,7 +29,7 @@ async function request<T>(
     if (token) headers['Authorization'] = `Bearer ${token}`
   }
 
-  const res = await fetch(`${BASE_URL}${path}`, { ...options, headers })
+  const res = await fetch(`${API_BASE}${path}`, { ...options, headers })
 
   if (res.status === 401) {
     removeToken()
@@ -55,14 +55,14 @@ export interface AuthResponse {
 }
 
 export function apiRegister(name: string, email: string, password: string) {
-  return request<AuthResponse>('/api/auth/register', {
+  return request<AuthResponse>('/auth/register', {
     method: 'POST',
     body: JSON.stringify({ name, email, password }),
   })
 }
 
 export function apiLogin(email: string, password: string) {
-  return request<AuthResponse>('/api/auth/login', {
+  return request<AuthResponse>('/auth/login', {
     method: 'POST',
     body: JSON.stringify({ email, password }),
   })
@@ -79,7 +79,7 @@ export interface UserProfile {
 }
 
 export function apiGetProfile() {
-  return request<UserProfile>('/api/user/profile', {}, true)
+  return request<UserProfile>('/user/profile', {}, true)
 }
 
 // ───────── Bookings ─────────
@@ -96,7 +96,7 @@ export interface ApiBooking {
 }
 
 export function apiGetBookings() {
-  return request<ApiBooking[]>('/api/bookings', {}, true)
+  return request<ApiBooking[]>('/bookings', {}, true)
 }
 
 // ───────── Objects ─────────
@@ -112,11 +112,11 @@ export interface ApiObject {
 
 export function apiGetObjects(category?: string) {
   const qs = category ? `?category=${encodeURIComponent(category)}` : ''
-  return request<ApiObject[]>(`/api/objects${qs}`)
+  return request<ApiObject[]>(`/objects${qs}`)
 }
 
 // ───────── Health ─────────
 
 export function apiHealth() {
-  return request<{ status: string }>('/api/health')
+  return request<{ status: string }>('/health')
 }
