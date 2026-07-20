@@ -1,17 +1,16 @@
 import { API_BASE } from '../config/api'
-
-const TOKEN_KEY = 'bookingo_token'
+import { getAuthToken, setAuthToken, clearAuthToken } from '../config/auth'
 
 export function getToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY)
+  return getAuthToken()
 }
 
 export function setToken(token: string): void {
-  localStorage.setItem(TOKEN_KEY, token)
+  setAuthToken(token)
 }
 
 export function removeToken(): void {
-  localStorage.removeItem(TOKEN_KEY)
+  clearAuthToken()
 }
 
 async function request<T>(
@@ -32,8 +31,6 @@ async function request<T>(
   const res = await fetch(`${API_BASE}${path}`, { ...options, headers })
 
   if (res.status === 401) {
-    removeToken()
-    window.location.href = '/login'
     throw new Error('Сессия истекла. Войдите снова.')
   }
 

@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Star, CalendarCheck, Clock, ChevronRight, Share2, Edit2, LogOut } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
+import { useBookings } from '../../contexts/BookingContext'
 import { useNavigate } from 'react-router-dom'
-import { apiGetProfile, apiGetBookings, type UserProfile, type ApiBooking } from '../../lib/api'
+import { apiGetProfile, type UserProfile } from '../../lib/api'
 
 const MENU = [
   { icon: Edit2, label: 'Редактировать профиль', color: '#22c55e' },
@@ -22,22 +23,24 @@ function Spinner() {
 
 export function ProfileTab() {
   const { user, logout } = useAuth()
+  const { bookings } = useBookings()
   const navigate = useNavigate()
 
   const [profile, setProfile] = useState<UserProfile | null>(null)
-  const [bookings, setBookings] = useState<ApiBooking[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (!user) {
+      setLoading(false)
+      return
+    }
+
     setLoading(true)
-    Promise.all([
-      apiGetProfile().catch(() => null),
-      apiGetBookings().catch(() => []),
-    ]).then(([p, b]) => {
-      if (p) setProfile(p)
-      setBookings(Array.isArray(b) ? b : [])
-    }).finally(() => setLoading(false))
-  }, [])
+    apiGetProfile()
+      .then(setProfile)
+      .catch(() => setProfile(null))
+      .finally(() => setLoading(false))
+  }, [user])
 
   const totalBookings = bookings.length
   const memberSince = profile?.created_at
@@ -77,10 +80,10 @@ export function ProfileTab() {
             </div>
           </div>
 
-          {/* Статистика */}
+          {/* Статистика — брони из моков, дата регистрации с API если есть */}
           <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginTop: 20 }}>
             {[
-              { icon: CalendarCheck, value: loading ? '—' : String(totalBookings), label: 'Броней' },
+              { icon: CalendarCheck, value: String(totalBookings), label: 'Броней' },
               { icon: Clock, value: memberSince ?? '—', label: 'С нами с', small: true },
             ].map(s => {
               const Icon = s.icon

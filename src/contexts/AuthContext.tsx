@@ -7,9 +7,10 @@ import {
   type ReactNode,
 } from 'react'
 import { API_BASE } from '../config/api'
+import { AUTH_TOKEN_KEY, AUTH_USER_KEY, clearAuthToken } from '../config/auth'
 
-const TOKEN_KEY = 'authToken'
-const USER_KEY  = 'authUser'
+const TOKEN_KEY = AUTH_TOKEN_KEY
+const USER_KEY  = AUTH_USER_KEY
 
 // ─── types ───────────────────────────────────────────────
 export interface User {
@@ -37,6 +38,7 @@ function saveSession(token: string, user: User) {
 function clearSession() {
   localStorage.removeItem(TOKEN_KEY)
   localStorage.removeItem(USER_KEY)
+  clearAuthToken()
   // clean up legacy keys
   localStorage.removeItem('bookingo_user')
   localStorage.removeItem('nexus_user')
