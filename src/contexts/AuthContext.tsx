@@ -29,7 +29,11 @@ interface AuthCtx {
   login: (login: string, password: string) => Promise<{ success: boolean; error?: string }>
   register: (name: string, email: string, password: string, phone?: string) => Promise<{ success: boolean; error?: string; email?: string; emailExists?: boolean }>
   sendCode: (email: string) => Promise<{ success: boolean; error?: string }>
-  verifyCodeAndLogin: (email: string, code: string) => Promise<{ success: boolean; error?: string }>
+  verifyCodeAndLogin: (
+    email: string,
+    code: string,
+    profile?: { name?: string; phone?: string },
+  ) => Promise<{ success: boolean; error?: string }>
   logout: () => void
 }
 
@@ -167,12 +171,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const verifyCodeAndLogin = useCallback(async (email: string, code: string) => {
+  const verifyCodeAndLogin = useCallback(async (
+    email: string,
+    code: string,
+    profile?: { name?: string; phone?: string },
+  ) => {
     setIsLoading(true)
     try {
+      const body: Record<string, string> = { email: email.trim(), code: code.trim() }
+      if (profile?.name?.trim()) body.name = profile.name.trim()
+      if (profile?.phone?.trim()) body.phone = normalizePhone(profile.phone)
+
       const data = await apiFetch<{ token: string; userId: number; email: string; name: string; phone?: string | null }>(
         '/auth/verify-code',
-        { email: email.trim(), code: code.trim() },
+        body,
       )
       const u: User = {
         id:     data.userId,

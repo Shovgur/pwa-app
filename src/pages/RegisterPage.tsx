@@ -41,6 +41,7 @@ export function RegisterPage() {
   const [emailExists, setEmailExists] = useState(false)
   const [verifyError, setVerifyError] = useState('')
   const [step, setStep] = useState<'form' | 'verify'>('form')
+  const [codeSent, setCodeSent] = useState(false)
   const [sendingCode, setSendingCode] = useState(false)
   const [redirecting, setRedirecting] = useState(false)
 
@@ -64,8 +65,22 @@ export function RegisterPage() {
 
     const sent = await sendCode(email)
     setSendingCode(false)
+    setCodeSent(sent.success)
     if (!sent.success) {
       setVerifyError(sent.error ?? 'Не удалось отправить код. Попробуйте ещё раз.')
+    }
+  }
+
+  async function handleResendCode() {
+    setVerifyError('')
+    setSendingCode(true)
+    const sent = await sendCode(email)
+    setSendingCode(false)
+    if (sent.success) {
+      setCodeSent(true)
+      setVerifyError('')
+    } else {
+      setVerifyError(sent.error ?? 'Не удалось отправить код повторно')
     }
   }
 
@@ -76,7 +91,7 @@ export function RegisterPage() {
     setVerifyError('')
     if (value.trim().length !== 6 || isLoading || sendingCode) return
 
-    const result = await verifyCodeAndLogin(email, value)
+    const result = await verifyCodeAndLogin(email, value, { name, phone })
     if (result.success) {
       setRedirecting(true)
       navigate('/profile', { replace: true })
@@ -122,7 +137,7 @@ export function RegisterPage() {
             <span style={{ fontSize: 24, fontWeight: 900, color: '#fff' }} className="logo-text">BookinGo</span>
           </div>
           <p style={{ color: '#64748b', fontSize: 13 }}>
-            {step === 'form' ? 'Создайте аккаунт бесплатно' : ''}
+            {step === 'form' ? 'Создайте аккаунт бесплатно' : 'Подтвердите email'}
           </p>
         </div>
 
@@ -263,47 +278,106 @@ export function RegisterPage() {
                 </motion.button>
               </motion.form>
             ) : (
-              <motion.form
+              <motion.div
                 key="verify-step"
-                onSubmit={handleVerify}
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+                style={{ display: 'flex', flexDirection: 'column', gap: 14 }}
               >
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  autoComplete="one-time-code"
-                  autoFocus
-                  maxLength={6}
-                  value={code}
-                  onChange={e => {
-                    const next = e.target.value.replace(/\D/g, '').slice(0, 6)
-                    setCode(next)
-                    if (next.length === 6) void submitCode(next)
-                  }}
-                  placeholder="000000"
-                  required
-                  disabled={sendingCode || verifyBusy}
-                  style={{
-                    ...inputStyle,
-                    fontSize: 22,
-                    fontWeight: 700,
-                    letterSpacing: '0.35em',
-                    textAlign: 'center',
-                    padding: '16px',
-                  }}
-                />
+                {sendingCode && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    style={{
+                      padding: '12px 14px',
+                      borderRadius: 12,
+                      background: 'rgba(59,130,246,0.12)',
+                      border: '1px solid rgba(59,130,246,0.25)',
+                      color: '#93c5fd',
+                      fontSize: 13,
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    Отправляем код на <strong style={{ color: '#bfdbfe' }}>{email}</strong>...
+                  </motion.div>
+                )}
 
-                <AnimatePresence>
-                  {verifyError && (
-                    <motion.p initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                      style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', fontSize: 13, margin: 0, textAlign: 'center' }}>
-                      {verifyError}
-                    </motion.p>
-                  )}
-                </AnimatePresence>
-              </motion.form>
+                {codeSent && !sendingCode && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    style={{
+                      padding: '12px 14px',
+                      borderRadius: 12,
+                      background: 'rgba(34,197,94,0.12)',
+                      border: '1px solid rgba(34,197,94,0.25)',
+                      color: '#86efac',
+                      fontSize: 13,
+                      lineHeight: 1.5,
+                    }}
+                  >
+                    ✅ Код верификации отправлен на <strong style={{ color: '#bbf7d0' }}>{email}</strong>
+                  </motion.div>
+                )}
+
+                <form onSubmit={handleVerify} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="one-time-code"
+                    autoFocus
+                    maxLength={6}
+                    value={code}
+                    onChange={e => {
+                      const next = e.target.value.replace(/\D/g, '').slice(0, 6)
+                      setCode(next)
+                      if (next.length === 6) void submitCode(next)
+                    }}
+                    placeholder="000000"
+                    required
+                    disabled={sendingCode || verifyBusy}
+                    style={{
+                      ...inputStyle,
+                      fontSize: 22,
+                      fontWeight: 700,
+                      letterSpacing: '0.35em',
+                      textAlign: 'center',
+                      padding: '16px',
+                    }}
+                  />
+
+                  <AnimatePresence>
+                    {verifyError && (
+                      <motion.p initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                        style={{ padding: '10px 14px', borderRadius: 10, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', fontSize: 13, margin: 0, textAlign: 'center' }}>
+                        {verifyError}
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
+                </form>
+
+                <button
+                  type="button"
+                  onClick={handleResendCode}
+                  disabled={verifyBusy}
+                  style={{ background: 'none', border: 'none', color: '#64748b', fontSize: 13, cursor: verifyBusy ? 'default' : 'pointer', fontFamily: 'inherit', textAlign: 'center', padding: 0 }}
+                >
+                  Не пришло письмо? <span style={{ color: '#22c55e', fontWeight: 600 }}>Отправить код снова</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStep('form')
+                    setCode('')
+                    setCodeSent(false)
+                    setVerifyError('')
+                  }}
+                  style={{ background: 'none', border: 'none', color: '#64748b', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'center', padding: 0 }}
+                >
+                  ← Изменить email
+                </button>
+              </motion.div>
             )}
           </AnimatePresence>
 
