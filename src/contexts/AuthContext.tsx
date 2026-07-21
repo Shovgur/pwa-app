@@ -8,6 +8,7 @@ import {
 } from 'react'
 import { API_BASE } from '../config/api'
 import { AUTH_TOKEN_KEY, AUTH_USER_KEY, clearAuthToken } from '../config/auth'
+import { buildLoginPayload, isDuplicateEmailError, normalizePhone } from '../utils/authHelpers'
 
 const TOKEN_KEY = AUTH_TOKEN_KEY
 const USER_KEY  = AUTH_USER_KEY
@@ -17,6 +18,7 @@ export interface User {
   id: number
   name: string
   email: string
+  phone?: string | null
   avatar: string
 }
 
@@ -24,8 +26,10 @@ interface AuthCtx {
   user: User | null
   isAuthenticated: boolean
   isLoading: boolean
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
-  register: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>
+  login: (login: string, password: string) => Promise<{ success: boolean; error?: string }>
+  register: (name: string, email: string, password: string, phone?: string) => Promise<{ success: boolean; error?: string; email?: string; emailExists?: boolean }>
+  sendCode: (email: string) => Promise<{ success: boolean; error?: string }>
+  verifyCodeAndLogin: (email: string, code: string) => Promise<{ success: boolean; error?: string }>
   logout: () => void
 }
 
@@ -58,14 +62,30 @@ function makeAvatar(name?: string | null): string {
   return name.trim().slice(0, 2).toUpperCase()
 }
 
+function parseApiError(data: Record<string, unknown>, status: number): string {
+  const raw = String(data.message ?? data.error ?? '')
+  if (isDuplicateEmailError(raw, status)) return 'Этот email уже зарегистрирован'
+  if (raw) return raw
+  return `Ошибка ${status}`
+}
+
+class ApiRequestError extends Error {
+  status: number
+
+  constructor(message: string, status: number) {
+    super(message)
+    this.status = status
+  }
+}
+
 async function apiFetch<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   })
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data?.message ?? `Ошибка ${res.status}`)
+  const data = await res.json().catch(() => ({})) as Record<string, unknown>
+  if (!res.ok) throw new ApiRequestError(parseApiError(data, res.status), res.status)
   return data as T
 }
 
@@ -85,18 +105,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const login = useCallback(async (email: string, password: string) => {
+  const login = useCallback(async (loginValue: string, password: string) => {
     setIsLoading(true)
     try {
-      const data = await apiFetch<{ token: string; userId: number; email: string; name: string }>(
+      const data = await apiFetch<{ token: string; userId: number; email: string; name: string; phone?: string | null }>(
         '/auth/login',
-        { email, password },
+        buildLoginPayload(loginValue, password),
       )
       const u: User = {
         id:     data.userId,
-        name:   data.name  ?? email,
+        name:   data.name  ?? loginValue,
         email:  data.email,
-        avatar: makeAvatar(data.name ?? email),
+        phone:  data.phone ?? null,
+        avatar: makeAvatar(data.name ?? loginValue),
       }
       setUser(u)
       saveSession(data.token, u)
@@ -108,24 +129,63 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const register = useCallback(async (name: string, email: string, password: string) => {
+  const register = useCallback(async (name: string, email: string, password: string, phone?: string) => {
     setIsLoading(true)
     try {
-      const data = await apiFetch<{ token: string; userId: number; email: string; name: string }>(
+      const payload: Record<string, string> = { name, email, password }
+      if (phone?.trim()) payload.phone = normalizePhone(phone)
+
+      await apiFetch<{ token?: string; userId: number; email: string; name: string; phone?: string | null }>(
         '/auth/register',
-        { name, email, password },
+        payload,
+      )
+      // Сессию не создаём — вход только после verify-code
+      return { success: true, email }
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Ошибка регистрации'
+      const status = e instanceof ApiRequestError ? e.status : undefined
+      const emailExists = isDuplicateEmailError(message, status)
+      return {
+        success: false,
+        error: emailExists ? 'Этот email уже зарегистрирован' : message,
+        emailExists,
+      }
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  const sendCode = useCallback(async (email: string) => {
+    try {
+      await apiFetch<{ success?: boolean; message?: string }>(
+        '/auth/send-code',
+        { email: email.trim() },
+      )
+      return { success: true }
+    } catch (e) {
+      return { success: false, error: e instanceof Error ? e.message : 'Не удалось отправить код' }
+    }
+  }, [])
+
+  const verifyCodeAndLogin = useCallback(async (email: string, code: string) => {
+    setIsLoading(true)
+    try {
+      const data = await apiFetch<{ token: string; userId: number; email: string; name: string; phone?: string | null }>(
+        '/auth/verify-code',
+        { email: email.trim(), code: code.trim() },
       )
       const u: User = {
         id:     data.userId,
-        name:   data.name  ?? name,
+        name:   data.name ?? email,
         email:  data.email,
-        avatar: makeAvatar(data.name ?? name),
+        phone:  data.phone ?? null,
+        avatar: makeAvatar(data.name ?? email),
       }
       setUser(u)
       saveSession(data.token, u)
       return { success: true }
     } catch (e) {
-      return { success: false, error: e instanceof Error ? e.message : 'Ошибка регистрации' }
+      return { success: false, error: e instanceof Error ? e.message : 'Неверный код' }
     } finally {
       setIsLoading(false)
     }
@@ -137,7 +197,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, register, sendCode, verifyCodeAndLogin, logout }}>
       {children}
     </AuthContext.Provider>
   )

@@ -70,9 +70,9 @@ export function ProfileTab() {
               <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, margin: '0 0 6px' }}>
                 {profile?.email ?? user?.email}
               </p>
-              {profile?.phone && (
-                <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12, margin: '0 0 10px' }}>{profile.phone}</p>
-              )}
+              {profile?.phone ?? user?.phone ? (
+                <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12, margin: '0 0 10px' }}>{profile?.phone ?? user?.phone}</p>
+              ) : null}
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(34,197,94,0.2)', border: '1px solid rgba(34,197,94,0.35)', padding: '4px 12px', borderRadius: 100 }}>
                 <Star size={11} color="#22c55e" style={{ fill: '#22c55e' }} />
                 <span style={{ color: '#22c55e', fontSize: 12, fontWeight: 700 }}>Участник</span>

@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { BookingProvider } from './contexts/BookingContext'
 import { ScrollToTop } from './components/ScrollToTop'
+import { FullPageLoader } from './components/ui/Loaders'
 import { PublicLayout } from './components/layout/PublicLayout'
 import { LandingPage } from './pages/LandingPage'
 import { CatalogPage } from './pages/CatalogPage'
@@ -13,23 +14,22 @@ import { PoolsPage } from './pages/PoolsPage'
 import { PoolDetailPage } from './pages/PoolDetailPage'
 import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
+import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
 import { ProfilePage } from './pages/ProfilePage'
 
 const DashboardPage = lazy(() =>
   import('./pages/DashboardPage').then((m) => ({ default: m.DashboardPage })),
 )
 
-// Показывает children только залогиненным, иначе → /login
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth()
-  if (isLoading) return null            // ждём восстановления сессии из localStorage
+  if (isLoading) return <FullPageLoader message="Проверяем сессию..." />
   return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />
 }
 
 // Гостевой маршрут: если уже залогинен → /dashboard
 function GuestRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, isLoading } = useAuth()
-  if (isLoading) return null
+  const { isAuthenticated } = useAuth()
   return isAuthenticated ? <Navigate to="/dashboard" replace /> : <>{children}</>
 }
 
@@ -50,6 +50,7 @@ function AppRoutes() {
       {/* Аутентификация — гостевые маршруты */}
       <Route path="/login"    element={<GuestRoute><LoginPage /></GuestRoute>} />
       <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
+      <Route path="/forgot-password" element={<GuestRoute><ForgotPasswordPage /></GuestRoute>} />
 
       {/* Профиль — защищённый маршрут */}
       <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
@@ -57,7 +58,7 @@ function AppRoutes() {
       {/* Дашборд — защищённый маршрут */}
       <Route path="/dashboard/*" element={
         <ProtectedRoute>
-          <Suspense fallback={null}>
+          <Suspense fallback={<FullPageLoader message="Открываем личный кабинет..." />}>
             <DashboardPage />
           </Suspense>
         </ProtectedRoute>

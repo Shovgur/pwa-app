@@ -58,3 +58,36 @@ export function FullPageLoader({ message = 'Загружаем лучшие пл
     </motion.div>
   )
 }
+
+export function AuthTransitionLoader({ message }: { message: string }) {
+  return (
+    <motion.div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 200,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 18,
+        background: 'rgba(10, 22, 40, 0.94)',
+        backdropFilter: 'blur(14px)',
+      }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+    >
+      <motion.div animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 2, repeat: Infinity }}>
+        <PulseRingLoader size={72} />
+      </motion.div>
+      <motion.p
+        style={{ margin: 0, fontSize: 15, fontWeight: 600, color: colors.text2, textAlign: 'center', maxWidth: 280 }}
+        animate={{ opacity: [0.55, 1, 0.55] }}
+        transition={{ duration: 1.8, repeat: Infinity }}
+      >
+        {message}
+      </motion.p>
+    </motion.div>
+  )
+}

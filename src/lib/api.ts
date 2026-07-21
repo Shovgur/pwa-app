@@ -1,4 +1,5 @@
 import { API_BASE } from '../config/api'
+import { buildLoginPayload, normalizePhone } from '../utils/authHelpers'
 import { getAuthToken, setAuthToken, clearAuthToken } from '../config/auth'
 
 export function getToken(): string | null {
@@ -34,10 +35,17 @@ async function request<T>(
     throw new Error('Сессия истекла. Войдите снова.')
   }
 
-  const data = await res.json().catch(() => ({}))
+  const data = await res.json().catch(() => ({})) as Record<string, unknown>
 
   if (!res.ok) {
-    throw new Error(data?.message ?? `Ошибка ${res.status}`)
+    const raw = (data.message ?? data.error) as string | undefined
+    if (res.status === 404 && path.includes('send-code')) {
+      throw new Error('Сервис отправки кода не настроен на сервере.')
+    }
+    if (raw === 'Registration failed') {
+      throw new Error('Этот email уже зарегистрирован. Войдите или используйте другой адрес.')
+    }
+    throw new Error(raw ?? `Ошибка ${res.status}`)
   }
 
   return data as T
@@ -51,17 +59,33 @@ export interface AuthResponse {
   user: { id: number; email: string; name: string }
 }
 
-export function apiRegister(name: string, email: string, password: string) {
+export function apiRegister(name: string, email: string, password: string, phone?: string) {
+  const body: Record<string, string> = { name, email, password }
+  if (phone?.trim()) body.phone = normalizePhone(phone)
   return request<AuthResponse>('/auth/register', {
     method: 'POST',
-    body: JSON.stringify({ name, email, password }),
+    body: JSON.stringify(body),
   })
 }
 
-export function apiLogin(email: string, password: string) {
+export function apiLogin(login: string, password: string) {
   return request<AuthResponse>('/auth/login', {
     method: 'POST',
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify(buildLoginPayload(login, password)),
+  })
+}
+
+export function apiSendCode(email: string) {
+  return request<{ success?: boolean; message?: string }>('/auth/send-code', {
+    method: 'POST',
+    body: JSON.stringify({ email: email.trim() }),
+  })
+}
+
+export function apiVerifyCode(email: string, code: string) {
+  return request<AuthResponse>('/auth/verify-code', {
+    method: 'POST',
+    body: JSON.stringify({ email: email.trim(), code: code.trim() }),
   })
 }
 

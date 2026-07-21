@@ -1,31 +1,50 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { MapPin, Eye, EyeOff, LogIn } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { ParticleField } from '../components/ParticleField'
 import { BackToSiteLink } from '../components/ui/BackToSiteLink'
+import { AuthTransitionLoader } from '../components/ui/Loaders'
 
 const SPORTS = ['⚽', '🎾', '🏀', '🏐', '🏸', '🏊']
 
 export function LoginPage() {
-  const [email, setEmail]       = useState('')
+  const location = useLocation()
+  const [searchParams] = useSearchParams()
+  const initialLogin =
+    (location.state as { login?: string } | null)?.login ??
+    searchParams.get('login') ??
+    ''
+  const [login, setLogin]       = useState(initialLogin)
   const [password, setPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
   const [error, setError]       = useState('')
-  const { login, isLoading }    = useAuth()
+  const [redirecting, setRedirecting] = useState(false)
+  const { login: authLogin, isLoading } = useAuth()
   const navigate                = useNavigate()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
-    const result = await login(email, password)
-    if (result.success) navigate('/dashboard', { replace: true })
-    else setError(result.error ?? 'Ошибка входа')
+    const result = await authLogin(login, password)
+    if (result.success) {
+      setRedirecting(true)
+      navigate('/dashboard', { replace: true })
+    } else setError(result.error ?? 'Ошибка входа')
   }
+
+  const showLoader = isLoading || redirecting
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', position: 'relative', background: 'linear-gradient(160deg, #0a1628 0%, #0f1e35 50%, #0d1f2d 100%)' }}>
+      <AnimatePresence>
+        {showLoader && (
+          <AuthTransitionLoader
+            message={redirecting ? 'Открываем личный кабинет...' : 'Входим в аккаунт...'}
+          />
+        )}
+      </AnimatePresence>
       <ParticleField />
 
       <div style={{ position: 'fixed', top: 'calc(24px + env(safe-area-inset-top, 0px))', left: 24, zIndex: 50 }}>
@@ -90,10 +109,10 @@ export function LoginPage() {
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <div>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#94a3b8', marginBottom: 8, letterSpacing: 0.5 }}>EMAIL</label>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#94a3b8', marginBottom: 8, letterSpacing: 0.5 }}>EMAIL ИЛИ ТЕЛЕФОН</label>
                 <input
-                  type="email" value={email} onChange={e => setEmail(e.target.value)}
-                  placeholder="you@example.com" required autoComplete="email"
+                  type="text" value={login} onChange={e => setLogin(e.target.value)}
+                  placeholder="example@mail.ru" required autoComplete="username"
                   style={{ width: '100%', padding: '14px 16px', borderRadius: 12, background: '#243354', border: '1px solid rgba(255,255,255,0.08)', color: '#fff', fontSize: 15, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }}
                 />
               </div>
@@ -110,6 +129,14 @@ export function LoginPage() {
                     style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', display: 'flex' }}>
                     {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
+                </div>
+                <div style={{ textAlign: 'right', marginTop: 8 }}>
+                  <Link
+                    to={login.includes('@') ? `/forgot-password?email=${encodeURIComponent(login.trim())}` : '/forgot-password'}
+                    style={{ color: '#64748b', fontSize: 12, textDecoration: 'none' }}
+                  >
+                    Забыли пароль?
+                  </Link>
                 </div>
               </div>
 

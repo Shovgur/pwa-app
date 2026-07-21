@@ -54,7 +54,7 @@ export function ProfilePage() {
           {[
             { icon: User,   label: 'Имя',    value: user?.name  ?? '—' },
             { icon: Mail,   label: 'Email',  value: user?.email ?? '—' },
-            { icon: Phone,  label: 'Телефон', value: 'Не указан' },
+            { icon: Phone,  label: 'Телефон', value: user?.phone ?? 'Не указан' },
             { icon: Shield, label: 'ID',      value: user?.id ? `#${user.id}` : '—' },
           ].map((row, i, arr) => {
             const Icon = row.icon

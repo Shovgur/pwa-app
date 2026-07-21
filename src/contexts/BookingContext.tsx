@@ -129,13 +129,7 @@ export const COURTS: Court[] = [
   },
 ]
 
-const INITIAL_BOOKINGS: Booking[] = [
-  { id: 1, courtId: 1, court: COURTS[0], date: '11 марта', time: '18:00', duration: 90, price: 2250, status: 'upcoming', createdAt: '2026-03-10' },
-  { id: 2, courtId: 2, court: COURTS[1], date: '15 марта', time: '10:00', duration: 60, price: 2400, status: 'upcoming', createdAt: '2026-03-11' },
-  { id: 3, courtId: 3, court: COURTS[2], date: '5 марта', time: '20:00', duration: 60, price: 900, status: 'completed', createdAt: '2026-03-04' },
-  { id: 4, courtId: 4, court: COURTS[3], date: '28 февраля', time: '12:00', duration: 60, price: 700, status: 'completed', createdAt: '2026-02-27' },
-  { id: 5, courtId: 5, court: COURTS[4], date: '20 февраля', time: '09:00', duration: 60, price: 3000, status: 'cancelled', createdAt: '2026-02-18' },
-]
+const INITIAL_BOOKINGS: Booking[] = []
 
 interface BookingContextType {
   bookings: Booking[]
