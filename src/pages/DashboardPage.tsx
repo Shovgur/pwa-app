@@ -1,8 +1,7 @@
-import { Routes, Route, Link, useLocation } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Globe } from 'lucide-react'
-import { AmbientBg } from '../components/AmbientBg'
 import { Sidebar } from '../components/Sidebar'
+import { DashboardTopbar } from '../components/DashboardTopbar'
 import { MobileNav } from '../components/MobileNav'
 import { HomeTab } from '../components/tabs/HomeTab'
 import { CourtsTab } from '../components/tabs/CourtsTab'
@@ -12,7 +11,6 @@ import { ProfileTab } from '../components/tabs/ProfileTab'
 import { NotificationsTab } from '../components/tabs/NotificationsTab'
 import { SettingsTab } from '../components/tabs/SettingsTab'
 
-/* Простой fade — не конфликтует с внутренними анимациями табов */
 function TabPage({ children }: { children: React.ReactNode }) {
   return (
     <motion.div
@@ -31,20 +29,23 @@ export function DashboardPage() {
   const location = useLocation()
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: '#0f1623', position: 'relative' }}>
-      <AmbientBg />
-
-      <div className="hidden md:block" style={{ position: 'relative', zIndex: 10, flexShrink: 0 }}>
+    <div
+      className="flex h-screen overflow-hidden"
+      style={{ background: '#121820', position: 'relative' }}
+    >
+      {/* z-index выше main, чтобы кнопка сворачивания не обрезалась правой панелью */}
+      <div
+        className="hidden md:block"
+        style={{ position: 'relative', zIndex: 30, flexShrink: 0, overflow: 'visible' }}
+      >
         <Sidebar />
       </div>
 
-      <main className="flex-1 overflow-y-auto overflow-x-hidden" style={{ position: 'relative', zIndex: 10 }}>
-        <div className="dashboard-topbar md:hidden">
-          <Link to="/" className="back-to-site back-to-site--subtle">
-            <Globe size={16} />
-            <span>На сайт</span>
-          </Link>
-        </div>
+      <main
+        className="flex-1 overflow-y-auto overflow-x-hidden dashboard-main"
+        style={{ position: 'relative', zIndex: 10 }}
+      >
+        <DashboardTopbar />
 
         <Routes location={location} key={location.pathname}>
           <Route index element={<TabPage><HomeTab /></TabPage>} />
