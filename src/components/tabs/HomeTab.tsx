@@ -76,6 +76,7 @@ export function HomeTab() {
         transition={{ duration: 0.35 }}
       >
         <div
+          className="news-carousel-card"
           style={{
             borderRadius: 20,
             padding: '28px 32px',
@@ -87,7 +88,7 @@ export function HomeTab() {
             gap: 18,
           }}
         >
-          <div style={{
+          <div className="news-carousel-top" style={{
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -133,7 +134,7 @@ export function HomeTab() {
                     }}>
                       {current.eyebrow}
                     </p>
-                    <p style={{
+                    <p className="news-carousel-title" style={{
                       margin: 0,
                       fontSize: 21,
                       fontWeight: 700,
@@ -149,6 +150,7 @@ export function HomeTab() {
             </div>
 
             <motion.button
+              className="news-carousel-cta"
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => navigate(current.action)}

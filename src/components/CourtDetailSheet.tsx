@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -54,6 +54,22 @@ type Step = "detail" | "booking" | "confirm" | "success";
 interface Props {
   court: Court;
   onClose: () => void;
+}
+
+/** На десктопе показываем модалку по центру экрана вместо мобильного bottom-sheet. */
+function useIsDesktop() {
+  const [isDesktop, setIsDesktop] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(min-width: 860px)").matches,
+  );
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 860px)");
+    const onChange = () => setIsDesktop(mq.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+
+  return isDesktop;
 }
 
 function FakeMap({ court }: { court: Court }) {
@@ -181,6 +197,8 @@ function FakeMap({ court }: { court: Court }) {
 
 export function CourtDetailSheet({ court, onClose }: Props) {
   const { addBooking } = useBookings();
+  const isDesktop = useIsDesktop();
+  const sidePad = isDesktop ? "0 32px 28px" : "0 16px 24px";
   const [step, setStep] = useState<Step>("detail");
   const [photoIdx, setPhotoIdx] = useState(0);
   const [selectedDate, setSelectedDate] = useState(UPCOMING_DATES[0]);
@@ -209,61 +227,43 @@ export function CourtDetailSheet({ court, onClose }: Props) {
       {/* Overlay */}
       <motion.div
         key="overlay"
+        className="court-sheet-overlay"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        style={{
-          position: "fixed",
-          inset: 0,
-          zIndex: 10000,
-          background: "rgba(0,0,0,0.7)",
-          backdropFilter: "blur(4px)",
-        }}
       />
 
-      {/* Sheet */}
+      {/* Sheet: снизу на мобиле, по центру экрана на десктопе */}
       <motion.div
         key="sheet"
-        initial={{ y: "100%" }}
-        animate={{ y: 0 }}
-        exit={{ y: "100%" }}
-        transition={{ type: "spring", damping: 30, stiffness: 300 }}
+        className="court-sheet"
+        initial={isDesktop ? { opacity: 0, scale: 0.96, x: "-50%", y: "-46%" } : { y: "100%" }}
+        animate={isDesktop ? { opacity: 1, scale: 1, x: "-50%", y: "-50%" } : { y: 0 }}
+        exit={isDesktop ? { opacity: 0, scale: 0.96, x: "-50%", y: "-46%" } : { y: "100%" }}
+        transition={isDesktop ? { duration: 0.2, ease: "easeOut" } : { type: "spring", damping: 30, stiffness: 300 }}
         onClick={(e) => e.stopPropagation()}
-        style={{
-          position: "fixed",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          zIndex: 10001,
-          background: "#111827",
-          borderRadius: "24px 24px 0 0",
-          maxHeight: "92vh",
-          /* Ключевая архитектура: flex-column
-             handle + content(scroll, flex:1) + footer(no scroll) */
-          display: "flex",
-          flexDirection: "column",
-          overflow: "hidden",
-        }}
       >
-        {/* Handle */}
-        <div
-          style={{
-            flexShrink: 0,
-            display: "flex",
-            justifyContent: "center",
-            padding: "12px 0 4px",
-          }}
-        >
+        {/* Handle — только на мобиле */}
+        {!isDesktop && (
           <div
             style={{
-              width: 40,
-              height: 4,
-              borderRadius: 2,
-              background: "rgba(255,255,255,0.15)",
+              flexShrink: 0,
+              display: "flex",
+              justifyContent: "center",
+              padding: "12px 0 4px",
             }}
-          />
-        </div>
+          >
+            <div
+              style={{
+                width: 40,
+                height: 4,
+                borderRadius: 2,
+                background: "rgba(255,255,255,0.15)",
+              }}
+            />
+          </div>
+        )}
 
         <AnimatePresence mode="wait">
           {/* ─── DETAIL ─── */}
@@ -294,8 +294,8 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                 <div
                   style={{
                     position: "relative",
-                    margin: "0 16px 16px",
-                    height: 200,
+                    margin: isDesktop ? "0 32px 16px" : "0 16px 16px",
+                    height: isDesktop ? 260 : 200,
                     borderRadius: 20,
                     overflow: "hidden",
                   }}
@@ -401,7 +401,7 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                   </div>
                 </div>
 
-                <div style={{ padding: "0 16px 24px" }}>
+                <div style={{ padding: sidePad }}>
                   <div
                     style={{
                       display: "flex",
@@ -650,11 +650,12 @@ export function CourtDetailSheet({ court, onClose }: Props) {
               }}
             >
               <div
+                className="court-sheet-narrow"
                 style={{
                   flex: 1,
                   overflowY: "auto",
                   overscrollBehavior: "contain",
-                  padding: "0 16px 16px",
+                  padding: isDesktop ? "0 32px 24px" : "0 16px 16px",
                 }}
               >
                 <div
@@ -1010,11 +1011,12 @@ export function CourtDetailSheet({ court, onClose }: Props) {
               }}
             >
               <div
+                className="court-sheet-narrow"
                 style={{
                   flex: 1,
                   overflowY: "auto",
                   overscrollBehavior: "contain",
-                  padding: "0 16px 16px",
+                  padding: isDesktop ? "0 32px 24px" : "0 16px 16px",
                 }}
               >
                 <div
@@ -1205,11 +1207,12 @@ export function CourtDetailSheet({ court, onClose }: Props) {
               }}
             >
               <div
+                className="court-sheet-narrow"
                 style={{
                   flex: 1,
                   overflowY: "auto",
                   overscrollBehavior: "contain",
-                  padding: "24px 16px 16px",
+                  padding: isDesktop ? "24px 32px 16px" : "24px 16px 16px",
                   textAlign: "center",
                 }}
               >

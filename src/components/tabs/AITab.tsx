@@ -153,7 +153,7 @@ export function AITab() {
 
       {/* Suggestions */}
       <div className="px-6 pb-3">
-        <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: 'none' }}>
+        <div className="flex gap-2 overflow-x-auto pb-1">
           {SUGGESTIONS.map((s) => (
             <motion.button
               key={s}

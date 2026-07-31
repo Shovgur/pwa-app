@@ -19,12 +19,13 @@ export function NotificationsTab() {
   function read(id: number) { setItems(prev => prev.map(n => n.id === id ? { ...n, read: true } : n)) }
 
   return (
-    <div style={{ padding: '24px 20px', paddingBottom: 100, display: 'flex', flexDirection: 'column', gap: 20 }}>
+    <div className="dashboard-page">
+      <div style={{ maxWidth: 760, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 20 }}>
 
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
-          <h1 style={{ fontSize: 24, fontWeight: 800, color: '#f1f5f9', marginBottom: 4 }}>Уведомления</h1>
+          <h1 style={{ fontSize: 26, fontWeight: 700, color: '#F1F5F9', marginBottom: 4, fontFamily: 'var(--font-display)' }}>Уведомления</h1>
           <p style={{ color: '#64748b', fontSize: 14 }}>{unread > 0 ? `${unread} непрочитанных` : 'Всё прочитано'}</p>
         </div>
         {unread > 0 && (
@@ -73,6 +74,7 @@ export function NotificationsTab() {
             <p style={{ color: '#64748b', fontSize: 15 }}>Нет уведомлений</p>
           </motion.div>
         )}
+      </div>
       </div>
     </div>
   )
