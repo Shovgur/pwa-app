@@ -4,6 +4,8 @@ import { motion } from 'framer-motion'
 import { KeyRound, ArrowLeft } from 'lucide-react'
 import { ParticleField } from '../components/ParticleField'
 import { BackToSiteLink } from '../components/ui/BackToSiteLink'
+import { FieldError, errorInputStyle } from '../components/ui/FieldError'
+import { useFieldErrors } from '../hooks/useFieldErrors'
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
@@ -22,6 +24,7 @@ export function ForgotPasswordPage() {
   const [searchParams] = useSearchParams()
   const [email, setEmail] = useState(searchParams.get('email') ?? '')
   const [submitted, setSubmitted] = useState(false)
+  const { errors, handleInvalid, clearError } = useFieldErrors()
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -59,12 +62,14 @@ export function ForgotPasswordPage() {
                 <input
                   type="email"
                   value={email}
-                  onChange={e => setEmail(e.target.value)}
+                  onChange={e => { setEmail(e.target.value); clearError('email') }}
+                  onInvalid={handleInvalid('email')}
                   placeholder="you@example.com"
                   required
                   autoComplete="email"
-                  style={inputStyle}
+                  style={{ ...inputStyle, ...errorInputStyle(Boolean(errors.email)) }}
                 />
+                <FieldError message={errors.email} />
               </div>
 
               <motion.button

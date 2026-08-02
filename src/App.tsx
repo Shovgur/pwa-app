@@ -16,6 +16,7 @@ import { LoginPage } from './pages/LoginPage'
 import { RegisterPage } from './pages/RegisterPage'
 import { ForgotPasswordPage } from './pages/ForgotPasswordPage'
 import { ProfilePage } from './pages/ProfilePage'
+import { PartnersPage } from './pages/PartnersPage'
 
 const DashboardPage = lazy(() =>
   import('./pages/DashboardPage').then((m) => ({ default: m.DashboardPage })),
@@ -51,6 +52,9 @@ function AppRoutes() {
       <Route path="/login"    element={<GuestRoute><LoginPage /></GuestRoute>} />
       <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
       <Route path="/forgot-password" element={<GuestRoute><ForgotPasswordPage /></GuestRoute>} />
+
+      {/* Стать партнёром — доступно всем, отдельная страница-лендинг */}
+      <Route path="/partners" element={<PartnersPage />} />
 
       {/* Профиль — защищённый маршрут */}
       <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />

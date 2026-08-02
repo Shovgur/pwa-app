@@ -53,11 +53,11 @@ button, input, select, textarea {
   scrollbar-color: transparent transparent;
 }
 
-::-webkit-scrollbar { width: 3px; height: 4px; }
+::-webkit-scrollbar { width: 2px; height: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb {
   background: transparent;
-  border-radius: 4px;
+  border-radius: 2px;
   transition: background 0.25s ease;
 }
 
@@ -828,6 +828,53 @@ input:-webkit-autofill:focus {
     align-items: center;
     gap: 20px;
   }
+}
+
+/* ── Страница "Стать партнёром" ── */
+.partners-benefits-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 18px;
+}
+
+@media (min-width: 640px) {
+  .partners-benefits-grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (min-width: 1020px) {
+  .partners-benefits-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+.partners-form-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 640px) {
+  .partners-form-grid { grid-template-columns: 1fr 1fr; }
+  .partners-form-grid .full-width { grid-column: 1 / -1; }
+}
+
+/* ── Подпись об ошибке под инпутом (лёгкая CSS-анимация без просчёта layout) ── */
+.field-error-text {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin: 6px 0 0;
+  color: #f87171;
+  font-size: 12px;
+  line-height: 1.4;
+  animation: field-error-in 0.18s ease-out;
+}
+
+@keyframes field-error-in {
+  from { opacity: 0; transform: translateY(-3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .field-error-text { animation: none; }
 }
 
 /* ── Модалка деталей площадки: bottom-sheet на мобиле, центр-диалог на десктопе ── */

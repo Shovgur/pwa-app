@@ -6,6 +6,8 @@ import { useAuth } from '../contexts/AuthContext'
 import { ParticleField } from '../components/ParticleField'
 import { BackToSiteLink } from '../components/ui/BackToSiteLink'
 import { AuthTransitionLoader } from '../components/ui/Loaders'
+import { FieldError, errorInputStyle } from '../components/ui/FieldError'
+import { useFieldErrors } from '../hooks/useFieldErrors'
 
 const SPORTS = ['⚽', '🎾', '🏀', '🏐', '🏸', '🏊']
 
@@ -21,6 +23,7 @@ export function LoginPage() {
   const [showPass, setShowPass] = useState(false)
   const [error, setError]       = useState('')
   const [redirecting, setRedirecting] = useState(false)
+  const { errors, handleInvalid, clearError } = useFieldErrors()
   const { login: authLogin, isLoading } = useAuth()
   const navigate                = useNavigate()
 
@@ -111,25 +114,29 @@ export function LoginPage() {
               <div>
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#94a3b8', marginBottom: 8, letterSpacing: 0.5 }}>EMAIL ИЛИ ТЕЛЕФОН</label>
                 <input
-                  type="text" value={login} onChange={e => setLogin(e.target.value)}
+                  type="text" value={login} onChange={e => { setLogin(e.target.value); clearError('login') }}
+                  onInvalid={handleInvalid('login')}
                   placeholder="example@mail.ru" required autoComplete="username"
-                  style={{ width: '100%', padding: '14px 16px', borderRadius: 12, background: '#243354', border: '1px solid rgba(255,255,255,0.08)', color: '#fff', fontSize: 15, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                  style={{ width: '100%', padding: '14px 16px', borderRadius: 12, background: '#243354', border: '1px solid rgba(255,255,255,0.08)', color: '#fff', fontSize: 15, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', ...errorInputStyle(Boolean(errors.login)) }}
                 />
+                <FieldError message={errors.login} />
               </div>
 
               <div>
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#94a3b8', marginBottom: 8, letterSpacing: 0.5 }}>ПАРОЛЬ</label>
                 <div style={{ position: 'relative' }}>
                   <input
-                    type={showPass ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)}
+                    type={showPass ? 'text' : 'password'} value={password} onChange={e => { setPassword(e.target.value); clearError('password') }}
+                    onInvalid={handleInvalid('password')}
                     placeholder="••••••••" required autoComplete="current-password"
-                    style={{ width: '100%', padding: '14px 48px 14px 16px', borderRadius: 12, background: '#243354', border: '1px solid rgba(255,255,255,0.08)', color: '#fff', fontSize: 15, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }}
+                    style={{ width: '100%', padding: '14px 48px 14px 16px', borderRadius: 12, background: '#243354', border: '1px solid rgba(255,255,255,0.08)', color: '#fff', fontSize: 15, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit', ...errorInputStyle(Boolean(errors.password)) }}
                   />
                   <button type="button" onClick={() => setShowPass(!showPass)}
                     style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', display: 'flex' }}>
                     {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
+                <FieldError message={errors.password} />
                 <div style={{ textAlign: 'right', marginTop: 8 }}>
                   <Link
                     to={login.includes('@') ? `/forgot-password?email=${encodeURIComponent(login.trim())}` : '/forgot-password'}

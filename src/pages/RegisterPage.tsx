@@ -6,6 +6,8 @@ import { useAuth } from '../contexts/AuthContext'
 import { ParticleField } from '../components/ParticleField'
 import { BackToSiteLink } from '../components/ui/BackToSiteLink'
 import { AuthTransitionLoader } from '../components/ui/Loaders'
+import { FieldError, errorInputStyle } from '../components/ui/FieldError'
+import { useFieldErrors } from '../hooks/useFieldErrors'
 
 function BtnSpinner() {
   return (
@@ -44,6 +46,8 @@ export function RegisterPage() {
   const [codeSent, setCodeSent] = useState(false)
   const [sendingCode, setSendingCode] = useState(false)
   const [redirecting, setRedirecting] = useState(false)
+  const { errors, handleInvalid, clearError } = useFieldErrors()
+  const { errors: verifyErrors, handleInvalid: handleVerifyInvalid, clearError: clearVerifyError } = useFieldErrors()
 
   const { register, sendCode, verifyCodeAndLogin, isLoading } = useAuth()
   const navigate = useNavigate()
@@ -163,7 +167,14 @@ export function RegisterPage() {
               >
                 <div>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#94a3b8', marginBottom: 7, letterSpacing: 0.5 }}>ИМЯ</label>
-                  <input type="text" value={name} onChange={e => setName(e.target.value)} placeholder="Ваше имя" required autoComplete="name" style={inputStyle} />
+                  <input
+                    type="text" value={name}
+                    onChange={e => { setName(e.target.value); clearError('name') }}
+                    onInvalid={handleInvalid('name')}
+                    placeholder="Ваше имя" required autoComplete="name"
+                    style={{ ...inputStyle, ...errorInputStyle(Boolean(errors.name)) }}
+                  />
+                  <FieldError message={errors.name} />
                 </div>
 
                 <div>
@@ -173,33 +184,48 @@ export function RegisterPage() {
                     value={email}
                     onChange={e => {
                       setEmail(e.target.value)
+                      clearError('email')
                       if (emailExists) {
                         setEmailExists(false)
                         setError('')
                       }
                     }}
+                    onInvalid={handleInvalid('email')}
                     placeholder="you@example.com"
                     required
                     autoComplete="email"
-                    style={inputStyle}
+                    style={{ ...inputStyle, ...errorInputStyle(Boolean(errors.email)) }}
                   />
+                  <FieldError message={errors.email} />
                 </div>
 
                 <div>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#94a3b8', marginBottom: 7, letterSpacing: 0.5 }}>ТЕЛЕФОН</label>
-                  <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+7 999 123-45-67" required autoComplete="tel" inputMode="tel" style={inputStyle} />
+                  <input
+                    type="tel" value={phone}
+                    onChange={e => { setPhone(e.target.value); clearError('phone') }}
+                    onInvalid={handleInvalid('phone')}
+                    placeholder="+7 999 123-45-67" required autoComplete="tel" inputMode="tel"
+                    style={{ ...inputStyle, ...errorInputStyle(Boolean(errors.phone)) }}
+                  />
+                  <FieldError message={errors.phone} />
                 </div>
 
                 <div>
                   <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#94a3b8', marginBottom: 7, letterSpacing: 0.5 }}>ПАРОЛЬ</label>
                   <div style={{ position: 'relative' }}>
-                    <input type={showPass ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} placeholder="Минимум 6 символов" required minLength={6} autoComplete="new-password"
-                      style={{ ...inputStyle, padding: '13px 48px 13px 16px' }} />
+                    <input
+                      type={showPass ? 'text' : 'password'} value={password}
+                      onChange={e => { setPassword(e.target.value); clearError('password') }}
+                      onInvalid={handleInvalid('password')}
+                      placeholder="Минимум 6 символов" required minLength={6} autoComplete="new-password"
+                      style={{ ...inputStyle, padding: '13px 48px 13px 16px', ...errorInputStyle(Boolean(errors.password)) }} />
                     <button type="button" onClick={() => setShowPass(!showPass)}
                       style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#64748b', cursor: 'pointer', display: 'flex' }}>
                       {showPass ? <EyeOff size={17} /> : <Eye size={17} />}
                     </button>
                   </div>
+                  <FieldError message={errors.password} />
                 </div>
 
                 <AnimatePresence>
@@ -331,8 +357,10 @@ export function RegisterPage() {
                     onChange={e => {
                       const next = e.target.value.replace(/\D/g, '').slice(0, 6)
                       setCode(next)
+                      clearVerifyError('code')
                       if (next.length === 6) void submitCode(next)
                     }}
+                    onInvalid={handleVerifyInvalid('code')}
                     placeholder="000000"
                     required
                     disabled={sendingCode || verifyBusy}
@@ -343,8 +371,10 @@ export function RegisterPage() {
                       letterSpacing: '0.35em',
                       textAlign: 'center',
                       padding: '16px',
+                      ...errorInputStyle(Boolean(verifyErrors.code)),
                     }}
                   />
+                  <FieldError message={verifyErrors.code} />
 
                   <AnimatePresence>
                     {verifyError && (

@@ -136,6 +136,24 @@ export function apiGetObjects(category?: string) {
   return request<ApiObject[]>(`/objects${qs}`)
 }
 
+// ───────── Partners ─────────
+
+export interface PartnerApplicationPayload {
+  venueName: string
+  venueType: string
+  city: string
+  contactName: string
+  phone: string
+  email: string
+}
+
+export function apiApplyPartner(payload: PartnerApplicationPayload) {
+  return request<{ success?: boolean; message?: string }>('/partners/apply', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  })
+}
+
 // ───────── Health ─────────
 
 export function apiHealth() {

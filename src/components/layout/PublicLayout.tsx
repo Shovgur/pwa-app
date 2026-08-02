@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useLayoutEffect, useCallback } from 'react
 import { createPortal } from 'react-dom'
 import {
   Menu, X, ArrowRight, LogOut, Settings,
-  CalendarCheck, LayoutDashboard, HelpCircle,
+  CalendarCheck, LayoutDashboard, HelpCircle, Handshake,
 } from 'lucide-react'
 import { Logo } from '../ui/Logo'
 import { Button } from '../ui/Button'
@@ -361,6 +361,11 @@ export function PublicLayout() {
 
             {/* Right side actions */}
             <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10 }}>
+              {/* Стать партнёром — видно вне зависимости от авторизации */}
+              <Link to="/partners" className="site-header-cta" style={{ textDecoration: 'none' }}>
+                <Button size="sm" variant="ghost" icon={<Handshake size={15} />}>Стать партнёром</Button>
+              </Link>
+
               {isAuthenticated ? (
                 <>
                   {/* Авторизован: кнопка забронировать → каталог + аватар с дропдауном */}
@@ -494,6 +499,12 @@ export function PublicLayout() {
                     transition={{ delay: 0.2 }}
                     style={{ display: 'flex', flexDirection: 'column', gap: 10 }}
                   >
+                    <Link to="/partners" onClick={closeMobile} style={{ textDecoration: 'none', display: 'block' }}>
+                      <Button variant="ghost" icon={<Handshake size={16} />} style={{ width: '100%', justifyContent: 'center', padding: '14px 24px', fontSize: 15 }}>
+                        Стать партнёром
+                      </Button>
+                    </Link>
+
                     {isAuthenticated ? (
                       <>
                         <MobileUserSection closeMobile={closeMobile} />
