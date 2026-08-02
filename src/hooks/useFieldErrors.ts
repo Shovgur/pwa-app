@@ -9,8 +9,14 @@ function messageForValidity(el: ValidatableElement): string {
     if (el.type === 'email') return 'Введите корректный email, например you@example.com'
     return 'Проверьте формат значения'
   }
-  if (v.tooShort) return `Минимум ${el.minLength} символов`
-  if (v.tooLong) return `Максимум ${el.maxLength} символов`
+  if (v.tooShort) {
+    const minLen = 'minLength' in el ? el.minLength : 0
+    return `Минимум ${minLen} символов`
+  }
+  if (v.tooLong) {
+    const maxLen = 'maxLength' in el ? el.maxLength : 0
+    return `Максимум ${maxLen} символов`
+  }
   if (v.patternMismatch) return 'Неверный формат значения'
   if (v.rangeUnderflow || v.rangeOverflow) return 'Значение вне допустимого диапазона'
   return 'Проверьте значение поля'
