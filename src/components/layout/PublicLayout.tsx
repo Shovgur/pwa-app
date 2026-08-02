@@ -367,25 +367,13 @@ export function PublicLayout() {
               </Link>
 
               {isAuthenticated ? (
-                <>
-                  {/* Авторизован: кнопка забронировать → каталог + аватар с дропдауном */}
-                  <Link to="/catalog" className="site-header-cta" style={{ textDecoration: 'none' }}>
-                    <Button size="sm">Забронировать</Button>
-                  </Link>
-                  <div className="site-header-user-menu">
-                    <UserMenu />
-                  </div>
-                </>
+                <div className="site-header-user-menu">
+                  <UserMenu />
+                </div>
               ) : (
-                <>
-                  {/* Не авторизован: Забронировать → логин */}
-                  <Link to="/login" className="site-header-cta" style={{ textDecoration: 'none' }}>
-                    <Button size="sm">Войти</Button>
-                  </Link>
-                  <Link to="/catalog" className="site-header-cta" style={{ textDecoration: 'none' }}>
-                    <Button size="sm" variant="outline">Забронировать</Button>
-                  </Link>
-                </>
+                <Link to="/login" className="site-header-cta" style={{ textDecoration: 'none' }}>
+                  <Button size="sm">Войти</Button>
+                </Link>
               )}
 
               {/* Burger — mobile only */}
@@ -506,27 +494,13 @@ export function PublicLayout() {
                     </Link>
 
                     {isAuthenticated ? (
-                      <>
-                        <MobileUserSection closeMobile={closeMobile} />
-                        <Link to="/catalog" onClick={closeMobile} style={{ textDecoration: 'none', display: 'block' }}>
-                          <Button style={{ width: '100%', justifyContent: 'center', padding: '14px 24px', fontSize: 16 }}>
-                            Забронировать →
-                          </Button>
-                        </Link>
-                      </>
+                      <MobileUserSection closeMobile={closeMobile} />
                     ) : (
-                      <>
-                        <Link to="/login" onClick={closeMobile} style={{ textDecoration: 'none', display: 'block' }}>
-                          <Button variant="ghost" style={{ width: '100%', justifyContent: 'center', padding: '14px 24px', fontSize: 16 }}>
-                            Войти
-                          </Button>
-                        </Link>
-                        <Link to="/catalog" onClick={closeMobile} style={{ textDecoration: 'none', display: 'block' }}>
-                          <Button style={{ width: '100%', justifyContent: 'center', padding: '14px 24px', fontSize: 16 }}>
-                            Забронировать →
-                          </Button>
-                        </Link>
-                      </>
+                      <Link to="/login" onClick={closeMobile} style={{ textDecoration: 'none', display: 'block' }}>
+                        <Button variant="ghost" style={{ width: '100%', justifyContent: 'center', padding: '14px 24px', fontSize: 16 }}>
+                          Войти
+                        </Button>
+                      </Link>
                     )}
                   </motion.div>
                 </motion.div>
