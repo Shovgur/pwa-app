@@ -805,6 +805,61 @@ input:-webkit-autofill:focus {
   .dashboard-settings-grid { grid-template-columns: 1fr 1fr; }
 }
 
+/* ── Кабинет партнёра ── */
+.partner-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 640px) {
+  .partner-stats-grid { grid-template-columns: 1fr 1fr; }
+}
+
+@media (min-width: 1100px) {
+  .partner-stats-grid { grid-template-columns: repeat(4, 1fr); }
+}
+
+.partner-info-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 640px) {
+  .partner-info-grid { grid-template-columns: 1fr 1fr; }
+  .partner-info-grid .full-width { grid-column: 1 / -1; }
+}
+
+.partner-dashboard-subtitle {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.partner-dashboard-welcome {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .partner-dashboard-welcome {
+    display: block;
+    font-size: 26px;
+    font-weight: 700;
+    color: #F1F5F9;
+    margin: 0 0 8px;
+    font-family: var(--font-display);
+  }
+
+  .partner-dashboard-subtitle {
+    font-size: 16px;
+    font-weight: 500;
+    color: #64748b;
+  }
+}
+
 .dashboard-profile-layout {
   display: grid;
   grid-template-columns: 1fr;
