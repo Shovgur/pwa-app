@@ -203,6 +203,31 @@ export function getCourt(id: number): Court | undefined {
   return COURTS.find((c) => c.id === id)
 }
 
+/** Представляем лофт как обычную площадку, чтобы его можно было забронировать через тот же флоу, что и корты. */
+export function loftToCourt(loft: Loft, index: number): Court {
+  return {
+    id: 900 + index,
+    emoji: '🏢',
+    sport: 'Лофт',
+    name: loft.name,
+    location: loft.location,
+    address: loft.location,
+    rating: loft.rating,
+    reviews: loft.reviews,
+    price: loft.price,
+    color: '#f97316',
+    available: true,
+    distance: loft.metro,
+    amenities: loft.features,
+    description: loft.description,
+    photos: [loft.gradient],
+    slots: loft.timeSlots,
+    lat: 55.75,
+    lng: 37.62,
+    venueType: 'loft',
+  }
+}
+
 export function getPartnerCourts(partnerId: string): Court[] {
   if (partnerId === 'aquasport') {
     return COURTS.filter((c) => ['Бассейн', 'Теннис', 'Футбол', 'Волейбол', 'Баскетбол'].includes(c.sport))

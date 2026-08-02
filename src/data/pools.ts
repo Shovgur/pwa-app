@@ -1,3 +1,5 @@
+import type { Court } from '../contexts/BookingContext'
+
 export interface Pool {
   id: string
   name: string
@@ -409,6 +411,53 @@ export const POOLS: Pool[] = [
 
 export function getPoolById(id: string): Pool | undefined {
   return POOLS.find((p) => p.id === id)
+}
+
+/** ID бассейнов, которые показываем в личном кабинете для мокового бронирования. */
+export const FEATURED_POOL_IDS = ['luzhniki', 'chayka', 'mitino', 'zil']
+
+const POOL_SLOTS = ['07:00', '09:00', '11:00', '13:00', '15:00', '17:00', '19:00', '21:00']
+
+function parsePoolPrice(price: string): number {
+  const match = price.match(/\d[\d\s]*/)
+  if (!match) return 500
+  return parseInt(match[0].replace(/\s/g, ''), 10) || 500
+}
+
+/** Представляем бассейн как обычную площадку для мокового бронирования в личном кабинете. */
+export function poolToCourt(pool: Pool, index: number): Court {
+  const amenities = [
+    pool.sauna && 'Сауна',
+    pool.hasCoach && 'Тренер',
+    pool.medCert ? 'Нужна мед. справка' : 'Без справки',
+    'Раздевалки',
+    'Душ',
+  ].filter(Boolean) as string[]
+
+  return {
+    id: 800 + index,
+    emoji: '🏊',
+    sport: 'Бассейн',
+    name: pool.name,
+    location: pool.city,
+    address: pool.address,
+    rating: 4.7,
+    reviews: 60 + index * 12,
+    price: parsePoolPrice(pool.price),
+    color: '#0ea5e9',
+    available: true,
+    distance: pool.city,
+    amenities,
+    description: `${pool.name} — бассейн в ${pool.city}. Свободное плавание, детские группы и индивидуальные тренировки.`,
+    photos: [
+      'linear-gradient(135deg, #0c4a6e 0%, #0891b2 50%, #38bdf8 100%)',
+      'linear-gradient(135deg, #083344 0%, #0e7490 100%)',
+    ],
+    slots: POOL_SLOTS,
+    lat: pool.lat,
+    lng: pool.lon,
+    venueType: 'pool',
+  }
 }
 
 export const PROMO_CODE = 'sportbook'

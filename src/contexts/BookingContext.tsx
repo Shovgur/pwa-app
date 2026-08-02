@@ -20,6 +20,8 @@ export interface Court {
   slots: string[]
   lat: number
   lng: number
+  /** Тип площадки — влияет на то, куда попадёт бронь и какой наряд подберёт маскот в профиле. */
+  venueType?: 'sport' | 'loft' | 'pool'
 }
 
 export interface Booking {
@@ -33,7 +35,7 @@ export interface Booking {
   status: 'upcoming' | 'completed' | 'cancelled'
   createdAt: string
   addOns?: { name: string; price: number }[]
-  venueType?: 'sport' | 'loft'
+  venueType?: 'sport' | 'loft' | 'pool'
 }
 
 export const COURTS: Court[] = [
@@ -155,7 +157,7 @@ export function BookingProvider({ children }: { children: ReactNode }) {
       price,
       status: 'upcoming',
       createdAt: new Date().toISOString().slice(0, 10),
-      venueType: 'sport',
+      venueType: court.venueType ?? 'sport',
     }
     setBookings(prev => [booking, ...prev])
     return booking

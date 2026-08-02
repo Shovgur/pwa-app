@@ -1,11 +1,19 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Search, MapPin, Star, X } from 'lucide-react'
 import { COURTS } from '../../contexts/BookingContext'
 import type { Court } from '../../contexts/BookingContext'
+import { LOFTS, loftToCourt } from '../../data/venues'
+import { POOLS, FEATURED_POOL_IDS, poolToCourt } from '../../data/pools'
 import { CourtDetailSheet } from '../CourtDetailSheet'
 
-const SPORTS = ['Все', 'Теннис', 'Футбол', 'Баскетбол', 'Бадминтон', 'Волейбол', 'Бассейн']
+const SPORTS = ['Все', 'Теннис', 'Футбол', 'Баскетбол', 'Бадминтон', 'Волейбол', 'Бассейн', 'Лофт']
+
+function priceUnit(court: Court): string {
+  if (court.venueType === 'loft') return '/сессия'
+  if (court.venueType === 'pool') return '/визит'
+  return '/ч'
+}
 
 export function CourtsTab() {
   const [query, setQuery] = useState('')
@@ -13,7 +21,16 @@ export function CourtsTab() {
   const [onlyFree, setOnlyFree] = useState(false)
   const [selected, setSelected] = useState<Court | null>(null)
 
-  const filtered = COURTS.filter(c =>
+  const allVenues = useMemo<Court[]>(() => {
+    const lofts = LOFTS.map((loft, i) => loftToCourt(loft, i))
+    const pools = FEATURED_POOL_IDS
+      .map(id => POOLS.find(p => p.id === id))
+      .filter((p): p is NonNullable<typeof p> => Boolean(p))
+      .map((pool, i) => poolToCourt(pool, i))
+    return [...COURTS, ...pools, ...lofts]
+  }, [])
+
+  const filtered = allVenues.filter(c =>
     (sport === 'Все' || c.sport === sport) &&
     (!onlyFree || c.available) &&
     (c.name.toLowerCase().includes(query.toLowerCase()) || c.location.toLowerCase().includes(query.toLowerCase()))
@@ -136,7 +153,7 @@ export function CourtsTab() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8, gap: 8 }}>
                 <div style={{ fontSize: 15, fontWeight: 700, color: '#f1f5f9', flex: 1 }}>{court.name}</div>
                 <div style={{ fontSize: 15, fontWeight: 700, color: court.color, whiteSpace: 'nowrap', fontFamily: 'var(--font-display)' }}>
-                  {court.price.toLocaleString()} ₽<span style={{ fontSize: 11, fontWeight: 400, color: '#64748b' }}>/ч</span>
+                  {court.price.toLocaleString()} ₽<span style={{ fontSize: 11, fontWeight: 400, color: '#64748b' }}>{priceUnit(court)}</span>
                 </div>
               </div>
 

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -50,6 +51,12 @@ const UPCOMING_DATES = (() => {
 })();
 
 type Step = "detail" | "booking" | "confirm" | "success";
+
+function priceUnit(court: Court): string {
+  if (court.venueType === "loft") return "/ сессия";
+  if (court.venueType === "pool") return "/ визит";
+  return "/ час";
+}
 
 interface Props {
   court: Court;
@@ -222,7 +229,7 @@ export function CourtDetailSheet({ court, onClose }: Props) {
     setStep("success");
   }
 
-  return (
+  return createPortal(
     <AnimatePresence>
       {/* Overlay */}
       <motion.div
@@ -445,7 +452,7 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                         {court.price.toLocaleString()} ₽
                       </div>
                       <div style={{ fontSize: 11, color: "#64748b" }}>
-                        / час
+                        {priceUnit(court)}
                       </div>
                     </div>
                   </div>
@@ -1365,6 +1372,7 @@ export function CourtDetailSheet({ court, onClose }: Props) {
           )}
         </AnimatePresence>
       </motion.div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   );
 }

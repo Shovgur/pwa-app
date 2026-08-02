@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Star, CalendarCheck, Clock, ChevronRight, Share2, Edit2, LogOut, TrendingUp } from 'lucide-react'
+import { CalendarCheck, Clock, ChevronRight, Share2, Edit2, LogOut, TrendingUp } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useBookings } from '../../contexts/BookingContext'
 import { useNavigate } from 'react-router-dom'
 import { apiGetProfile, type UserProfile } from '../../lib/api'
+import { CharacterAvatar } from '../ui/CharacterAvatar'
+import { getDominantOutfit, OUTFITS } from '../../utils/characterOutfit'
 
 const MENU = [
   { icon: Edit2, label: 'Редактировать профиль', color: '#22c55e' },
@@ -48,6 +50,9 @@ export function ProfileTab() {
     ? new Date(profile.created_at).toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' })
     : null
 
+  const outfitKey = getDominantOutfit(bookings)
+  const outfit = OUTFITS[outfitKey]
+
   return (
     <div className="dashboard-page">
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} style={{ marginBottom: 20 }}>
@@ -64,13 +69,8 @@ export function ProfileTab() {
             <div style={{ position: 'absolute', top: -30, right: -30, width: 120, height: 120, borderRadius: '50%', background: 'rgba(34,197,94,0.08)' }} />
             <div style={{ position: 'absolute', bottom: -20, left: 20, width: 80, height: 80, borderRadius: '50%', background: 'rgba(59,130,246,0.08)' }} />
 
-            <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 12 }}>
-              <motion.div
-                style={{ width: 76, height: 76, borderRadius: 22, background: 'linear-gradient(135deg, #22c55e, #3b82f6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, fontWeight: 800, color: '#fff', flexShrink: 0, boxShadow: '0 8px 20px rgba(34,197,94,0.25)' }}
-                whileHover={{ scale: 1.05, rotate: 3 }}
-              >
-                {user?.avatar}
-              </motion.div>
+            <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: 10 }}>
+              <CharacterAvatar size={112} />
               <div>
                 <h2 style={{ fontSize: 19, fontWeight: 800, color: '#fff', margin: '0 0 4px' }}>
                   {loading ? <Spinner /> : (profile?.name ?? user?.name ?? '—')}
@@ -82,9 +82,11 @@ export function ProfileTab() {
                   <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: 12, margin: '0 0 10px' }}>{profile?.phone ?? user?.phone}</p>
                 ) : null}
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(34,197,94,0.2)', border: '1px solid rgba(34,197,94,0.35)', padding: '4px 12px', borderRadius: 100 }}>
-                  <Star size={11} color="#22c55e" style={{ fill: '#22c55e' }} />
-                  <span style={{ color: '#22c55e', fontSize: 12, fontWeight: 700 }}>Участник</span>
+                  <span style={{ color: '#22c55e', fontSize: 12, fontWeight: 700 }}>{outfit.label}</span>
                 </div>
+                <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, margin: '10px 0 0', lineHeight: 1.5, maxWidth: 220 }}>
+                  {outfit.caption}
+                </p>
               </div>
             </div>
 
@@ -95,9 +97,9 @@ export function ProfileTab() {
               ].map(s => {
                 const Icon = s.icon
                 return (
-                  <div key={s.label} style={{ textAlign: 'center', background: 'rgba(255,255,255,0.07)', borderRadius: 14, padding: '12px 8px' }}>
+                  <div key={s.label} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', background: 'rgba(255,255,255,0.07)', borderRadius: 14, padding: '12px 8px' }}>
                     <Icon size={16} color="rgba(255,255,255,0.6)" style={{ marginBottom: 4 }} />
-                    <div style={{ fontSize: s.small ? 12 : 18, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>{s.value}</div>
+                    <div style={{ height: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: s.small ? 12 : 18, fontWeight: 800, color: '#fff', lineHeight: 1.2 }}>{s.value}</div>
                     <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>{s.label}</div>
                   </div>
                 )
