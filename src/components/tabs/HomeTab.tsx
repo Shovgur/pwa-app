@@ -18,7 +18,7 @@ const NEWS = [
     title: 'Вы отлично провели неделю — 10 бронирований! 🏆',
     cta: 'Смотреть',
     icon: Award,
-    action: '/dashboard/bookings',
+    action: '/dashboard/achievements',
   },
   {
     id: 'venue',

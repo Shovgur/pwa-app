@@ -1,15 +1,18 @@
 import { NavLink } from 'react-router-dom'
-import { Home, Search, CalendarCheck, MapPin, User } from 'lucide-react'
+import { Home, Search, CalendarCheck, MapPin, User, Trophy } from 'lucide-react'
 import { useBookings } from '../contexts/BookingContext'
+import { computeAchievements, getAchievementStats } from '../utils/achievements'
 
 export function MobileNav() {
   const { bookings } = useBookings()
   const upcomingCount = bookings.filter(b => b.status === 'upcoming').length
+  const unlockedCount = getAchievementStats(computeAchievements(bookings)).unlockedCount
 
   const items = [
     { to: '/dashboard', icon: Home, label: 'Главная', color: '#22c55e' },
     { to: '/dashboard/courts', icon: Search, label: 'Площадки', color: '#3b82f6' },
     { to: '/dashboard/bookings', icon: CalendarCheck, label: 'Брони', color: '#f97316', badge: upcomingCount },
+    { to: '/dashboard/achievements', icon: Trophy, label: 'Награды', color: '#eab308', badge: unlockedCount || undefined },
     { to: '/dashboard/map', icon: MapPin, label: 'Карта', color: '#a855f7' },
     { to: '/dashboard/profile', icon: User, label: 'Профиль', color: '#06b6d4' },
   ]
@@ -67,7 +70,7 @@ export function MobileNav() {
                     }}
                   />
                   <div style={{ position: 'relative' }}>
-                    <Icon size={22} color={isActive ? item.color : '#64748b'} />
+                    <Icon size={20} color={isActive ? item.color : '#64748b'} />
                     {item.badge != null && item.badge > 0 && !isActive && (
                       <span
                         style={{
@@ -93,7 +96,7 @@ export function MobileNav() {
                   </div>
                   <span
                     style={{
-                      fontSize: 10,
+                      fontSize: 9,
                       fontWeight: isActive ? 700 : 400,
                       color: isActive ? item.color : '#64748b',
                       transition: 'color 0.2s',

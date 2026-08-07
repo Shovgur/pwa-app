@@ -10,6 +10,7 @@ import { MapTab } from '../components/tabs/MapTab'
 import { ProfileTab } from '../components/tabs/ProfileTab'
 import { NotificationsTab } from '../components/tabs/NotificationsTab'
 import { SettingsTab } from '../components/tabs/SettingsTab'
+import { AchievementsTab } from '../components/tabs/AchievementsTab'
 
 function TabPage({ children }: { children: React.ReactNode }) {
   return (
@@ -53,6 +54,7 @@ export function DashboardPage() {
           <Route path="bookings" element={<TabPage><BookingsTab /></TabPage>} />
           <Route path="map" element={<TabPage><MapTab /></TabPage>} />
           <Route path="profile" element={<TabPage><ProfileTab /></TabPage>} />
+          <Route path="achievements" element={<TabPage><AchievementsTab /></TabPage>} />
           <Route path="notifications" element={<TabPage><NotificationsTab /></TabPage>} />
           <Route path="settings" element={<TabPage><SettingsTab /></TabPage>} />
         </Routes>

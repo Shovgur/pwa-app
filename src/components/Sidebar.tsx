@@ -3,10 +3,11 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Home, Search, CalendarCheck, MapPin, User,
-  Settings, Bell, LogOut, ChevronLeft,
+  Settings, Bell, LogOut, ChevronLeft, Trophy,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useBookings } from '../contexts/BookingContext'
+import { computeAchievements, getAchievementStats } from '../utils/achievements'
 import { APP_ICON_SRC } from '../config/branding'
 
 type NavEntry = {
@@ -28,11 +29,14 @@ export function Sidebar() {
 
   const upcomingCount = bookings.filter(b => b.status === 'upcoming').length
   const notifCount = 3
+  const achievementStats = getAchievementStats(computeAchievements(bookings))
+  const newAchievements = achievementStats.unlockedCount
 
   const NAV: NavEntry[] = [
     { to: '/dashboard',          icon: Home,          label: 'Главная',      color: '#22c55e' },
     { to: '/dashboard/courts',   icon: Search,        label: 'Площадки',     color: '#3b82f6' },
     { to: '/dashboard/bookings', icon: CalendarCheck, label: 'Бронирования', color: '#f97316', badge: upcomingCount },
+    { to: '/dashboard/achievements', icon: Trophy,    label: 'Достижения',   color: '#eab308', badge: newAchievements || undefined },
     { to: '/dashboard/map',      icon: MapPin,        label: 'Карта',        color: '#a855f7' },
     { to: '/dashboard/profile',  icon: User,          label: 'Профиль',      color: '#06b6d4' },
   ]
