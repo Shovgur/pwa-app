@@ -21,6 +21,9 @@ import { ProfilePage } from './pages/ProfilePage'
 import { PartnersPage } from './pages/PartnersPage'
 import { PartnerDashboardPage } from './pages/PartnerDashboardPage'
 import { PartnerSettingsPage } from './pages/PartnerSettingsPage'
+import { PartnerCrmPage } from './pages/PartnerCrmPage'
+import { PartnerStaffPage } from './pages/PartnerStaffPage'
+import { can, partnerHomeRoute, isOwner, PARTNER_BOOKINGS_PATH, type Capability } from './utils/partnerAccess'
 
 const DashboardPage = lazy(() =>
   import('./pages/DashboardPage').then((m) => ({ default: m.DashboardPage })),
@@ -46,6 +49,29 @@ function PartnerProtectedRoute({ children }: { children: React.ReactNode }) {
   return isPartnerAuthenticated ? <>{children}</> : <Navigate to="/login" replace />
 }
 
+/**
+ * Разделы кабинета, закрытые для управляющего (финансы, реквизиты, сотрудники).
+ * На фронте это UX-слой — сами данные обязан не отдавать бэкенд.
+ */
+function PartnerCapabilityRoute({ cap, children }: { cap: Capability; children: React.ReactNode }) {
+  const { partner } = usePartnerAuth()
+  const role = partner?.role ?? 'owner'
+  return can(role, cap) ? <>{children}</> : <Navigate to={partnerHomeRoute(role)} replace />
+}
+
+/** Только владелец; менеджера отправляем на главную с плашкой «Доступ запрещён». */
+function PartnerOwnerRoute({ children }: { children: React.ReactNode }) {
+  const { partner } = usePartnerAuth()
+  if (isOwner(partner?.role)) return <>{children}</>
+  return <Navigate to="/partner/dashboard" replace state={{ accessDenied: true }} />
+}
+
+/** /partner → своя стартовая страница: владельцу сводка, управляющему CRM */
+function PartnerHomeRedirect() {
+  const { partner } = usePartnerAuth()
+  return <Navigate to={partnerHomeRoute(partner?.role)} replace />
+}
+
 function AppRoutes() {
   return (
     <Routes>
@@ -69,12 +95,22 @@ function AppRoutes() {
       <Route path="/partners" element={<PartnersPage />} />
 
       {/* Кабинет партнёра — защищённые маршруты (вход через /login, таб "Я партнёр") */}
+      <Route path="/partner" element={<PartnerProtectedRoute><PartnerHomeRedirect /></PartnerProtectedRoute>} />
+
       <Route element={
         <PartnerProtectedRoute>
           <PartnerLayout />
         </PartnerProtectedRoute>
       }>
         <Route path="/partner/dashboard" element={<PartnerDashboardPage />} />
+        <Route path={PARTNER_BOOKINGS_PATH} element={
+          <PartnerCapabilityRoute cap="crm"><PartnerCrmPage /></PartnerCapabilityRoute>
+        } />
+        {/* старый путь — редирект на /partner/bookings */}
+        <Route path="/partner/crm" element={<Navigate to={PARTNER_BOOKINGS_PATH} replace />} />
+        <Route path="/partner/staff" element={
+          <PartnerOwnerRoute><PartnerStaffPage /></PartnerOwnerRoute>
+        } />
         <Route path="/partner/settings" element={<PartnerSettingsPage />} />
       </Route>
 

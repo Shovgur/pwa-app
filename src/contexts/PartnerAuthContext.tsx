@@ -7,6 +7,7 @@ import {
   type ReactNode,
 } from 'react'
 import { API_BASE } from '../config/api'
+import { parsePartnerRole, type PartnerRole } from '../utils/partnerAccess'
 
 const PARTNER_TOKEN_KEY = 'partnerAuthToken'
 const PARTNER_USER_KEY = 'partnerAuthUser'
@@ -21,6 +22,10 @@ export interface Partner {
   city: string | null
   commissionPercent: number
   status: string
+  /** owner — владелец площадки, manager — сотрудник, работающий в CRM */
+  role: PartnerRole
+  /** Имя сотрудника; у владельца пусто — там используется название компании */
+  name: string | null
 }
 
 interface ChangePasswordPayload {
@@ -55,7 +60,14 @@ function saveProfile(p: Partner) {
 function loadProfile(): Partner | null {
   try {
     const raw = localStorage.getItem(PARTNER_USER_KEY)
-    return raw ? (JSON.parse(raw) as Partner) : null
+    if (!raw) return null
+    const cached = JSON.parse(raw) as Partner
+    // Профили, закэшированные до появления ролей, поля role не содержат
+    return {
+      ...cached,
+      role: parsePartnerRole(cached.role),
+      name: cached.name ?? null,
+    }
   } catch {
     return null
   }
@@ -77,6 +89,8 @@ function mapProfile(data: Record<string, unknown>): Partner {
     city:              (data.city as string | undefined) ?? null,
     commissionPercent: Number(data.commission_percent ?? 0),
     status:            (data.status as string | undefined) ?? 'active',
+    role:              parsePartnerRole(data.role),
+    name:              (data.name as string | undefined) ?? null,
   }
 }
 

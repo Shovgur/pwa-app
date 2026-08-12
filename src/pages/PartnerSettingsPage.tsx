@@ -4,6 +4,7 @@ import { Building2, ShieldCheck, Save, CheckCircle2 } from 'lucide-react'
 import { usePartnerAuth } from '../contexts/PartnerAuthContext'
 import { FieldError, errorInputStyle } from '../components/ui/FieldError'
 import { useFieldErrors } from '../hooks/useFieldErrors'
+import { can } from '../utils/partnerAccess'
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
@@ -57,6 +58,9 @@ function BtnSpinner() {
 
 export function PartnerSettingsPage() {
   const { partner, changePartnerPassword } = usePartnerAuth()
+  // Реквизиты и комиссия — информация владельца, управляющему доступна только
+  // смена собственного логина и пароля
+  const showCompanyInfo = can(partner?.role ?? 'owner', 'companyInfo')
 
   const [currentPassword, setCurrentPassword] = useState('')
   const [newLogin, setNewLogin]               = useState('')
@@ -113,31 +117,35 @@ export function PartnerSettingsPage() {
         <h1 style={{ fontSize: 26, fontWeight: 700, color: '#F1F5F9', marginBottom: 4, fontFamily: 'var(--font-display)' }}>
           Настройки аккаунта
         </h1>
-        <p style={{ color: '#64748b', fontSize: 14 }}>Информация о компании и безопасность входа</p>
+        <p style={{ color: '#64748b', fontSize: 14 }}>
+          {showCompanyInfo ? 'Информация о компании и безопасность входа' : 'Безопасность вашего входа в кабинет'}
+        </p>
       </motion.div>
 
-      {/* Информация о компании */}
-      <motion.div
-        className="card"
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.05 }}
-        style={{ padding: '22px 24px', marginBottom: 20 }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
-          <div style={{ width: 36, height: 36, borderRadius: 12, background: 'rgba(34,197,94,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Building2 size={17} color="#22c55e" />
+      {/* Информация о компании — только владельцу */}
+      {showCompanyInfo && (
+        <motion.div
+          className="card"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          style={{ padding: '22px 24px', marginBottom: 20 }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 18 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 12, background: 'rgba(34,197,94,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Building2 size={17} color="#22c55e" />
+            </div>
+            <span style={{ fontSize: 15, fontWeight: 700, color: '#f1f5f9' }}>Информация о компании</span>
           </div>
-          <span style={{ fontSize: 15, fontWeight: 700, color: '#f1f5f9' }}>Информация о компании</span>
-        </div>
 
-        <div className="partner-info-grid">
-          <ReadOnlyField label="НАЗВАНИЕ КОМПАНИИ" value={partner?.companyName || '—'} />
-          <ReadOnlyField label="EMAIL" value={partner?.email || '—'} />
-          <ReadOnlyField label="ГОРОД" value={partner?.city || '—'} />
-          <ReadOnlyField label="КОМИССИЯ" value={partner ? `${partner.commissionPercent}%` : '—'} />
-        </div>
-      </motion.div>
+          <div className="partner-info-grid">
+            <ReadOnlyField label="НАЗВАНИЕ КОМПАНИИ" value={partner?.companyName || '—'} />
+            <ReadOnlyField label="EMAIL" value={partner?.email || '—'} />
+            <ReadOnlyField label="ГОРОД" value={partner?.city || '—'} />
+            <ReadOnlyField label="КОМИССИЯ" value={partner ? `${partner.commissionPercent}%` : '—'} />
+          </div>
+        </motion.div>
+      )}
 
       {/* Безопасность */}
       <motion.div

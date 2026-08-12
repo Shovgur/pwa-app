@@ -2,12 +2,16 @@ import { Outlet } from 'react-router-dom'
 import { PartnerSidebarContent } from './PartnerSidebar'
 import { PartnerMobileNav } from './PartnerMobileNav'
 import { usePartnerAuth } from '../../contexts/PartnerAuthContext'
+import { PartnerCrmProvider } from '../../contexts/PartnerCrmContext'
 
 const SIDEBAR_BG = '#1e293b'
 const SIDEBAR_WIDTH = 264
 
-export function PartnerLayout() {
+function PartnerShell() {
   const { partner } = usePartnerAuth()
+  const greetingName = partner?.role === 'manager'
+    ? (partner.name || partner.login)
+    : (partner?.companyName || 'партнёр')
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: '#0f172a' }}>
@@ -29,7 +33,7 @@ export function PartnerLayout() {
           }}
         >
           <span style={{ fontSize: 17, fontWeight: 800, color: '#fff', lineHeight: 1.3, fontFamily: 'var(--font-display)' }}>
-            Добро пожаловать, {partner?.companyName || 'партнёр'}!
+            Добро пожаловать, {greetingName}!
           </span>
         </div>
 
@@ -40,5 +44,13 @@ export function PartnerLayout() {
 
       <PartnerMobileNav />
     </div>
+  )
+}
+
+export function PartnerLayout() {
+  return (
+    <PartnerCrmProvider>
+      <PartnerShell />
+    </PartnerCrmProvider>
   )
 }

@@ -85,7 +85,8 @@ export function LoginPage() {
     const result = await loginPartner(partnerLogin, partnerPassword);
     if (result.success) {
       setRedirecting(true);
-      navigate("/partner/dashboard", { replace: true });
+      // /partner сам разведёт по роли: владельца — на сводку, управляющего — в CRM
+      navigate("/partner", { replace: true });
     } else setPartnerError(result.error ?? "Ошибка входа");
   }
 
