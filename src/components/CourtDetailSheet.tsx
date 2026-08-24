@@ -20,6 +20,12 @@ import { courtPhotoStyle } from "../utils/venueAdapters";
 import { VenueMap } from "./ui/VenueMap";
 import { BILLING_LABEL } from "../utils/venueBuilderPresets";
 import { calcBookingTotal } from "../utils/partnerBookingPrice";
+import { upcomingBookingDays } from "../utils/bookingDates";
+import { courtVenueRef } from "../lib/clientBookings";
+import {
+  fetchCourtAvailability,
+  isSlotTakenError,
+} from "../lib/venueAvailability";
 import { BookingStepProgress } from "./court-sheet/BookingStepProgress";
 import { MockPaymentStep } from "./court-sheet/MockPaymentStep";
 import { useVenueSlots } from "../hooks/useVenueSlots";
@@ -32,36 +38,7 @@ const DURATIONS = [
   { label: "2 часа", value: 120 },
 ];
 
-const UPCOMING_DATES = (() => {
-  const days = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"];
-  const months = [
-    "янв",
-    "фев",
-    "мар",
-    "апр",
-    "май",
-    "июн",
-    "июл",
-    "авг",
-    "сен",
-    "окт",
-    "ноя",
-    "дек",
-  ];
-  const result = [];
-  const today = new Date();
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(today);
-    d.setDate(today.getDate() + i);
-    result.push({
-      label: i === 0 ? "Сегодня" : i === 1 ? "Завтра" : days[d.getDay()],
-      date: `${d.getDate()} ${months[d.getMonth()]}`,
-      full: d.toLocaleDateString("ru-RU"),
-      iso: d.toISOString().slice(0, 10),
-    });
-  }
-  return result;
-})();
+const UPCOMING_DATES = upcomingBookingDays();
 
 type Step = "detail" | "booking" | "confirm" | "payment" | "success";
 
@@ -139,14 +116,22 @@ export function CourtDetailSheet({ court, onClose }: Props) {
     slotTimes: partnerSlotTimes,
     loading: slotsLoading,
     error: slotsError,
+    reload: reloadSlots,
   } = useVenueSlots({
     venueId: court.partnerVenueId,
+    venueRef: court.partnerVenueId ? undefined : courtVenueRef(court),
     date: selectedDate.iso,
     durationMinutes: effectiveDurationMinutes,
-    enabled: Boolean(court.partnerVenueId),
+    enabled: true,
   });
 
-  const displaySlots = court.partnerVenueId ? partnerSlotTimes : court.slots;
+  const displaySlots = partnerSlotTimes;
+
+  useEffect(() => {
+    if ((step === "confirm" || step === "payment") && selectedDate.iso) {
+      reloadSlots();
+    }
+  }, [step, selectedDate.iso, effectiveDurationMinutes, reloadSlots]);
 
   useEffect(() => {
     if (selectedSlot && !displaySlots.includes(selectedSlot)) {
@@ -180,12 +165,25 @@ export function CourtDetailSheet({ court, onClose }: Props) {
     setPaying(true);
     setPayError(null);
     try {
+      const fresh = await fetchCourtAvailability({
+        venueId: court.partnerVenueId,
+        venueRef: court.partnerVenueId ? undefined : courtVenueRef(court),
+        date: selectedDate.iso,
+        durationMinutes: effectiveDurationMinutes,
+      });
+      if (!fresh.slots.some((s) => s.time === selectedSlot)) {
+        reloadSlots();
+        setSelectedSlot(null);
+        setStep("booking");
+        return;
+      }
+
       await new Promise((r) => setTimeout(r, 1400));
       const booking = await addBooking(
         court,
         selectedDate.date,
         selectedSlot,
-        selectedDuration.value,
+        effectiveDurationMinutes,
         {
           isoDate: selectedDate.iso,
           price: totalPrice,
@@ -194,9 +192,18 @@ export function CourtDetailSheet({ court, onClose }: Props) {
         },
       );
       setNewBooking(booking);
+      reloadSlots();
       setStep("success");
     } catch (e) {
-      setPayError(e instanceof Error ? e.message : "Не удалось создать бронь");
+      const message = e instanceof Error ? e.message : "Не удалось создать бронь";
+      if (isSlotTakenError(message)) {
+        reloadSlots();
+        setSelectedSlot(null);
+        setStep("booking");
+        setPayError(null);
+        return;
+      }
+      setPayError(message);
     } finally {
       setPaying(false);
     }
@@ -898,8 +905,8 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                     slots={displaySlots}
                     selectedSlot={selectedSlot}
                     onSelect={setSelectedSlot}
-                    loading={Boolean(court.partnerVenueId && slotsLoading)}
-                    error={court.partnerVenueId ? slotsError : null}
+                    loading={slotsLoading}
+                    error={slotsError}
                     accentColor={court.color}
                   />
                 </div>

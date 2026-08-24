@@ -79,11 +79,15 @@ print('partnerVenues.js patched')
 
 idx = INDEX.read_text()
 
-IMPORT_IDX = "import { hasBookingConflict } from './venueAvailability.js';\n"
-if "hasBookingConflict" not in idx:
+if 'hasBookingConflict' not in idx:
     idx = idx.replace(
         "import { registerPartnerVenueRoutes, registerPublicVenueRoutes } from './partnerVenues.js';",
-        "import { registerPartnerVenueRoutes, registerPublicVenueRoutes } from './partnerVenues.js';\n" + IMPORT_IDX,
+        "import { registerPartnerVenueRoutes, registerPublicVenueRoutes } from './partnerVenues.js';\nimport { hasBookingConflict, computeVenueAvailability } from './venueAvailability.js';",
+    )
+elif 'computeVenueAvailability' not in idx:
+    idx = idx.replace(
+        "import { hasBookingConflict } from './venueAvailability.js';",
+        "import { hasBookingConflict, computeVenueAvailability } from './venueAvailability.js';",
     )
 
 CONFLICT_CHECK = """    if (partnerVenueId) {
@@ -124,3 +128,69 @@ else:
 
 INDEX.write_text(idx)
 print('index.js patched')
+
+AVAIL_REF_ROUTE = """
+app.get('/api/availability', async (req, res) => {
+  try {
+    const { venueRef, date, duration, step } = req.query;
+    if (!venueRef || !date) {
+      return res.status(400).json({ error: 'venueRef и date обязательны' });
+    }
+    const dateYmd = String(date).slice(0, 10);
+    if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(dateYmd)) {
+      return res.status(400).json({ error: 'Укажите date в формате YYYY-MM-DD' });
+    }
+    const durationMinutes = Math.max(15, parseInt(String(duration || '60'), 10) || 60);
+    const stepMinutes = Math.max(15, parseInt(String(step || '30'), 10) || 30);
+
+    const partnerMatch = String(venueRef).match(/^partner:(\\d+)$/);
+    let partnerVenueId = null;
+    let timePriceRules = [];
+    let basePrice = 0;
+
+    if (partnerMatch) {
+      partnerVenueId = parseInt(partnerMatch[1], 10);
+      const venueRes = await pool.query(
+        'SELECT id, base_price_per_hour, is_active FROM partner_venues WHERE id = $1',
+        [partnerVenueId],
+      );
+      if (!venueRes.rows.length || !venueRes.rows[0].is_active) {
+        return res.status(404).json({ error: 'Площадка не найдена' });
+      }
+      basePrice = Number(venueRes.rows[0].base_price_per_hour) || 0;
+      const timeRes = await pool.query(
+        'SELECT time_from, time_to, price_per_hour FROM partner_venue_time_prices WHERE venue_id = $1 ORDER BY id',
+        [partnerVenueId],
+      );
+      timePriceRules = timeRes.rows.map((r) => ({
+        timeFrom: String(r.time_from).slice(0, 5),
+        timeTo: String(r.time_to).slice(0, 5),
+        pricePerHour: Number(r.price_per_hour),
+      }));
+    }
+
+    const availability = await computeVenueAvailability(pool, {
+      partnerVenueId,
+      venueRef: partnerVenueId ? undefined : String(venueRef),
+      date: dateYmd,
+      durationMinutes,
+      stepMinutes,
+      timePriceRules,
+      basePrice,
+    });
+    res.json(availability);
+  } catch (err) {
+    console.error('GET /api/availability', err);
+    res.status(500).json({ error: 'Ошибка сервера' });
+  }
+});
+"""
+
+if "/api/availability'" not in idx and "app.get('/api/availability'" not in idx:
+    anchor = "registerPublicVenueRoutes(app, pool);"
+    idx = idx.replace(anchor, AVAIL_REF_ROUTE + "\n\n" + anchor)
+    INDEX.write_text(idx)
+    print('index.js availability route added')
+else:
+    print('availability route already present')
+

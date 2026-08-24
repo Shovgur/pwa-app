@@ -7,6 +7,14 @@ export interface BookingDayOption {
   iso: string
 }
 
+/** YYYY-MM-DD in local timezone (not UTC). */
+export function localIsoDate(date = new Date()): string {
+  const y = date.getFullYear()
+  const m = String(date.getMonth() + 1).padStart(2, '0')
+  const d = String(date.getDate()).padStart(2, '0')
+  return `${y}-${m}-${d}`
+}
+
 export function upcomingBookingDays(count = 7): BookingDayOption[] {
   const today = new Date()
   return Array.from({ length: count }, (_, i) => {
@@ -15,7 +23,7 @@ export function upcomingBookingDays(count = 7): BookingDayOption[] {
     return {
       label: i === 0 ? 'Сегодня' : i === 1 ? 'Завтра' : DAY_LABELS[d.getDay()],
       date: `${d.getDate()} ${MONTH_LABELS[d.getMonth()]}`,
-      iso: d.toISOString().slice(0, 10),
+      iso: localIsoDate(d),
     }
   })
 }
@@ -27,5 +35,5 @@ export function formatBookingDisplayDate(iso: string): string {
 }
 
 export function todayIsoDate(): string {
-  return new Date().toISOString().slice(0, 10)
+  return localIsoDate()
 }

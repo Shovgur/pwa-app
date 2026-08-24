@@ -12,6 +12,7 @@ import { loadPublicVenueById, usePublicVenues } from '../contexts/PublicVenuesCo
 import type { PartnerVenue } from '../lib/partnerVenues'
 import { VENUE_KIND_LABEL } from '../lib/partnerVenues'
 import { partnerVenueToCourt, resolveVenueImageUrl, venueCoverImage } from '../utils/venueAdapters'
+import { fetchCourtAvailability, isSlotTakenError } from '../lib/venueAvailability'
 import { venueMinPricePerHour } from '../utils/venuePrice'
 import { colors } from '../theme/tokens'
 import { paths } from '../config/features'
@@ -42,6 +43,7 @@ export function PublicVenuePage() {
     slotTimes,
     loading: slotsLoading,
     error: slotsError,
+    reload: reloadSlots,
   } = useVenueSlots({
     venueId: id,
     date: selectedDateIso,
@@ -91,18 +93,33 @@ export function PublicVenuePage() {
   const court = partnerVenueToCourt(venue)
 
   async function handleBook() {
-    if (!selectedSlot) return
+    if (!selectedSlot || !id) return
     if (!isAuthenticated) {
       navigate('/login', { state: { from: `/venue/${id}` } })
       return
     }
     try {
-      await addBooking(court, days[selectedDay].date, selectedSlot, 60, {
+      const fresh = await fetchCourtAvailability({
+        venueId: id,
+        date: days[selectedDay].iso,
+        durationMinutes: BOOKING_DURATION_MINUTES,
+      })
+      if (!fresh.slots.some((s) => s.time === selectedSlot)) {
+        reloadSlots()
+        setSelectedSlot(null)
+        return
+      }
+      await addBooking(court, days[selectedDay].date, selectedSlot, BOOKING_DURATION_MINUTES, {
         isoDate: days[selectedDay].iso,
       })
+      reloadSlots()
       setSuccess(true)
-    } catch {
-      // остаёмся на форме
+    } catch (e) {
+      const message = e instanceof Error ? e.message : ''
+      if (isSlotTakenError(message)) {
+        reloadSlots()
+        setSelectedSlot(null)
+      }
     }
   }
 

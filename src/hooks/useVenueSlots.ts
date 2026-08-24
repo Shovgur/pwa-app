@@ -1,8 +1,13 @@
-import { useEffect, useState } from 'react'
-import { DEMO_SLOTS, fetchVenueAvailability, type VenueSlot } from '../lib/venueAvailability'
+import { useCallback, useEffect, useState } from 'react'
+import {
+  DEMO_SLOTS,
+  fetchCourtAvailability,
+  type VenueSlot,
+} from '../lib/venueAvailability'
 
 interface UseVenueSlotsOptions {
   venueId?: string | null
+  venueRef?: string
   date: string
   durationMinutes: number
   enabled?: boolean
@@ -18,6 +23,7 @@ interface UseVenueSlotsResult {
 
 export function useVenueSlots({
   venueId,
+  venueRef,
   date,
   durationMinutes,
   enabled = true,
@@ -27,8 +33,10 @@ export function useVenueSlots({
   const [error, setError] = useState<string | null>(null)
   const [reloadKey, setReloadKey] = useState(0)
 
+  const hasSource = Boolean(venueId || venueRef)
+
   useEffect(() => {
-    if (!enabled || !venueId || !date) {
+    if (!enabled || !hasSource || !date) {
       setSlots([])
       setLoading(false)
       setError(null)
@@ -38,9 +46,8 @@ export function useVenueSlots({
     let cancelled = false
     setLoading(true)
     setError(null)
-    // Keep previous slots visible while reloading to avoid layout jumps.
 
-    void fetchVenueAvailability(venueId, date, durationMinutes)
+    void fetchCourtAvailability({ venueId, venueRef, date, durationMinutes })
       .then((data) => {
         if (!cancelled) setSlots(data.slots)
       })
@@ -55,17 +62,19 @@ export function useVenueSlots({
       })
 
     return () => { cancelled = true }
-  }, [venueId, date, durationMinutes, enabled, reloadKey])
+  }, [venueId, venueRef, date, durationMinutes, enabled, hasSource, reloadKey])
 
-  const slotTimes = venueId
+  const slotTimes = hasSource
     ? slots.map((s) => s.time)
     : DEMO_SLOTS
+
+  const reload = useCallback(() => setReloadKey((k) => k + 1), [])
 
   return {
     slots,
     slotTimes,
-    loading: Boolean(venueId && loading),
+    loading: Boolean(hasSource && loading),
     error,
-    reload: () => setReloadKey((k) => k + 1),
+    reload,
   }
 }
