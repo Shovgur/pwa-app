@@ -1414,8 +1414,8 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                     lineHeight: 1.6,
                   }}
                 >
-                  {court.name} забронирован на {newBooking?.date} в{" "}
-                  {newBooking?.time}
+                  {court.name} забронирован на {selectedDate.date} в{" "}
+                  {selectedSlot ?? newBooking?.time}
                 </p>
 
                 <div
@@ -1458,8 +1458,8 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                     }}
                   >
                     {[
-                      ["📅 Дата", newBooking?.date],
-                      ["⏰ Время", newBooking?.time],
+                      ["📅 Дата", selectedDate.date],
+                      ["⏰ Время", selectedSlot ?? newBooking?.time],
                       ["⏱ Длительность", selectedDuration.label],
                       ["💳 Оплачено", `${totalPrice.toLocaleString()} ₽`],
                     ].map(([label, value]) => (

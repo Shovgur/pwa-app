@@ -76,8 +76,12 @@ export function filterAvailableSlots(slots, occupiedRanges, durationMinutes) {
 }
 
 export function filterPastSlots(slots, dateYmd, now = new Date()) {
-  const today = now.toISOString().slice(0, 10);
-  if (dateYmd !== today) return slots;
+  const todayYmd = [
+    now.getFullYear(),
+    String(now.getMonth() + 1).padStart(2, '0'),
+    String(now.getDate()).padStart(2, '0'),
+  ].join('-');
+  if (dateYmd !== todayYmd) return slots;
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
   return slots.filter((slot) => timeToMinutes(slot.time) >= nowMinutes);
 }

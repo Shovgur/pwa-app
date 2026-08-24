@@ -29,9 +29,12 @@ export function upcomingBookingDays(count = 7): BookingDayOption[] {
 }
 
 export function formatBookingDisplayDate(iso: string): string {
-  const d = new Date(`${iso}T12:00:00`)
-  if (Number.isNaN(d.getTime())) return iso
-  return `${d.getDate()} ${MONTH_LABELS[d.getMonth()]}`
+  const match = String(iso).match(/^(\d{4})-(\d{2})-(\d{2})/)
+  if (!match) return iso
+  const day = parseInt(match[3], 10)
+  const month = parseInt(match[2], 10) - 1
+  if (month < 0 || month > 11) return iso
+  return `${day} ${MONTH_LABELS[month]}`
 }
 
 export function todayIsoDate(): string {
