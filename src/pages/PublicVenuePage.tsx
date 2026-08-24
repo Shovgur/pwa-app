@@ -18,8 +18,9 @@ import { paths } from '../config/features'
 import { BILLING_LABEL } from '../utils/venueBuilderPresets'
 
 import { upcomingBookingDays } from '../utils/bookingDates'
+import { useVenueSlots } from '../hooks/useVenueSlots'
 
-const SLOTS = ['09:00', '10:30', '12:00', '14:00', '16:00', '18:00', '20:00']
+const BOOKING_DURATION_MINUTES = 60
 
 export function PublicVenuePage() {
   const { id } = useParams()
@@ -34,6 +35,22 @@ export function PublicVenuePage() {
   const [selectedDay, setSelectedDay] = useState(0)
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+
+  const selectedDateIso = days[selectedDay]?.iso ?? days[0].iso
+  const {
+    slotTimes,
+    loading: slotsLoading,
+    error: slotsError,
+  } = useVenueSlots({
+    venueId: id,
+    date: selectedDateIso,
+    durationMinutes: BOOKING_DURATION_MINUTES,
+    enabled: Boolean(id),
+  })
+
+  useEffect(() => {
+    setSelectedSlot(null)
+  }, [selectedDateIso, id])
 
   useEffect(() => {
     if (!id) return
@@ -225,8 +242,15 @@ export function PublicVenuePage() {
             <h3 style={{ fontSize: 15, fontWeight: 700, color: colors.text, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
               <Clock size={16} /> Время
             </h3>
+            {slotsLoading ? (
+              <p style={{ color: colors.muted, fontSize: 14, margin: 0 }}>Загружаем свободные слоты…</p>
+            ) : slotsError ? (
+              <p style={{ color: '#f87171', fontSize: 14, margin: 0 }}>{slotsError}</p>
+            ) : slotTimes.length === 0 ? (
+              <p style={{ color: colors.muted, fontSize: 14, margin: 0 }}>На этот день свободных слотов нет</p>
+            ) : (
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {SLOTS.map(slot => (
+              {slotTimes.map(slot => (
                 <button
                   key={slot}
                   type="button"
@@ -242,6 +266,7 @@ export function PublicVenuePage() {
                 </button>
               ))}
             </div>
+            )}
           </div>
         </motion.div>
 

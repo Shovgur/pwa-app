@@ -22,6 +22,7 @@ import { BILLING_LABEL } from "../utils/venueBuilderPresets";
 import { calcBookingTotal } from "../utils/partnerBookingPrice";
 import { BookingStepProgress } from "./court-sheet/BookingStepProgress";
 import { MockPaymentStep } from "./court-sheet/MockPaymentStep";
+import { useVenueSlots } from "../hooks/useVenueSlots";
 
 const DURATIONS = [
   { label: "30 мин", value: 30 },
@@ -124,6 +125,37 @@ export function CourtDetailSheet({ court, onClose }: Props) {
     });
     return () => { cancelled = true; };
   }, [court.partnerVenueId, getVenue]);
+
+  const effectiveDurationMinutes = useMemo(() => {
+    if (selectedPackageId && partnerVenue) {
+      const pkg = partnerVenue.durationRules.find((r) => r.id === selectedPackageId);
+      if (pkg) return pkg.hours * 60;
+    }
+    return selectedDuration.value;
+  }, [selectedPackageId, partnerVenue, selectedDuration.value]);
+
+  const {
+    slotTimes: partnerSlotTimes,
+    loading: slotsLoading,
+    error: slotsError,
+  } = useVenueSlots({
+    venueId: court.partnerVenueId,
+    date: selectedDate.iso,
+    durationMinutes: effectiveDurationMinutes,
+    enabled: Boolean(court.partnerVenueId),
+  });
+
+  const displaySlots = court.partnerVenueId ? partnerSlotTimes : court.slots;
+
+  useEffect(() => {
+    setSelectedSlot(null);
+  }, [selectedDate.iso, effectiveDurationMinutes, court.partnerVenueId]);
+
+  useEffect(() => {
+    if (selectedSlot && !displaySlots.includes(selectedSlot)) {
+      setSelectedSlot(null);
+    }
+  }, [displaySlots, selectedSlot]);
 
   const totalPrice = useMemo(
     () => calcBookingTotal(
@@ -522,7 +554,7 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                       Ближайшие слоты — сегодня
                     </h3>
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                      {court.slots.slice(0, 4).map((slot) => (
+                      {displaySlots.slice(0, 4).map((slot) => (
                         <div
                           key={slot}
                           style={{
@@ -538,7 +570,7 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                           {slot}
                         </div>
                       ))}
-                      {court.slots.length > 4 && (
+                      {displaySlots.length > 4 && (
                         <div
                           style={{
                             padding: "6px 14px",
@@ -550,7 +582,7 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                             gap: 3,
                           }}
                         >
-                          +{court.slots.length - 4} ещё{" "}
+                          +{displaySlots.length - 4} ещё{" "}
                           <ChevronDown size={13} />
                         </div>
                       )}
@@ -751,6 +783,13 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                   >
                     Время начала
                   </h3>
+                  {slotsLoading && court.partnerVenueId ? (
+                    <p style={{ fontSize: 13, color: "#64748b", margin: 0 }}>Загружаем свободные слоты…</p>
+                  ) : slotsError ? (
+                    <p style={{ fontSize: 13, color: "#f87171", margin: 0 }}>{slotsError}</p>
+                  ) : displaySlots.length === 0 ? (
+                    <p style={{ fontSize: 13, color: "#64748b", margin: 0 }}>На этот день свободных слотов нет</p>
+                  ) : (
                   <div
                     style={{
                       display: "grid",
@@ -758,7 +797,7 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                       gap: 8,
                     }}
                   >
-                    {court.slots.map((slot) => {
+                    {displaySlots.map((slot) => {
                       const active = selectedSlot === slot;
                       return (
                         <motion.button
@@ -786,6 +825,7 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                       );
                     })}
                   </div>
+                  )}
                 </div>
 
                 {partnerVenue && partnerVenue.durationRules.length > 0 && (
