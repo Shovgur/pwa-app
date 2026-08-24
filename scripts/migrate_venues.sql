@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS partner_venues (
   base_price_per_hour INTEGER NOT NULL DEFAULT 0,
   is_active           BOOLEAN NOT NULL DEFAULT true,
   amenities           JSONB NOT NULL DEFAULT '[]'::jsonb,
+  lat                 DOUBLE PRECISION,
+  lng                 DOUBLE PRECISION,
   created_at          TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

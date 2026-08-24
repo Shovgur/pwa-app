@@ -30,6 +30,8 @@ import {
   presetExtrasForKind,
   timePricePresets,
 } from '../../utils/venueBuilderPresets'
+import type { AddressSuggestion } from '../../lib/geocoding'
+import { AddressAutocomplete } from '../ui/AddressAutocomplete'
 import { parsePriceInput } from '../../utils/venuePrice'
 
 const inputStyle: React.CSSProperties = {
@@ -192,6 +194,7 @@ export function VenueBuilderForm({ onSubmit, onCancel, submitting }: VenueBuilde
   const [venueKind, setVenueKind] = useState<VenueKind>('sport')
   const [city, setCity] = useState('')
   const [address, setAddress] = useState('')
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [description, setDescription] = useState('')
   const [photos, setPhotos] = useState<VenuePhoto[]>([])
   const [basePrice, setBasePrice] = useState('')
@@ -335,6 +338,8 @@ export function VenueBuilderForm({ onSubmit, onCancel, submitting }: VenueBuilde
         .filter(r => r.hours > 0 && r.price > 0),
       extraServices: extras,
       amenities,
+      lat: coords?.lat ?? null,
+      lng: coords?.lng ?? null,
     }
 
     await onSubmit(payload)
@@ -379,9 +384,24 @@ export function VenueBuilderForm({ onSubmit, onCancel, submitting }: VenueBuilde
             <label style={labelStyle}>ГОРОД</label>
             <input type="text" value={city} onChange={e => setCity(e.target.value)} placeholder="Москва" required style={inputStyle} />
           </div>
-          <div>
+          <div className="full-width">
             <label style={labelStyle}>АДРЕС</label>
-            <input type="text" value={address} onChange={e => setAddress(e.target.value)} placeholder="ул. Примерная, 1" required style={inputStyle} />
+            <AddressAutocomplete
+              value={address}
+              city={city}
+              onChange={(v) => { setAddress(v); setCoords(null) }}
+              onSelect={(s: AddressSuggestion) => {
+                setAddress(s.address)
+                if (s.city) setCity(s.city)
+                setCoords({ lat: s.lat, lng: s.lng })
+              }}
+              placeholder="Начните вводить адрес — появятся подсказки"
+              required
+              style={inputStyle}
+            />
+            <p style={{ margin: '6px 0 0', fontSize: 11.5, color: '#64748b' }}>
+              Подсказки по адресам России. Выберите из списка — координаты сохранятся для карты.
+            </p>
           </div>
           <div className="full-width">
             <label style={labelStyle}>ОПИСАНИЕ</label>

@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { SeoHead } from '../components/SeoHead'
 import { motion } from 'framer-motion'
@@ -8,6 +9,7 @@ import { HeroSearch, HeroStats } from '../components/ui/HeroSearch'
 import { Button } from '../components/ui/Button'
 import { VenueCard } from '../components/ui/VenueCard'
 import { CategoryCard } from '../components/ui/CategoryCard'
+import { usePublicVenues } from '../contexts/PublicVenuesContext'
 import { PARTNERS, FEATURES, LOFTS } from '../data/venues'
 import { POOLS } from '../data/pools'
 import { colors } from '../theme/tokens'
@@ -23,7 +25,9 @@ const CATEGORY_ITEMS = [
 ]
 
 export function LandingPage() {
-  const partnerCards = [
+  const { catalogItems } = usePublicVenues()
+
+  const mockPartnerCards = [
     {
       gradient: 'linear-gradient(135deg, #0c4a6e 0%, #0e7490 100%)',
       to: `/pools/${POOLS[0].id}`,
@@ -56,6 +60,21 @@ export function LandingPage() {
       description: 'Минималистичный белый лофт с фото-зоной и проектором 4K.',
     },
   ]
+
+  const partnerCards = useMemo(() => {
+    const apiCards = catalogItems.map(item => ({
+      gradient: item.gradient,
+      to: item.to,
+      title: item.title,
+      badge: item.badge,
+      price: item.price,
+      rating: item.rating,
+      location: item.location,
+      description: item.description,
+      image: item.image,
+    }))
+    return [...apiCards, ...mockPartnerCards]
+  }, [catalogItems])
 
   return (
     <div style={{ width: '100%' }}>
@@ -211,7 +230,7 @@ export function LandingPage() {
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', width: '100%', marginBottom: 40, gap: 16, flexWrap: 'wrap' }}>
           <div className="section-heading" style={{ marginBottom: 0 }}>
             <h2>Наши партнёры</h2>
-            <p>3 площадки — разные форматы досуга</p>
+            <p>{partnerCards.length} площадок — разные форматы досуга</p>
           </div>
           <Link to="/catalog"><Button variant="ghost" size="sm" icon={<ArrowRight size={16} />}>Все площадки</Button></Link>
         </div>

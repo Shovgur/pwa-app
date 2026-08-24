@@ -71,6 +71,8 @@ export interface PartnerVenue {
   isActive: boolean
   bookingsCount: number
   createdAt: string
+  lat?: number | null
+  lng?: number | null
 }
 
 export interface CreateVenuePayload {
@@ -85,6 +87,8 @@ export interface CreateVenuePayload {
   durationRules: VenueDurationRule[]
   extraServices: VenueExtraService[]
   amenities: string[]
+  lat?: number | null
+  lng?: number | null
 }
 
 async function partnerRequest<T>(

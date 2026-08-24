@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   CalendarCheck, MapPin, Clock, Star, TrendingUp, Users,
@@ -6,10 +6,10 @@ import {
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { COURTS } from '../../contexts/BookingContext'
+import { usePublicVenues } from '../../contexts/PublicVenuesContext'
 import { CourtDetailSheet } from '../CourtDetailSheet'
 import type { Court } from '../../contexts/BookingContext'
-
-const POPULAR = COURTS.filter(c => c.available).slice(0, 3)
+import { courtCardBannerStyle } from '../../utils/venueAdapters'
 
 const NEWS = [
   {
@@ -40,8 +40,17 @@ const NEWS = [
 
 export function HomeTab() {
   const navigate = useNavigate()
+  const { courts: partnerCourts } = usePublicVenues()
   const [selectedCourt, setSelectedCourt] = useState<Court | null>(null)
   const [slide, setSlide] = useState(0)
+
+  const allCourts = useMemo(() => [...partnerCourts, ...COURTS], [partnerCourts])
+
+  const POPULAR = useMemo(() => {
+    const mocks = COURTS.filter(c => c.available).slice(0, 3)
+    const partners = partnerCourts.slice(0, 3)
+    return [...partners, ...mocks].slice(0, 6)
+  }, [partnerCourts])
 
   useEffect(() => {
     const id = window.setInterval(() => {
@@ -51,10 +60,10 @@ export function HomeTab() {
   }, [])
 
   const STATS = [
-    { icon: CalendarCheck, label: 'Площадок рядом', value: String(COURTS.length), color: '#22c55e' },
-    { icon: Clock, label: 'Доступно сейчас', value: String(COURTS.filter(c => c.available).length), color: '#3b82f6' },
-    { icon: Star, label: 'Видов спорта', value: String(new Set(COURTS.map(c => c.sport)).size), color: '#f97316' },
-    { icon: Users, label: 'Всего отзывов', value: String(COURTS.reduce((s, c) => s + c.reviews, 0)), color: '#a855f7' },
+    { icon: CalendarCheck, label: 'Площадок рядом', value: String(allCourts.length), color: '#22c55e' },
+    { icon: Clock, label: 'Доступно сейчас', value: String(allCourts.filter(c => c.available).length), color: '#3b82f6' },
+    { icon: Star, label: 'Видов спорта', value: String(new Set(allCourts.map(c => c.sport)).size), color: '#f97316' },
+    { icon: Users, label: 'Всего отзывов', value: String(allCourts.reduce((s, c) => s + c.reviews, 0)), color: '#a855f7' },
   ]
 
   const current = NEWS[slide]
@@ -279,13 +288,14 @@ export function HomeTab() {
             >
               <div style={{
                 height: 140,
-                background: c.photos[0],
+                ...courtCardBannerStyle(c),
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontSize: 40,
+                position: 'relative',
               }}>
-                {c.emoji}
+                <span style={{ filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.5))' }}>{c.emoji}</span>
               </div>
               <div style={{ padding: '14px 16px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <div style={{ fontSize: 15, fontWeight: 700, color: '#F1F5F9' }}>{c.name}</div>

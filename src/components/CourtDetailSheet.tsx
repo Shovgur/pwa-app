@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -9,9 +9,18 @@ import {
   Check,
   ChevronLeft,
   ChevronDown,
+  Plus,
 } from "lucide-react";
 import type { Court } from "../contexts/BookingContext";
 import { useBookings } from "../contexts/BookingContext";
+import { loadPublicVenueById, usePublicVenues } from "../contexts/PublicVenuesContext";
+import type { PartnerVenue } from "../lib/partnerVenues";
+import { courtPhotoStyle } from "../utils/venueAdapters";
+import { VenueMap } from "./ui/VenueMap";
+import { BILLING_LABEL } from "../utils/venueBuilderPresets";
+import { calcBookingTotal } from "../utils/partnerBookingPrice";
+import { BookingStepProgress } from "./court-sheet/BookingStepProgress";
+import { MockPaymentStep } from "./court-sheet/MockPaymentStep";
 
 const DURATIONS = [
   { label: "30 мин", value: 30 },
@@ -50,7 +59,7 @@ const UPCOMING_DATES = (() => {
   return result;
 })();
 
-type Step = "detail" | "booking" | "confirm" | "success";
+type Step = "detail" | "booking" | "confirm" | "payment" | "success";
 
 function priceUnit(court: Court): string {
   if (court.venueType === "loft") return "/ сессия";
@@ -79,131 +88,9 @@ function useIsDesktop() {
   return isDesktop;
 }
 
-function FakeMap({ court }: { court: Court }) {
-  return (
-    <div
-      style={{
-        position: "relative",
-        width: "100%",
-        height: 180,
-        borderRadius: 16,
-        overflow: "hidden",
-        background: "#1a2332",
-      }}
-    >
-      <svg
-        width="100%"
-        height="100%"
-        style={{ position: "absolute", inset: 0 }}
-      >
-        {[20, 40, 60, 80].map((y) => (
-          <line
-            key={`h${y}`}
-            x1="0"
-            y1={`${y}%`}
-            x2="100%"
-            y2={`${y}%`}
-            stroke="rgba(255,255,255,0.07)"
-            strokeWidth="1"
-          />
-        ))}
-        {[15, 30, 50, 70, 85].map((x) => (
-          <line
-            key={`v${x}`}
-            x1={`${x}%`}
-            y1="0"
-            x2={`${x}%`}
-            y2="100%"
-            stroke="rgba(255,255,255,0.07)"
-            strokeWidth="1"
-          />
-        ))}
-        {[
-          [5, 5, 20, 30],
-          [35, 15, 20, 40],
-          [60, 10, 30, 25],
-          [70, 50, 18, 25],
-          [10, 50, 22, 35],
-          [40, 60, 25, 30],
-        ].map(([x, y, w, h], i) => (
-          <rect
-            key={i}
-            x={`${x}%`}
-            y={`${y}%`}
-            width={`${w}%`}
-            height={`${h}%`}
-            rx="3"
-            fill="rgba(255,255,255,0.04)"
-          />
-        ))}
-      </svg>
-      <div
-        style={{
-          position: "absolute",
-          left: "50%",
-          top: "40%",
-          transform: "translate(-50%,-50%)",
-        }}
-      >
-        <motion.div
-          animate={{ y: [0, -4, 0] }}
-          transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
-        >
-          <div
-            style={{
-              background: court.color,
-              borderRadius: "50% 50% 50% 0",
-              width: 36,
-              height: 36,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 18,
-              boxShadow: `0 4px 20px ${court.color}80`,
-              transform: "rotate(-45deg)",
-            }}
-          >
-            <span style={{ transform: "rotate(45deg)" }}>{court.emoji}</span>
-          </div>
-          <div
-            style={{
-              width: 6,
-              height: 6,
-              background: court.color,
-              borderRadius: "50%",
-              marginTop: 2,
-              opacity: 0.7,
-            }}
-          />
-        </motion.div>
-      </div>
-      <div
-        style={{
-          position: "absolute",
-          bottom: 0,
-          left: 0,
-          right: 0,
-          padding: "10px 12px",
-          background: "linear-gradient(transparent, rgba(10,15,25,0.9))",
-          display: "flex",
-          alignItems: "center",
-          gap: 6,
-        }}
-      >
-        <MapPin size={13} color={court.color} />
-        <span style={{ fontSize: 12, color: "#94a3b8" }}>{court.address}</span>
-      </div>
-    </div>
-  );
-}
-
 export function CourtDetailSheet({ court, onClose }: Props) {
   const { addBooking } = useBookings();
+  const { getVenue } = usePublicVenues();
   const isDesktop = useIsDesktop();
   const sidePad = isDesktop ? "0 32px 28px" : "0 16px 24px";
   const [step, setStep] = useState<Step>("detail");
@@ -211,14 +98,55 @@ export function CourtDetailSheet({ court, onClose }: Props) {
   const [selectedDate, setSelectedDate] = useState(UPCOMING_DATES[0]);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [selectedDuration, setSelectedDuration] = useState(DURATIONS[1]);
+  const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
+  const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
+  const [paying, setPaying] = useState(false);
+  const [partnerVenue, setPartnerVenue] = useState<PartnerVenue | null>(() =>
+    court.partnerVenueId ? getVenue(court.partnerVenueId) ?? null : null,
+  );
   const [newBooking, setNewBooking] = useState<ReturnType<
     typeof addBooking
   > | null>(null);
 
-  const totalPrice = Math.round(court.price * (selectedDuration.value / 60));
+  useEffect(() => {
+    if (!court.partnerVenueId) return;
+    const cached = getVenue(court.partnerVenueId);
+    if (cached) {
+      setPartnerVenue(cached);
+      return;
+    }
+    let cancelled = false;
+    void loadPublicVenueById(court.partnerVenueId).then((v) => {
+      if (!cancelled && v) setPartnerVenue(v);
+    });
+    return () => { cancelled = true; };
+  }, [court.partnerVenueId, getVenue]);
 
-  function handleBook() {
-    if (!selectedSlot) return;
+  const totalPrice = useMemo(
+    () => calcBookingTotal(
+      court.price,
+      selectedDuration.value,
+      partnerVenue,
+      selectedPackageId,
+      selectedExtras,
+    ),
+    [court.price, selectedDuration.value, partnerVenue, selectedPackageId, selectedExtras],
+  );
+
+  function toggleExtra(id: string) {
+    setSelectedExtras((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  }
+
+  function handleStartBooking() {
+    setStep("booking");
+  }
+
+  async function handlePay() {
+    if (!selectedSlot || paying) return;
+    setPaying(true);
+    await new Promise((r) => setTimeout(r, 1400));
     const booking = addBooking(
       court,
       selectedDate.date,
@@ -226,6 +154,7 @@ export function CourtDetailSheet({ court, onClose }: Props) {
       selectedDuration.value,
     );
     setNewBooking(booking);
+    setPaying(false);
     setStep("success");
   }
 
@@ -317,7 +246,7 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                       style={{
                         width: "100%",
                         height: "100%",
-                        background: court.photos[photoIdx],
+                        ...courtPhotoStyle(court, photoIdx),
                       }}
                     />
                   </AnimatePresence>
@@ -556,7 +485,14 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                     >
                       Расположение
                     </h3>
-                    <FakeMap court={court} />
+                    <VenueMap
+                      address={partnerVenue?.address ?? court.address}
+                      city={partnerVenue?.city ?? court.location}
+                      lat={partnerVenue?.lat ?? court.lat}
+                      lng={partnerVenue?.lng ?? court.lng}
+                      height={180}
+                      accentColor={court.color}
+                    />
                   </div>
 
                   <div>
@@ -611,7 +547,7 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.97 }}
-                      onClick={() => setStep("booking")}
+                      onClick={handleStartBooking}
                       style={{
                         width: "100%",
                         padding: "16px",
@@ -706,6 +642,8 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                     </div>
                   </div>
                 </div>
+
+                <BookingStepProgress current={0} />
 
                 <div style={{ marginBottom: 24 }}>
                   <h3
@@ -835,6 +773,66 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                   </div>
                 </div>
 
+                {partnerVenue && partnerVenue.durationRules.length > 0 && (
+                  <div style={{ marginBottom: 16 }}>
+                    <h3
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: "#94a3b8",
+                        marginBottom: 12,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                      }}
+                    >
+                      Пакеты
+                    </h3>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {partnerVenue.durationRules.map((pkg) => {
+                        const active = selectedPackageId === pkg.id;
+                        return (
+                          <button
+                            key={pkg.id}
+                            type="button"
+                            onClick={() => {
+                              if (active) {
+                                setSelectedPackageId(null);
+                              } else {
+                                setSelectedPackageId(pkg.id);
+                                const match = DURATIONS.find((d) => d.value === pkg.hours * 60);
+                                if (match) setSelectedDuration(match);
+                              }
+                            }}
+                            style={{
+                              display: "flex",
+                              justifyContent: "space-between",
+                              alignItems: "center",
+                              padding: "12px 14px",
+                              borderRadius: 14,
+                              border: active
+                                ? `1.5px solid ${court.color}`
+                                : "1px solid rgba(255,255,255,0.08)",
+                              background: active
+                                ? `${court.color}18`
+                                : "rgba(255,255,255,0.04)",
+                              cursor: "pointer",
+                              textAlign: "left",
+                              fontFamily: "inherit",
+                            }}
+                          >
+                            <span style={{ fontSize: 14, fontWeight: 600, color: "#f1f5f9" }}>
+                              {pkg.label || `${pkg.hours} ч`}
+                            </span>
+                            <span style={{ fontSize: 14, fontWeight: 700, color: court.color }}>
+                              {pkg.price.toLocaleString("ru-RU")} ₽
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 <div style={{ marginBottom: 16 }}>
                   <h3
                     style={{
@@ -848,14 +846,17 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                   >
                     Продолжительность
                   </h3>
-                  <div style={{ display: "flex", gap: 8 }}>
+                  <div style={{ display: "flex", gap: 8, opacity: selectedPackageId ? 0.45 : 1 }}>
                     {DURATIONS.map((d) => {
                       const active = selectedDuration.value === d.value;
                       return (
                         <motion.button
                           key={d.value}
                           whileTap={{ scale: 0.93 }}
-                          onClick={() => setSelectedDuration(d)}
+                          onClick={() => {
+                            setSelectedPackageId(null);
+                            setSelectedDuration(d);
+                          }}
                           style={{
                             flex: 1,
                             padding: "10px 4px",
@@ -879,6 +880,75 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                     })}
                   </div>
                 </div>
+
+                {partnerVenue && partnerVenue.extraServices.length > 0 && (
+                  <div style={{ marginBottom: 16 }}>
+                    <h3
+                      style={{
+                        fontSize: 11,
+                        fontWeight: 700,
+                        color: "#94a3b8",
+                        marginBottom: 12,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.05em",
+                      }}
+                    >
+                      Доп. услуги
+                    </h3>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                      {partnerVenue.extraServices.map((ex) => {
+                        const active = selectedExtras.includes(ex.id);
+                        return (
+                          <button
+                            key={ex.id}
+                            type="button"
+                            onClick={() => toggleExtra(ex.id)}
+                            style={{
+                              display: "flex",
+                              alignItems: "flex-start",
+                              gap: 12,
+                              padding: "12px 14px",
+                              borderRadius: 14,
+                              border: active
+                                ? `1.5px solid ${court.color}`
+                                : "1px solid rgba(255,255,255,0.08)",
+                              background: active
+                                ? `${court.color}12`
+                                : "rgba(255,255,255,0.04)",
+                              cursor: "pointer",
+                              textAlign: "left",
+                              fontFamily: "inherit",
+                            }}
+                          >
+                            <div style={{
+                              width: 22,
+                              height: 22,
+                              borderRadius: 6,
+                              flexShrink: 0,
+                              marginTop: 1,
+                              border: active
+                                ? `2px solid ${court.color}`
+                                : "2px solid rgba(255,255,255,0.2)",
+                              background: active ? court.color : "transparent",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}>
+                              {active && <Check size={12} color="#fff" />}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <div style={{ fontSize: 14, fontWeight: 600, color: "#f1f5f9" }}>{ex.name}</div>
+                              <div style={{ fontSize: 12, color: "#64748b", marginTop: 2 }}>
+                                {ex.description || BILLING_LABEL[ex.billing]} · {ex.price.toLocaleString("ru-RU")} ₽
+                              </div>
+                            </div>
+                            {!active && <Plus size={16} color="#64748b" style={{ flexShrink: 0, marginTop: 2 }} />}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
 
                 {selectedSlot && (
                   <motion.div
@@ -966,37 +1036,39 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                   </motion.div>
                 )}
 
-                {/* Кнопка внизу контента */}
-                <motion.button
-                  whileTap={{ scale: selectedSlot ? 0.97 : 1 }}
-                  onClick={() => selectedSlot && setStep("confirm")}
-                  style={{
-                    width: "100%",
-                    padding: "16px",
-                    borderRadius: 16,
-                    marginTop: 20,
-                    background: selectedSlot
-                      ? `linear-gradient(135deg, ${court.color}, ${court.color}bb)`
-                      : "rgba(255,255,255,0.08)",
-                    color: selectedSlot ? "#fff" : "#475569",
-                    fontSize: 16,
-                    fontWeight: 700,
-                    border: "none",
-                    cursor: selectedSlot ? "pointer" : "default",
-                    transition: "all 0.2s",
-                    boxShadow: selectedSlot
-                      ? `0 8px 24px ${court.color}40`
-                      : "none",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 8,
-                  }}
-                >
-                  {selectedSlot ? "Продолжить" : "Выберите время"}
-                  {selectedSlot && <ChevronRight size={18} />}
-                </motion.button>
-                <div style={{ height: 90 }} />
+              </div>
+
+              <div className="court-sheet-footer">
+                <div className="court-sheet-narrow">
+                  <motion.button
+                    whileTap={{ scale: selectedSlot ? 0.97 : 1 }}
+                    onClick={() => selectedSlot && setStep("confirm")}
+                    style={{
+                      width: "100%",
+                      padding: "16px",
+                      borderRadius: 16,
+                      background: selectedSlot
+                        ? `linear-gradient(135deg, ${court.color}, ${court.color}bb)`
+                        : "rgba(255,255,255,0.08)",
+                      color: selectedSlot ? "#fff" : "#475569",
+                      fontSize: 16,
+                      fontWeight: 700,
+                      border: "none",
+                      cursor: selectedSlot ? "pointer" : "default",
+                      transition: "all 0.2s",
+                      boxShadow: selectedSlot
+                        ? `0 8px 24px ${court.color}40`
+                        : "none",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 8,
+                    }}
+                  >
+                    {selectedSlot ? "Продолжить" : "Выберите время"}
+                    {selectedSlot && <ChevronRight size={18} />}
+                  </motion.button>
+                </div>
               </div>
             </motion.div>
           )}
@@ -1054,7 +1126,7 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                   </button>
                   <div>
                     <div style={{ fontSize: 12, color: "#64748b" }}>
-                      Шаг 3 из 3
+                      Шаг 2 из 3
                     </div>
                     <div
                       style={{
@@ -1067,6 +1139,8 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                     </div>
                   </div>
                 </div>
+
+                <BookingStepProgress current={1} />
 
                 <div
                   style={{
@@ -1085,7 +1159,7 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                       width: 60,
                       height: 60,
                       borderRadius: 14,
-                      background: court.photos[0],
+                      ...courtPhotoStyle(court, 0),
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -1176,7 +1250,7 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.97 }}
-                  onClick={handleBook}
+                  onClick={() => setStep("payment")}
                   style={{
                     width: "100%",
                     padding: "16px",
@@ -1191,11 +1265,22 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                     boxShadow: `0 8px 24px ${court.color}40`,
                   }}
                 >
-                  Подтвердить и оплатить
+                  Перейти к оплате
                 </motion.button>
                 <div style={{ height: 90 }} />
               </div>
             </motion.div>
+          )}
+
+          {step === "payment" && (
+            <MockPaymentStep
+              court={court}
+              totalPrice={totalPrice}
+              paying={paying}
+              isDesktop={isDesktop}
+              onBack={() => setStep("confirm")}
+              onPay={handlePay}
+            />
           )}
 
           {/* ─── SUCCESS ─── */}

@@ -8,6 +8,7 @@ import { SeoHead } from '../components/SeoHead'
 import { getPoolById, getBuyUrl } from '../data/pools'
 import { colors } from '../theme/tokens'
 import { FadeImg } from '../components/ui/FadeImg'
+import { VenueMap } from '../components/ui/VenueMap'
 import { trackPoolBuyClick } from '../utils/metrika'
 
 function poolDescription(pool: ReturnType<typeof getPoolById>): string {
@@ -164,42 +165,13 @@ export function PoolDetailPage() {
                 <p>{pool.address}, {pool.city}</p>
               </div>
             </div>
-            <div
-              style={{
-                borderRadius: 20,
-                overflow: 'hidden',
-                border: '1px solid rgba(255,255,255,0.1)',
-                height: 280,
-                position: 'relative',
-              }}
-            >
-              <iframe
-                title={`Карта — ${pool.name}`}
-                src={`https://www.openstreetmap.org/export/embed.html?bbox=${pool.lon - 0.012}%2C${pool.lat - 0.008}%2C${pool.lon + 0.012}%2C${pool.lat + 0.008}&layer=mapnik&marker=${pool.lat}%2C${pool.lon}`}
-                width="100%"
-                height="280"
-                style={{ border: 'none', display: 'block', filter: 'saturate(0.8) brightness(0.85)' }}
-                loading="lazy"
-              />
-              <div
-                style={{
-                  position: 'absolute',
-                  bottom: 12,
-                  left: 12,
-                  background: 'rgba(10,15,25,0.88)',
-                  backdropFilter: 'blur(12px)',
-                  borderRadius: 12,
-                  padding: '8px 14px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 7,
-                  pointerEvents: 'none',
-                }}
-              >
-                <MapPin size={14} color={colors.green} />
-                <span style={{ fontSize: 13, fontWeight: 600, color: '#fff' }}>{pool.address}</span>
-              </div>
-            </div>
+            <VenueMap
+              address={pool.address}
+              city={pool.city}
+              lat={pool.lat}
+              lng={pool.lon}
+              height={280}
+            />
           </section>
         </div>
       </div>

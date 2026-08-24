@@ -51,6 +51,7 @@ export function VenueCard({
       >
         <motion.article
           className={`venue-card ${featured ? 'venue-card--featured' : ''}`}
+          style={{ height: '100%' }}
           whileHover={{ y: -8 }}
           transition={{ type: 'spring', stiffness: 260, damping: 22 }}
         >
@@ -85,8 +86,8 @@ export function VenueCard({
                 <p className="venue-card-location"><MapPin size={14} /> {location}</p>
               </>
             )}
-            {featured && description && (
-              <p className="venue-card-desc">{description}</p>
+            {featured && (
+              <p className="venue-card-desc">{description?.trim() || '\u00A0'}</p>
             )}
             <div className="venue-card-footer">
               <div>

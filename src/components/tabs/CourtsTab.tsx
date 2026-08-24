@@ -3,11 +3,13 @@ import { motion } from 'framer-motion'
 import { Search, MapPin, Star, X } from 'lucide-react'
 import { COURTS } from '../../contexts/BookingContext'
 import type { Court } from '../../contexts/BookingContext'
+import { usePublicVenues } from '../../contexts/PublicVenuesContext'
 import { LOFTS, loftToCourt } from '../../data/venues'
 import { POOLS, FEATURED_POOL_IDS, poolToCourt } from '../../data/pools'
 import { CourtDetailSheet } from '../CourtDetailSheet'
+import { courtCardBannerStyle } from '../../utils/venueAdapters'
 
-const SPORTS = ['Все', 'Теннис', 'Футбол', 'Баскетбол', 'Бадминтон', 'Волейбол', 'Бассейн', 'Лофт']
+const SPORTS = ['Все', 'Теннис', 'Футбол', 'Баскетбол', 'Бадминтон', 'Волейбол', 'Бассейн', 'Лофт', 'Переговорная', 'Спорт']
 
 function priceUnit(court: Court): string {
   if (court.venueType === 'loft') return '/сессия'
@@ -16,6 +18,7 @@ function priceUnit(court: Court): string {
 }
 
 export function CourtsTab() {
+  const { courts: partnerCourts } = usePublicVenues()
   const [query, setQuery] = useState('')
   const [sport, setSport] = useState('Все')
   const [onlyFree, setOnlyFree] = useState(false)
@@ -27,8 +30,8 @@ export function CourtsTab() {
       .map(id => POOLS.find(p => p.id === id))
       .filter((p): p is NonNullable<typeof p> => Boolean(p))
       .map((pool, i) => poolToCourt(pool, i))
-    return [...COURTS, ...pools, ...lofts]
-  }, [])
+    return [...partnerCourts, ...COURTS, ...pools, ...lofts]
+  }, [partnerCourts])
 
   const filtered = allVenues.filter(c =>
     (sport === 'Все' || c.sport === sport) &&
@@ -129,7 +132,7 @@ export function CourtsTab() {
             }}
           >
             {/* Фото-баннер */}
-            <div style={{ height: 150, background: court.photos[0], position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ height: 150, ...courtCardBannerStyle(court), position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <span style={{ fontSize: 48, filter: 'drop-shadow(0 2px 12px rgba(0,0,0,0.6))' }}>{court.emoji}</span>
               <div style={{
                 position: 'absolute', top: 10, right: 10,

@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { PartnerAuthProvider, usePartnerAuth } from './contexts/PartnerAuthContext'
 import { BookingProvider } from './contexts/BookingContext'
+import { PublicVenuesProvider } from './contexts/PublicVenuesContext'
 import { ScrollToTop } from './components/ScrollToTop'
 import { FullPageLoader } from './components/ui/Loaders'
 import { PublicLayout } from './components/layout/PublicLayout'
@@ -24,6 +25,7 @@ import { PartnerCrmPage } from './pages/PartnerCrmPage'
 import { PartnerStaffPage } from './pages/PartnerStaffPage'
 import { PartnerVenuesPage } from './pages/PartnerVenuesPage'
 import { PartnerSettingsPage } from './pages/PartnerSettingsPage'
+import { PublicVenuePage } from './pages/PublicVenuePage'
 import { can, partnerHomeRoute, PARTNER_BOOKINGS_PATH, type Capability } from './utils/partnerAccess'
 
 const DashboardPage = lazy(() =>
@@ -72,6 +74,7 @@ function AppRoutes() {
       <Route element={<PublicLayout />}>
         <Route path="/" element={<LandingPage />} />
         <Route path="/catalog" element={<CatalogPage />} />
+        <Route path="/venue/:id" element={<PublicVenuePage />} />
         <Route path="/sport/:id" element={<SportBookingPage />} />
         <Route path="/loft/:id" element={<LoftBookingPage />} />
         <Route path="/how-it-works" element={<HowItWorksPage />} />
@@ -136,9 +139,11 @@ export default function App() {
       <ScrollToTop />
       <AuthProvider>
         <PartnerAuthProvider>
-          <BookingProvider>
-            <AppRoutes />
-          </BookingProvider>
+          <PublicVenuesProvider>
+            <BookingProvider>
+              <AppRoutes />
+            </BookingProvider>
+          </PublicVenuesProvider>
         </PartnerAuthProvider>
       </AuthProvider>
     </BrowserRouter>

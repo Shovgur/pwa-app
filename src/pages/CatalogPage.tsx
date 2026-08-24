@@ -4,12 +4,27 @@ import { SeoHead } from '../components/SeoHead'
 import { motion } from 'framer-motion'
 import { SlidersHorizontal, MapPin, Calendar } from 'lucide-react'
 import { VenueCard } from '../components/ui/VenueCard'
+import { usePublicVenues } from '../contexts/PublicVenuesContext'
 import { COURTS } from '../contexts/BookingContext'
 import { LOFTS } from '../data/venues'
 import { POOLS } from '../data/pools'
 import { colors } from '../theme/tokens'
 
+type CatalogItem = {
+  to: string
+  badge: string
+  title: string
+  location: string
+  description: string
+  price: string
+  rating: number
+  gradient: string
+  image?: string
+  type: 'sport' | 'loft' | 'pool' | 'meeting'
+}
+
 export function CatalogPage() {
+  const { catalogItems } = usePublicVenues()
   const [params, setParams] = useSearchParams()
   const initialType = params.get('type') ?? 'all'
   const city = params.get('city') ?? ''
@@ -20,7 +35,7 @@ export function CatalogPage() {
     setFilter(initialType)
   }, [initialType])
 
-  const sportItems = useMemo(() => COURTS.filter((c) => c.available).slice(0, 4).map((c) => ({
+  const sportItems = useMemo<CatalogItem[]>(() => COURTS.filter((c) => c.available).slice(0, 4).map((c) => ({
     to: `/sport/${c.id}`,
     badge: c.sport,
     title: c.name,
@@ -29,11 +44,11 @@ export function CatalogPage() {
     price: `${c.price.toLocaleString()} ₽/час`,
     rating: c.rating,
     gradient: c.photos[0],
-    image: undefined as string | undefined,
+    image: undefined,
     type: 'sport' as const,
   })), [])
 
-  const loftItems = useMemo(() => LOFTS.map((l) => ({
+  const loftItems = useMemo<CatalogItem[]>(() => LOFTS.map((l) => ({
     to: `/loft/${l.id}`,
     badge: 'Лофт + услуги',
     title: l.name,
@@ -42,11 +57,11 @@ export function CatalogPage() {
     price: `${l.price.toLocaleString()} ₽/час`,
     rating: l.rating,
     gradient: l.gradient,
-    image: undefined as string | undefined,
+    image: undefined,
     type: 'loft' as const,
   })), [])
 
-  const poolItems = useMemo(() => POOLS.map((p) => ({
+  const poolItems = useMemo<CatalogItem[]>(() => POOLS.map((p) => ({
     to: `/pools/${p.id}`,
     badge: '🏊 Бассейн',
     title: p.name,
@@ -59,21 +74,44 @@ export function CatalogPage() {
     type: 'pool' as const,
   })), [])
 
-  const allItems = useMemo(() => [...sportItems, ...loftItems, ...poolItems], [sportItems, loftItems, poolItems])
+  const partnerItems = useMemo<CatalogItem[]>(
+    () => catalogItems.map(item => ({
+      to: item.to,
+      badge: item.badge,
+      title: item.title,
+      location: item.location,
+      description: item.description ?? '',
+      price: item.price,
+      rating: item.rating,
+      gradient: item.gradient,
+      image: item.image,
+      type: item.type,
+    })),
+    [catalogItems],
+  )
+
+  const allItems = useMemo(
+    () => [...partnerItems, ...sportItems, ...loftItems, ...poolItems],
+    [partnerItems, sportItems, loftItems, poolItems],
+  )
 
   const filtered = useMemo(() => {
     if (filter === 'all') return allItems
     if (filter === 'sport') return allItems.filter((i) => i.type === 'sport')
     if (filter === 'loft') return allItems.filter((i) => i.type === 'loft')
     if (filter === 'pool') return allItems.filter((i) => i.type === 'pool')
+    if (filter === 'meeting') return allItems.filter((i) => i.type === 'meeting')
     return allItems
   }, [filter, allItems])
 
   const pills = [
     { id: 'all', emoji: '✨', label: `Все · ${allItems.length}` },
-    { id: 'sport', emoji: '🏅', label: `Спорт · ${sportItems.length}` },
-    { id: 'loft', emoji: '🏢', label: `Лофты · ${loftItems.length}` },
-    { id: 'pool', emoji: '🏊', label: `Бассейны · ${poolItems.length}` },
+    { id: 'sport', emoji: '🏅', label: `Спорт · ${allItems.filter(i => i.type === 'sport').length}` },
+    { id: 'loft', emoji: '🏢', label: `Лофты · ${allItems.filter(i => i.type === 'loft').length}` },
+    { id: 'pool', emoji: '🏊', label: `Бассейны · ${allItems.filter(i => i.type === 'pool').length}` },
+    ...(partnerItems.some(i => i.type === 'meeting')
+      ? [{ id: 'meeting', emoji: '💼', label: `Переговорные · ${allItems.filter(i => i.type === 'meeting').length}` }]
+      : []),
   ]
 
   function setFilterAndUrl(id: string) {

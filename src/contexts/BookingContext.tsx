@@ -18,10 +18,14 @@ export interface Court {
   description: string
   photos: string[] // градиенты для фото
   slots: string[]
-  lat: number
-  lng: number
+  lat?: number
+  lng?: number
   /** Тип площадки — влияет на то, куда попадёт бронь и какой наряд подберёт маскот в профиле. */
   venueType?: 'sport' | 'loft' | 'pool'
+  /** ID площадки партнёра из API (для /venue/:id) */
+  partnerVenueId?: string
+  /** Обложка с сервера (если есть фото) */
+  coverImage?: string
 }
 
 export interface Booking {

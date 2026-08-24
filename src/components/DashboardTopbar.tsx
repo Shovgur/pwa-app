@@ -7,15 +7,18 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useBookings, COURTS } from '../contexts/BookingContext'
+import { usePublicVenues } from '../contexts/PublicVenuesContext'
 import type { Court } from '../contexts/BookingContext'
 import { colors } from '../theme/tokens'
 import { CourtDetailSheet } from './CourtDetailSheet'
+import { courtCardBannerStyle } from '../utils/venueAdapters'
 
 const HEADER_H = 94
 const TOPBAR_BG = '#1E293B'
 
 export function DashboardTopbar() {
   const { user } = useAuth()
+  const { courts: partnerCourts } = usePublicVenues()
   const navigate = useNavigate()
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Доброе утро' : hour < 18 ? 'Добрый день' : 'Добрый вечер'
@@ -44,9 +47,11 @@ export function DashboardTopbar() {
     setQuery('')
   }
 
+  const allCourts = [...partnerCourts, ...COURTS]
+
   const results = query.trim().length === 0
-    ? COURTS.filter(c => c.available).slice(0, 5)
-    : COURTS.filter(c =>
+    ? allCourts.filter(c => c.available).slice(0, 5)
+    : allCourts.filter(c =>
         c.name.toLowerCase().includes(query.toLowerCase()) ||
         c.location.toLowerCase().includes(query.toLowerCase()) ||
         c.sport.toLowerCase().includes(query.toLowerCase())
@@ -252,7 +257,7 @@ export function DashboardTopbar() {
                         >
                           <div style={{
                             width: 40, height: 40, borderRadius: 12,
-                            background: c.photos[0],
+                            ...courtCardBannerStyle(c),
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             fontSize: 18, flexShrink: 0,
                           }}>
