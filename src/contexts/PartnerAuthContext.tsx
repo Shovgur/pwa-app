@@ -4,6 +4,7 @@ import {
   useState,
   useEffect,
   useCallback,
+  useRef,
   type ReactNode,
 } from 'react'
 import { API_BASE } from '../config/api'
@@ -37,6 +38,9 @@ interface ChangePasswordPayload {
 interface PartnerAuthCtx {
   partner: Partner | null
   isPartnerAuthenticated: boolean
+  /** Фоновая проверка сессии при старте приложения (для защищённых роутов) */
+  isInitializing: boolean
+  /** Явные действия пользователя: вход, смена пароля */
   isLoading: boolean
   loginPartner: (login: string, password: string) => Promise<{ success: boolean; error?: string }>
   logoutPartner: () => void
@@ -99,51 +103,94 @@ export function getPartnerToken(): string | null {
   return readToken()
 }
 
+const PROFILE_FETCH_TIMEOUT_MS = 8_000
+const AUTH_FETCH_TIMEOUT_MS = 12_000
+
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit = {},
+  timeoutMs = AUTH_FETCH_TIMEOUT_MS,
+): Promise<Response> {
+  const controller = new AbortController()
+  const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    return await fetch(url, { ...options, signal: controller.signal })
+  } finally {
+    window.clearTimeout(timeoutId)
+  }
+}
+
+async function fetchPartnerProfile(token: string): Promise<Response> {
+  return fetchWithTimeout(
+    `${API_BASE}/partner/profile`,
+    { headers: { Authorization: `Bearer ${token}` } },
+    PROFILE_FETCH_TIMEOUT_MS,
+  )
+}
+
 // ─── context ─────────────────────────────────────────────
 const PartnerAuthContext = createContext<PartnerAuthCtx | null>(null)
 
 export function PartnerAuthProvider({ children }: { children: ReactNode }) {
   const [partner, setPartner]   = useState<Partner | null>(() => loadProfile())
   const [hasToken, setHasToken] = useState<boolean>(() => !!readToken())
-  // Если токен уже есть в localStorage — сперва проверяем сессию через API,
-  // поэтому стартуем сразу в состоянии загрузки (как ProtectedRoute у клиента).
-  const [isLoading, setIsLoading] = useState<boolean>(() => !!readToken())
+  const [isInitializing, setIsInitializing] = useState<boolean>(() => !!readToken())
+  const [isLoading, setIsLoading] = useState(false)
+  const refreshInFlight = useRef<Promise<void> | null>(null)
 
-  const refreshPartnerProfile = useCallback(async () => {
+  const refreshPartnerProfile = useCallback(async (options?: { background?: boolean }) => {
     const token = readToken()
-    if (!token) return
-    setIsLoading(true)
-    try {
-      const res = await fetch(`${API_BASE}/partner/profile`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      if (res.status === 401) {
-        clearSession()
-        setHasToken(false)
-        setPartner(null)
-        return
+    if (!token) {
+      setIsInitializing(false)
+      return
+    }
+
+    if (refreshInFlight.current) {
+      await refreshInFlight.current
+      return
+    }
+
+    const run = (async () => {
+      if (!options?.background) setIsLoading(true)
+      try {
+        const res = await fetchPartnerProfile(token)
+        if (res.status === 401) {
+          clearSession()
+          setHasToken(false)
+          setPartner(null)
+          return
+        }
+        const data = await res.json().catch(() => ({})) as Record<string, unknown>
+        if (!res.ok) return
+        const p = mapProfile(data)
+        setPartner(p)
+        saveProfile(p)
+      } catch {
+        // сеть недоступна / таймаут — не блокируем UI, работаем с кэшем
+      } finally {
+        if (!options?.background) setIsLoading(false)
+        setIsInitializing(false)
       }
-      const data = await res.json().catch(() => ({})) as Record<string, unknown>
-      if (!res.ok) return
-      const p = mapProfile(data)
-      setPartner(p)
-      saveProfile(p)
-    } catch {
-      // сеть недоступна — работаем с закэшированным профилем, сессию не рвём
+    })()
+
+    refreshInFlight.current = run
+    try {
+      await run
     } finally {
-      setIsLoading(false)
+      refreshInFlight.current = null
     }
   }, [])
 
-  // Восстановление сессии при обновлении страницы / прямом заходе на /partner/*
+  // Восстановление сессии при обновлении страницы — в фоне, без блокировки /login
   useEffect(() => {
-    if (readToken()) void refreshPartnerProfile()
+    if (readToken()) void refreshPartnerProfile({ background: true })
+    else setIsInitializing(false)
   }, [refreshPartnerProfile])
 
   const loginPartner = useCallback(async (login: string, password: string) => {
     setIsLoading(true)
     try {
-      const res = await fetch(`${API_BASE}/partner/login`, {
+      const res = await fetchWithTimeout(`${API_BASE}/partner/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ login: login.trim(), password }),
@@ -168,9 +215,12 @@ export function PartnerAuthProvider({ children }: { children: ReactNode }) {
         setPartner(p)
         saveProfile(p)
       }
-      await refreshPartnerProfile()
+      await refreshPartnerProfile({ background: true })
       return { success: true }
     } catch (e) {
+      if (e instanceof DOMException && e.name === 'AbortError') {
+        return { success: false, error: 'Сервер не отвечает. Проверьте, что бэкенд запущен.' }
+      }
       return { success: false, error: e instanceof Error ? e.message : 'Ошибка входа' }
     } finally {
       setIsLoading(false)
@@ -220,6 +270,7 @@ export function PartnerAuthProvider({ children }: { children: ReactNode }) {
       value={{
         partner,
         isPartnerAuthenticated: hasToken,
+        isInitializing,
         isLoading,
         loginPartner,
         logoutPartner,

@@ -4,8 +4,9 @@ import { motion } from 'framer-motion'
 import { ArrowRight, Building2, CalendarCheck, CheckCircle2, Info, Percent, ShieldAlert, UserPlus, Users } from 'lucide-react'
 import { usePartnerAuth } from '../contexts/PartnerAuthContext'
 import { usePartnerCrm } from '../contexts/PartnerCrmContext'
-import { isOwner, PARTNER_BOOKINGS_PATH } from '../utils/partnerAccess'
+import { isOwner, PARTNER_BOOKINGS_PATH, PARTNER_VENUES_PATH } from '../utils/partnerAccess'
 import { formatMoney } from '../utils/partnerCrmFormat'
+import { fetchPartnerVenues } from '../lib/partnerVenues'
 
 type LocationState = { accessDenied?: boolean }
 
@@ -52,12 +53,25 @@ function AccessDeniedBanner({ onClose }: { onClose: () => void }) {
 
 function OwnerDashboard() {
   const { partner } = usePartnerAuth()
+  const [activeVenues, setActiveVenues] = useState(0)
+
+  useEffect(() => {
+    let cancelled = false
+    void fetchPartnerVenues()
+      .then(list => {
+        if (!cancelled) setActiveVenues(list.filter(v => v.isActive).length)
+      })
+      .catch(() => {
+        if (!cancelled) setActiveVenues(0)
+      })
+    return () => { cancelled = true }
+  }, [])
 
   const stats = [
     { icon: Users,         label: 'Всего клиентов',             value: '0', color: '#22c55e' },
     { icon: CalendarCheck, label: 'Бронирований в этом месяце', value: '0', color: '#3b82f6' },
     { icon: Percent,       label: 'Сумма комиссии',             value: formatMoney(0), color: '#f97316' },
-    { icon: Building2,     label: 'Активных площадок',          value: '0', color: '#a855f7' },
+    { icon: Building2,     label: 'Активных площадок',          value: String(activeVenues), color: '#a855f7' },
   ]
 
   return (
@@ -126,13 +140,39 @@ function OwnerDashboard() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.32 }}
         className="card"
+        style={{ marginTop: 20, padding: '18px 22px', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}
+      >
+        <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(168,85,247,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <Building2 size={18} color="#a855f7" />
+        </div>
+        <p style={{ margin: 0, flex: 1, minWidth: 200, fontSize: 14, color: '#cbd5e1', lineHeight: 1.5 }}>
+          Добавьте корты, лофты и другие объекты — они появятся в вашем кабинете
+        </p>
+        <Link
+          to={PARTNER_VENUES_PATH}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 16px',
+            borderRadius: 12, background: 'linear-gradient(135deg, #a855f7, #7c3aed)',
+            color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none',
+          }}
+        >
+          Площадки
+          <ArrowRight size={15} />
+        </Link>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.36 }}
+        className="card"
         style={{ marginTop: 20, padding: '20px 22px', display: 'flex', alignItems: 'center', gap: 14 }}
       >
         <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(59,130,246,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <Info size={18} color="#3b82f6" />
         </div>
         <p style={{ margin: 0, fontSize: 14, color: '#94a3b8', lineHeight: 1.5 }}>
-          Площадки и статистика появятся после подключения объектов. Раздел «Брони» доступен только вашим сотрудникам.
+          Раздел «Брони» доступен только вашим сотрудникам-управляющим
         </p>
       </motion.div>
     </>

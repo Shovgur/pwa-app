@@ -20,10 +20,11 @@ export type Capability =
   | 'finances'    // комиссия, выручка, финансовая аналитика
   | 'companyInfo' // реквизиты компании
   | 'staff'       // управление сотрудниками
+  | 'venues'      // управление площадками
   | 'crm'         // работа с бронями и оплатами
 
 const CAPABILITIES: Record<PartnerRole, readonly Capability[]> = {
-  owner:   ['overview', 'finances', 'companyInfo', 'staff'],
+  owner:   ['overview', 'finances', 'companyInfo', 'staff', 'venues'],
   manager: ['crm'],
 }
 
@@ -38,6 +39,9 @@ export function partnerHomeRoute(_role?: PartnerRole | null): string {
 
 /** Страница списка броней в кабинете партнёра */
 export const PARTNER_BOOKINGS_PATH = '/partner/bookings'
+
+/** Управление площадками партнёра */
+export const PARTNER_VENUES_PATH = '/partner/venues'
 
 export function isOwner(role: PartnerRole | null | undefined): boolean {
   return (role ?? 'owner') === 'owner'

@@ -968,12 +968,133 @@ input:-webkit-autofill:focus {
   padding: 16px 18px;
 }
 
+.partner-venue-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 18px;
+}
+
 @media (min-width: 768px) {
   .crm-staff-card {
     flex-direction: row;
     align-items: center;
     justify-content: space-between;
   }
+
+  .partner-venue-card {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.partner-no-spinner::-webkit-outer-spin-button,
+.partner-no-spinner::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.partner-no-spinner {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.venue-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
+}
+
+.venue-photo-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.venue-photo-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.venue-photo-actions {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: flex;
+  gap: 4px;
+}
+
+.venue-photo-actions button {
+  display: flex;
+  padding: 5px;
+  border: none;
+  border-radius: 8px;
+  background: rgba(15, 22, 35, 0.85);
+  color: #94a3b8;
+  cursor: pointer;
+}
+
+.venue-photo-actions button.is-cover {
+  color: #fbbf24;
+}
+
+.venue-photo-cover-badge {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  background: rgba(34, 197, 94, 0.9);
+  color: #0f172a;
+}
+
+.venue-photo-add {
+  aspect-ratio: 1;
+  border-radius: 12px;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.02);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.venue-rule-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.venue-card-thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 13px;
+  flex-shrink: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.venue-card-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .crm-skeleton {

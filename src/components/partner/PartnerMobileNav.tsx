@@ -1,8 +1,8 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { ClipboardList, Home, LogOut, Settings, Users } from 'lucide-react'
+import { Building2, ClipboardList, Home, LogOut, Settings, Users } from 'lucide-react'
 import { usePartnerAuth } from '../../contexts/PartnerAuthContext'
 import { usePartnerCrm } from '../../contexts/PartnerCrmContext'
-import { can, PARTNER_BOOKINGS_PATH, type Capability } from '../../utils/partnerAccess'
+import { can, PARTNER_BOOKINGS_PATH, PARTNER_VENUES_PATH, type Capability } from '../../utils/partnerAccess'
 
 interface NavItem {
   to: string
@@ -16,6 +16,7 @@ interface NavItem {
 const NAV: NavItem[] = [
   { to: '/partner/dashboard',  icon: Home,          label: 'Главная',    end: true,  cap: null },
   { to: PARTNER_BOOKINGS_PATH, icon: ClipboardList, label: 'Брони',      end: false, cap: 'crm' },
+  { to: PARTNER_VENUES_PATH,   icon: Building2,     label: 'Площадки',   end: false, cap: 'venues' },
   { to: '/partner/staff',      icon: Users,         label: 'Сотрудники', end: false, cap: 'staff' },
   { to: '/partner/settings',   icon: Settings,      label: 'Настройки',  end: false, cap: null },
 ]
