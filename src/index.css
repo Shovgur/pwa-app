@@ -1706,6 +1706,11 @@ input:-webkit-autofill:focus {
   to { transform: rotate(360deg); }
 }
 
+@keyframes slot-skeleton-pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.85; }
+}
+
 /* ── Venue cards (website) ── */
 .venue-card {
   width: 100%;

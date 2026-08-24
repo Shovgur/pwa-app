@@ -19,6 +19,7 @@ import { BILLING_LABEL } from '../utils/venueBuilderPresets'
 
 import { upcomingBookingDays } from '../utils/bookingDates'
 import { useVenueSlots } from '../hooks/useVenueSlots'
+import { VenueSlotPicker } from '../components/ui/VenueSlotPicker'
 
 const BOOKING_DURATION_MINUTES = 60
 
@@ -49,8 +50,10 @@ export function PublicVenuePage() {
   })
 
   useEffect(() => {
-    setSelectedSlot(null)
-  }, [selectedDateIso, id])
+    if (selectedSlot && !slotTimes.includes(selectedSlot)) {
+      setSelectedSlot(null)
+    }
+  }, [slotTimes, selectedSlot])
 
   useEffect(() => {
     if (!id) return
@@ -224,7 +227,10 @@ export function PublicVenuePage() {
                 <button
                   key={d.iso}
                   type="button"
-                  onClick={() => setSelectedDay(i)}
+                  onClick={() => {
+                    setSelectedDay(i)
+                    setSelectedSlot(null)
+                  }}
                   style={{
                     padding: '10px 16px', borderRadius: 12, border: 'none', cursor: 'pointer',
                     background: selectedDay === i ? colors.green : 'rgba(255,255,255,0.06)',
@@ -242,31 +248,15 @@ export function PublicVenuePage() {
             <h3 style={{ fontSize: 15, fontWeight: 700, color: colors.text, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
               <Clock size={16} /> Время
             </h3>
-            {slotsLoading ? (
-              <p style={{ color: colors.muted, fontSize: 14, margin: 0 }}>Загружаем свободные слоты…</p>
-            ) : slotsError ? (
-              <p style={{ color: '#f87171', fontSize: 14, margin: 0 }}>{slotsError}</p>
-            ) : slotTimes.length === 0 ? (
-              <p style={{ color: colors.muted, fontSize: 14, margin: 0 }}>На этот день свободных слотов нет</p>
-            ) : (
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {slotTimes.map(slot => (
-                <button
-                  key={slot}
-                  type="button"
-                  onClick={() => setSelectedSlot(slot)}
-                  style={{
-                    padding: '10px 18px', borderRadius: 12, border: 'none', cursor: 'pointer',
-                    background: selectedSlot === slot ? colors.green : 'rgba(255,255,255,0.06)',
-                    color: selectedSlot === slot ? '#0f172a' : colors.text2,
-                    fontWeight: 600, fontFamily: 'inherit',
-                  }}
-                >
-                  {slot}
-                </button>
-              ))}
-            </div>
-            )}
+            <VenueSlotPicker
+              slots={slotTimes}
+              selectedSlot={selectedSlot}
+              onSelect={setSelectedSlot}
+              loading={slotsLoading}
+              error={slotsError}
+              accentColor={colors.green}
+              minHeight={120}
+            />
           </div>
         </motion.div>
 

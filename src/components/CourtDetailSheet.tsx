@@ -23,6 +23,7 @@ import { calcBookingTotal } from "../utils/partnerBookingPrice";
 import { BookingStepProgress } from "./court-sheet/BookingStepProgress";
 import { MockPaymentStep } from "./court-sheet/MockPaymentStep";
 import { useVenueSlots } from "../hooks/useVenueSlots";
+import { VenueSlotPicker } from "./ui/VenueSlotPicker";
 
 const DURATIONS = [
   { label: "30 мин", value: 30 },
@@ -146,10 +147,6 @@ export function CourtDetailSheet({ court, onClose }: Props) {
   });
 
   const displaySlots = court.partnerVenueId ? partnerSlotTimes : court.slots;
-
-  useEffect(() => {
-    setSelectedSlot(null);
-  }, [selectedDate.iso, effectiveDurationMinutes, court.partnerVenueId]);
 
   useEffect(() => {
     if (selectedSlot && !displaySlots.includes(selectedSlot)) {
@@ -718,7 +715,10 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                       return (
                         <button
                           key={d.date}
-                          onClick={() => setSelectedDate(d)}
+                          onClick={() => {
+                            setSelectedDate(d);
+                            setSelectedSlot(null);
+                          }}
                           style={{
                             flex: "0 0 auto",
                             padding: "10px 14px",
@@ -770,7 +770,7 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                   </div>
                 </div>
 
-                <div style={{ marginBottom: 24 }}>
+                <div style={{ marginBottom: 16 }}>
                   <h3
                     style={{
                       fontSize: 11,
@@ -781,30 +781,22 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                       letterSpacing: "0.05em",
                     }}
                   >
-                    Время начала
+                    Продолжительность
                   </h3>
-                  {slotsLoading && court.partnerVenueId ? (
-                    <p style={{ fontSize: 13, color: "#64748b", margin: 0 }}>Загружаем свободные слоты…</p>
-                  ) : slotsError ? (
-                    <p style={{ fontSize: 13, color: "#f87171", margin: 0 }}>{slotsError}</p>
-                  ) : displaySlots.length === 0 ? (
-                    <p style={{ fontSize: 13, color: "#64748b", margin: 0 }}>На этот день свободных слотов нет</p>
-                  ) : (
-                  <div
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "repeat(4, 1fr)",
-                      gap: 8,
-                    }}
-                  >
-                    {displaySlots.map((slot) => {
-                      const active = selectedSlot === slot;
+                  <div style={{ display: "flex", gap: 8, opacity: selectedPackageId ? 0.45 : 1 }}>
+                    {DURATIONS.map((d) => {
+                      const active = selectedDuration.value === d.value;
                       return (
-                        <motion.button
-                          key={slot}
-                          whileTap={{ scale: 0.93 }}
-                          onClick={() => setSelectedSlot(slot)}
+                        <button
+                          key={d.value}
+                          type="button"
+                          onClick={() => {
+                            setSelectedPackageId(null);
+                            setSelectedDuration(d);
+                            setSelectedSlot(null);
+                          }}
                           style={{
+                            flex: 1,
                             padding: "10px 4px",
                             borderRadius: 12,
                             background: active
@@ -814,18 +806,18 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                               ? `1.5px solid ${court.color}`
                               : "1px solid rgba(255,255,255,0.08)",
                             color: active ? court.color : "#94a3b8",
-                            fontSize: 13,
+                            fontSize: 12,
                             fontWeight: active ? 700 : 400,
                             cursor: "pointer",
-                            transition: "all 0.15s",
+                            fontFamily: "inherit",
+                            transition: "background 0.15s ease, border-color 0.15s ease, color 0.15s ease",
                           }}
                         >
-                          {slot}
-                        </motion.button>
+                          {d.label}
+                        </button>
                       );
                     })}
                   </div>
-                  )}
                 </div>
 
                 {partnerVenue && partnerVenue.durationRules.length > 0 && (
@@ -857,6 +849,7 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                                 const match = DURATIONS.find((d) => d.value === pkg.hours * 60);
                                 if (match) setSelectedDuration(match);
                               }
+                              setSelectedSlot(null);
                             }}
                             style={{
                               display: "flex",
@@ -888,7 +881,7 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                   </div>
                 )}
 
-                <div style={{ marginBottom: 16 }}>
+                <div style={{ marginBottom: 24 }}>
                   <h3
                     style={{
                       fontSize: 11,
@@ -899,41 +892,16 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                       letterSpacing: "0.05em",
                     }}
                   >
-                    Продолжительность
+                    Время начала
                   </h3>
-                  <div style={{ display: "flex", gap: 8, opacity: selectedPackageId ? 0.45 : 1 }}>
-                    {DURATIONS.map((d) => {
-                      const active = selectedDuration.value === d.value;
-                      return (
-                        <motion.button
-                          key={d.value}
-                          whileTap={{ scale: 0.93 }}
-                          onClick={() => {
-                            setSelectedPackageId(null);
-                            setSelectedDuration(d);
-                          }}
-                          style={{
-                            flex: 1,
-                            padding: "10px 4px",
-                            borderRadius: 12,
-                            background: active
-                              ? `${court.color}20`
-                              : "rgba(255,255,255,0.04)",
-                            border: active
-                              ? `1.5px solid ${court.color}`
-                              : "1px solid rgba(255,255,255,0.08)",
-                            color: active ? court.color : "#94a3b8",
-                            fontSize: 12,
-                            fontWeight: active ? 700 : 400,
-                            cursor: "pointer",
-                            transition: "all 0.15s",
-                          }}
-                        >
-                          {d.label}
-                        </motion.button>
-                      );
-                    })}
-                  </div>
+                  <VenueSlotPicker
+                    slots={displaySlots}
+                    selectedSlot={selectedSlot}
+                    onSelect={setSelectedSlot}
+                    loading={Boolean(court.partnerVenueId && slotsLoading)}
+                    error={court.partnerVenueId ? slotsError : null}
+                    accentColor={court.color}
+                  />
                 </div>
 
                 {partnerVenue && partnerVenue.extraServices.length > 0 && (
@@ -1005,15 +973,20 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                   </div>
                 )}
 
-                {selectedSlot && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
+                <div
+                  style={{
+                    minHeight: 132,
+                    marginBottom: 8,
+                  }}
+                >
+                  <div
                     style={{
                       background: "rgba(255,255,255,0.05)",
                       border: "1px solid rgba(255,255,255,0.1)",
                       borderRadius: 16,
                       padding: "14px 16px",
+                      opacity: selectedSlot ? 1 : 0.72,
+                      transition: "opacity 0.15s ease",
                     }}
                   >
                     <div
@@ -1033,7 +1006,9 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                           fontWeight: 600,
                         }}
                       >
-                        {selectedDate.date}, {selectedSlot}
+                        {selectedSlot
+                          ? `${selectedDate.date}, ${selectedSlot}`
+                          : "—"}
                       </span>
                     </div>
                     <div
@@ -1088,8 +1063,8 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                         {totalPrice.toLocaleString()} ₽
                       </span>
                     </div>
-                  </motion.div>
-                )}
+                  </div>
+                </div>
 
               </div>
 

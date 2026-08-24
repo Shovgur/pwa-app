@@ -38,6 +38,7 @@ export function useVenueSlots({
     let cancelled = false
     setLoading(true)
     setError(null)
+    // Keep previous slots visible while reloading to avoid layout jumps.
 
     void fetchVenueAvailability(venueId, date, durationMinutes)
       .then((data) => {
