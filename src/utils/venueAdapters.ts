@@ -3,6 +3,7 @@ import type { VenueCardProps } from '../components/ui/VenueCard'
 import type { Court } from '../contexts/BookingContext'
 import type { PartnerVenue, VenueKind } from '../lib/partnerVenues'
 import { VENUE_KIND_LABEL } from '../lib/partnerVenues'
+import { getSportById, sportLabel } from '../data/sportTypes'
 import { venueMinPricePerHour, venuePriceSummary } from './venuePrice'
 
 const KIND_GRADIENT: Record<VenueKind, string> = {
@@ -50,13 +51,23 @@ export function partnerVenueCatalogType(kind: VenueKind): 'sport' | 'loft' | 'po
   return kind
 }
 
-export function partnerVenueToVenueCard(venue: PartnerVenue, delay = 0): VenueCardProps & { type: ReturnType<typeof partnerVenueCatalogType> } {
+export function partnerVenueBadge(venue: PartnerVenue): string {
+  if (venue.venueKind === 'sport' && venue.sportType) {
+    return sportLabel(venue.sportType)
+  }
+  return VENUE_KIND_LABEL[venue.venueKind]
+}
+
+export function partnerVenueToVenueCard(venue: PartnerVenue, delay = 0): VenueCardProps & {
+  type: ReturnType<typeof partnerVenueCatalogType>
+  sportTypeId?: string | null
+} {
   const minPrice = venueMinPricePerHour(venue)
   const image = venueCoverImage(venue)
   const desc = venue.description.trim()
   return {
     to: `/venue/${venue.id}`,
-    badge: VENUE_KIND_LABEL[venue.venueKind],
+    badge: partnerVenueBadge(venue),
     title: venue.name,
     location: `${venue.city} · ${venue.address}`,
     description: desc.length > 90 ? `${desc.slice(0, 90)}…` : desc,
@@ -66,6 +77,7 @@ export function partnerVenueToVenueCard(venue: PartnerVenue, delay = 0): VenueCa
     image,
     delay,
     type: partnerVenueCatalogType(venue.venueKind),
+    sportTypeId: venue.venueKind === 'sport' ? venue.sportType ?? null : null,
   }
 }
 
@@ -93,17 +105,21 @@ export function partnerVenueToCourt(venue: PartnerVenue): Court {
     ? [image, KIND_GRADIENT[venue.venueKind]]
     : [KIND_GRADIENT[venue.venueKind]]
 
+  const sportDef = venue.venueKind === 'sport' && venue.sportType
+    ? getSportById(venue.sportType)
+    : undefined
+
   return {
     id: partnerVenueCourtId(venue.id),
-    emoji: KIND_EMOJI[venue.venueKind],
-    sport: KIND_SPORT_LABEL[venue.venueKind],
+    emoji: sportDef?.emoji ?? KIND_EMOJI[venue.venueKind],
+    sport: sportDef?.label ?? KIND_SPORT_LABEL[venue.venueKind],
     name: venue.name,
     location: venue.city,
     address: venue.address,
     rating: 4.9,
     reviews: venue.bookingsCount || 12,
     price: venueMinPricePerHour(venue) || venue.basePricePerHour,
-    color: KIND_COLOR[venue.venueKind],
+    color: sportDef?.color ?? KIND_COLOR[venue.venueKind],
     available: true,
     distance: venue.city,
     amenities: venue.amenities.length ? venue.amenities : ['Wi‑Fi'],
@@ -115,5 +131,6 @@ export function partnerVenueToCourt(venue: PartnerVenue): Court {
     venueType: venue.venueKind === 'meeting' ? undefined : venue.venueKind,
     partnerVenueId: venue.id,
     coverImage: image,
+    sportTypeId: venue.sportType ?? undefined,
   }
 }

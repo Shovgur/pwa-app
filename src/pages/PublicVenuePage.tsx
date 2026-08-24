@@ -17,7 +17,8 @@ import { colors } from '../theme/tokens'
 import { paths } from '../config/features'
 import { BILLING_LABEL } from '../utils/venueBuilderPresets'
 
-const DAYS = ['Пн 9', 'Вт 10', 'Ср 11', 'Чт 12', 'Пт 13', 'Сб 14', 'Вс 15']
+import { upcomingBookingDays } from '../utils/bookingDates'
+
 const SLOTS = ['09:00', '10:30', '12:00', '14:00', '16:00', '18:00', '20:00']
 
 export function PublicVenuePage() {
@@ -29,7 +30,8 @@ export function PublicVenuePage() {
 
   const [venue, setVenue] = useState<PartnerVenue | null>(() => (id ? getVenue(id) ?? null : null))
   const [loading, setLoading] = useState(!venue && Boolean(id))
-  const [selectedDay, setSelectedDay] = useState(1)
+  const days = upcomingBookingDays()
+  const [selectedDay, setSelectedDay] = useState(0)
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
@@ -68,14 +70,20 @@ export function PublicVenuePage() {
   const minPrice = venueMinPricePerHour(venue) || venue.basePricePerHour
   const court = partnerVenueToCourt(venue)
 
-  function handleBook() {
+  async function handleBook() {
     if (!selectedSlot) return
     if (!isAuthenticated) {
       navigate('/login', { state: { from: `/venue/${id}` } })
       return
     }
-    addBooking(court, `${DAYS[selectedDay].split(' ')[1]} июня`, selectedSlot, 60)
-    setSuccess(true)
+    try {
+      await addBooking(court, days[selectedDay].date, selectedSlot, 60, {
+        isoDate: days[selectedDay].iso,
+      })
+      setSuccess(true)
+    } catch {
+      // остаёмся на форме
+    }
   }
 
   if (success) {
@@ -195,9 +203,9 @@ export function PublicVenuePage() {
           <div style={{ marginBottom: 24 }}>
             <h3 style={{ fontSize: 15, fontWeight: 700, color: colors.text, marginBottom: 12 }}>Выберите день</h3>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {DAYS.map((d, i) => (
+              {days.map((d, i) => (
                 <button
-                  key={d}
+                  key={d.iso}
                   type="button"
                   onClick={() => setSelectedDay(i)}
                   style={{
@@ -207,7 +215,7 @@ export function PublicVenuePage() {
                     fontWeight: 600, fontFamily: 'inherit',
                   }}
                 >
-                  {d}
+                  {d.label}, {d.date}
                 </button>
               ))}
             </div>
@@ -242,11 +250,11 @@ export function PublicVenuePage() {
           venueMeta={`${VENUE_KIND_LABEL[venue.venueKind]} · ${venue.city}`}
           venueImage={cover ?? 'linear-gradient(135deg, #0f172a, #1e3a5f)'}
           metaChips={selectedSlot ? [
-            { icon: <Clock size={14} />, text: `${DAYS[selectedDay]} · ${selectedSlot}` },
+            { icon: <Clock size={14} />, text: `${days[selectedDay].date} · ${selectedSlot}` },
             { icon: <Tag size={14} />, text: `от ${minPrice.toLocaleString('ru-RU')} ₽/ч` },
           ] : []}
           lines={[
-            { id: 'date', label: 'Дата', value: DAYS[selectedDay] },
+            { id: 'date', label: 'Дата', value: `${days[selectedDay].label}, ${days[selectedDay].date}` },
             { id: 'time', label: 'Время', value: selectedSlot ?? '—' },
             { id: 'rate', label: 'Тариф', value: `от ${minPrice.toLocaleString('ru-RU')} ₽/ч` },
           ]}

@@ -18,7 +18,7 @@ import type { Court } from './BookingContext'
 interface PublicVenuesCtx {
   venues: PublicVenue[]
   isLoading: boolean
-  catalogItems: (VenueCardProps & { type: 'sport' | 'loft' | 'pool' | 'meeting' })[]
+  catalogItems: (VenueCardProps & { type: 'sport' | 'loft' | 'pool' | 'meeting'; sportTypeId?: string | null })[]
   courts: Court[]
   getVenue: (id: string) => PublicVenue | undefined
   refresh: () => Promise<void>

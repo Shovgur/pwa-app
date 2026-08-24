@@ -73,11 +73,13 @@ export interface PartnerVenue {
   createdAt: string
   lat?: number | null
   lng?: number | null
+  sportType?: string | null
 }
 
 export interface CreateVenuePayload {
   name: string
   venueKind: VenueKind
+  sportType?: string | null
   city: string
   address: string
   description: string

@@ -32,7 +32,9 @@ import {
 } from '../../utils/venueBuilderPresets'
 import type { AddressSuggestion } from '../../lib/geocoding'
 import { AddressAutocomplete } from '../ui/AddressAutocomplete'
+import { FormSelect } from '../ui/FormSelect'
 import { parsePriceInput } from '../../utils/venuePrice'
+import { SPORT_TYPES } from '../../data/sportTypes'
 
 const inputStyle: React.CSSProperties = {
   width: '100%',
@@ -192,6 +194,7 @@ export function VenueBuilderForm({ onSubmit, onCancel, submitting }: VenueBuilde
 
   const [name, setName] = useState('')
   const [venueKind, setVenueKind] = useState<VenueKind>('sport')
+  const [sportType, setSportType] = useState('tennis')
   const [city, setCity] = useState('')
   const [address, setAddress] = useState('')
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
@@ -324,9 +327,16 @@ export function VenueBuilderForm({ onSubmit, onCancel, submitting }: VenueBuilde
       return
     }
 
+    if (venueKind === 'sport' && !sportType) {
+      setFormError('Выберите вид спорта')
+      setOpenSections(s => ({ ...s, basic: true }))
+      return
+    }
+
     const payload: CreateVenuePayload = {
       name: name.trim(),
       venueKind,
+      sportType: venueKind === 'sport' ? sportType : null,
       city: city.trim(),
       address: address.trim(),
       description: description.trim(),
@@ -369,17 +379,28 @@ export function VenueBuilderForm({ onSubmit, onCancel, submitting }: VenueBuilde
             <FieldError message={errors.name} />
           </div>
           <div>
-            <label style={labelStyle}>ТИП ПЛОЩАДКИ</label>
-            <select
+            <FormSelect
+              label="ТИП ПЛОЩАДКИ"
               value={venueKind}
-              onChange={e => setVenueKind(e.target.value as VenueKind)}
-              style={{ ...inputStyle, cursor: 'pointer' }}
-            >
-              {VENUE_KIND_OPTIONS.map(o => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
+              options={VENUE_KIND_OPTIONS.map(o => ({ value: o.value, label: o.label }))}
+              onChange={v => {
+                const next = v as VenueKind
+                setVenueKind(next)
+                if (next !== 'sport') setSportType('tennis')
+              }}
+            />
           </div>
+          {venueKind === 'sport' && (
+            <div style={{ gridColumn: '1 / -1' }}>
+              <FormSelect
+                label="ВИД СПОРТА"
+                value={sportType}
+                options={SPORT_TYPES.map(s => ({ value: s.id, label: `${s.emoji} ${s.label}` }))}
+                onChange={setSportType}
+                required
+              />
+            </div>
+          )}
           <div>
             <label style={labelStyle}>ГОРОД</label>
             <input type="text" value={city} onChange={e => setCity(e.target.value)} placeholder="Москва" required style={inputStyle} />
@@ -619,16 +640,15 @@ export function VenueBuilderForm({ onSubmit, onCancel, submitting }: VenueBuilde
             <PriceInput value={newExtra.price} onChange={v => setNewExtra(s => ({ ...s, price: v }))} placeholder="500" />
           </div>
           <div>
-            <label style={labelStyle}>ТИП НАЧИСЛЕНИЯ</label>
-            <select
+            <FormSelect
+              label="ТИП НАЧИСЛЕНИЯ"
               value={newExtra.billing}
-              onChange={e => setNewExtra(s => ({ ...s, billing: e.target.value as ExtraBilling }))}
-              style={{ ...inputStyle, cursor: 'pointer' }}
-            >
-              {(Object.entries(BILLING_LABEL) as [ExtraBilling, string][]).map(([k, v]) => (
-                <option key={k} value={k}>{v}</option>
-              ))}
-            </select>
+              options={(Object.entries(BILLING_LABEL) as [ExtraBilling, string][]).map(([k, v]) => ({
+                value: k,
+                label: v,
+              }))}
+              onChange={v => setNewExtra(s => ({ ...s, billing: v as ExtraBilling }))}
+            />
           </div>
           <div className="full-width">
             <label style={labelStyle}>ОПИСАНИЕ</label>

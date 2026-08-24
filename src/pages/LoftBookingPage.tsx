@@ -97,7 +97,7 @@ export function LoftBookingPage() {
     setAddonOptions((prev) => ({ ...prev, [addonId]: optionId }))
   }
 
-  function handleBook() {
+  async function handleBook() {
     if (!isAuthenticated) {
       navigate('/login', { state: { from: `/loft/${id}` } })
       return
@@ -111,8 +111,12 @@ export function LoftBookingPage() {
         price,
       }
     })
-    addLoftBooking(venue, venue.timeSlots[selectedSlot], addons, total - discount)
-    setSuccess(true)
+    try {
+      await addLoftBooking(venue, venue.timeSlots[selectedSlot], addons, total - discount)
+      setSuccess(true)
+    } catch {
+      // остаёмся на форме
+    }
   }
 
   if (success) {

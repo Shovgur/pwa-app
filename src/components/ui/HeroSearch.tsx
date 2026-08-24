@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { Search, MapPin, Calendar, LayoutGrid } from 'lucide-react'
 import { SelectMenu } from './SelectMenu'
 import { DatePickerField } from './DatePickerField'
+import { SPORT_TYPES } from '../../data/sportTypes'
 import { colors } from '../../theme/tokens'
 
 const CITIES = [
@@ -25,11 +26,13 @@ export function HeroSearch() {
   const [city, setCity] = useState('Москва')
   const [date, setDate] = useState('2026-06-10')
   const [category, setCategory] = useState('all')
+  const [sportType, setSportType] = useState('tennis')
 
   function handleSearch(e?: React.FormEvent) {
     e?.preventDefault()
     const params = new URLSearchParams()
-    if (category !== 'all') params.set('type', category)
+    if (category !== 'all') params.set('type', category === 'sport' ? 'sport' : category)
+    if (category === 'sport' && sportType) params.set('sport', sportType)
     params.set('city', city)
     params.set('date', date)
     navigate(`/catalog?${params.toString()}`)
@@ -74,6 +77,19 @@ export function HeroSearch() {
             accent={colors.orange}
           />
         </div>
+
+        {category === 'sport' && (
+          <div className="hero-search-field hero-search-field--last">
+            <SelectMenu
+              label="Вид спорта"
+              icon={<span style={{ fontSize: 13 }}>🎾</span>}
+              value={sportType}
+              options={SPORT_TYPES.map(s => ({ value: s.id, label: `${s.emoji} ${s.label}` }))}
+              onChange={setSportType}
+              accent={colors.green}
+            />
+          </div>
+        )}
       </div>
 
       <motion.button

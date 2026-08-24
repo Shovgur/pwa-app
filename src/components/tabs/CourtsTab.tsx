@@ -6,10 +6,16 @@ import type { Court } from '../../contexts/BookingContext'
 import { usePublicVenues } from '../../contexts/PublicVenuesContext'
 import { LOFTS, loftToCourt } from '../../data/venues'
 import { POOLS, FEATURED_POOL_IDS, poolToCourt } from '../../data/pools'
+import {
+  ALL_VENUE_CHIP,
+  buildVenueFilterChips,
+  courtMatchesQuery,
+  matchesVenueChip,
+  sportChipsMatchingQuery,
+} from '../../data/sportTypes'
 import { CourtDetailSheet } from '../CourtDetailSheet'
+import { SportFilterChips } from '../ui/SportFilterChips'
 import { courtCardBannerStyle } from '../../utils/venueAdapters'
-
-const SPORTS = ['Все', 'Теннис', 'Футбол', 'Баскетбол', 'Бадминтон', 'Волейбол', 'Бассейн', 'Лофт', 'Переговорная', 'Спорт']
 
 function priceUnit(court: Court): string {
   if (court.venueType === 'loft') return '/сессия'
@@ -20,7 +26,7 @@ function priceUnit(court: Court): string {
 export function CourtsTab() {
   const { courts: partnerCourts } = usePublicVenues()
   const [query, setQuery] = useState('')
-  const [sport, setSport] = useState('Все')
+  const [chipFilter, setChipFilter] = useState('all')
   const [onlyFree, setOnlyFree] = useState(false)
   const [selected, setSelected] = useState<Court | null>(null)
 
@@ -33,24 +39,29 @@ export function CourtsTab() {
     return [...partnerCourts, ...COURTS, ...pools, ...lofts]
   }, [partnerCourts])
 
+  const filterChips = useMemo(() => buildVenueFilterChips(allVenues), [allVenues])
+
+  const searchSportSuggestions = useMemo(() => sportChipsMatchingQuery(query), [query])
+
+  const visibleChips = useMemo(() => {
+    if (query.trim() && searchSportSuggestions.length) {
+      return [ALL_VENUE_CHIP, ...searchSportSuggestions, ...filterChips.filter(c => c.kind === 'venue')]
+    }
+    return filterChips
+  }, [query, searchSportSuggestions, filterChips])
+
   const filtered = allVenues.filter(c =>
-    (sport === 'Все' || c.sport === sport) &&
-    (!onlyFree || c.available) &&
-    (c.name.toLowerCase().includes(query.toLowerCase()) || c.location.toLowerCase().includes(query.toLowerCase()))
+    matchesVenueChip(c, chipFilter)
+    && (!onlyFree || c.available)
+    && courtMatchesQuery(c, query),
   )
 
   return (
     <div className="dashboard-page">
-      {/* Заголовок + поиск в одну строку на десктопе */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 16,
-          marginBottom: 18,
-        }}
+        style={{ display: 'flex', flexDirection: 'column', gap: 16, marginBottom: 18 }}
         className="dashboard-bookings-row"
       >
         <div style={{ flex: 1 }}>
@@ -65,7 +76,7 @@ export function CourtsTab() {
           <input
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="Поиск площадок..."
+            placeholder="Поиск или вид спорта…"
             style={{
               width: '100%', padding: '13px 40px', borderRadius: 12,
               background: '#222D3F', border: '1px solid rgba(255,255,255,0.08)',
@@ -81,44 +92,41 @@ export function CourtsTab() {
         </div>
       </motion.div>
 
-      {/* Фильтры */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.05 }}
-        style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 22 }}
+        style={{ marginBottom: 16 }}
       >
-        <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2 }}>
-          {SPORTS.map(s => (
-            <button key={s} onClick={() => setSport(s)} style={{
-              padding: '8px 16px', borderRadius: 100, border: 'none', cursor: 'pointer', flexShrink: 0,
-              fontFamily: 'inherit', fontWeight: 600, fontSize: 13, transition: 'all 0.2s',
-              background: sport === s ? '#22c55e' : '#222D3F',
-              color: sport === s ? '#fff' : '#94a3b8',
-            }}>
-              {s}
-            </button>
-          ))}
-        </div>
+        <SportFilterChips
+          chips={visibleChips}
+          activeId={chipFilter}
+          onSelect={setChipFilter}
+        />
+      </motion.div>
 
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.08 }}
+        style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 22 }}
+      >
         <button onClick={() => setOnlyFree(v => !v)} style={{
           display: 'flex', alignItems: 'center', gap: 6,
           padding: '7px 14px', borderRadius: 10, border: `1px solid ${onlyFree ? '#22c55e' : 'rgba(255,255,255,0.08)'}`,
           background: onlyFree ? '#22c55e18' : 'transparent', cursor: 'pointer',
           fontFamily: 'inherit', fontSize: 12, fontWeight: 600, flexShrink: 0,
           color: onlyFree ? '#22c55e' : '#64748b', transition: 'all 0.2s',
-          marginLeft: 'auto',
         }}>
           <div style={{ width: 8, height: 8, borderRadius: '50%', background: onlyFree ? '#22c55e' : '#334155' }} />
           Только свободные
         </button>
       </motion.div>
 
-      {/* Сетка карточек */}
       <div className="dashboard-courts-grid">
         {filtered.map((court, i) => (
           <motion.button
-            key={court.id}
+            key={`${court.id}-${court.partnerVenueId ?? 'm'}`}
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: Math.min(i * 0.04, 0.4) }}
@@ -131,7 +139,6 @@ export function CourtsTab() {
               padding: 0, cursor: 'pointer', overflow: 'hidden', display: 'block',
             }}
           >
-            {/* Фото-баннер */}
             <div style={{ height: 150, ...courtCardBannerStyle(court), position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <span style={{ fontSize: 48, filter: 'drop-shadow(0 2px 12px rgba(0,0,0,0.6))' }}>{court.emoji}</span>
               <div style={{
@@ -151,7 +158,6 @@ export function CourtsTab() {
               </div>
             </div>
 
-            {/* Инфо */}
             <div style={{ padding: '14px 16px 16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8, gap: 8 }}>
                 <div style={{ fontSize: 15, fontWeight: 700, color: '#f1f5f9', flex: 1 }}>{court.name}</div>

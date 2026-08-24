@@ -11,8 +11,9 @@ import {
   ChevronDown,
   Plus,
 } from "lucide-react";
-import type { Court } from "../contexts/BookingContext";
+import type { Booking, Court } from "../contexts/BookingContext";
 import { useBookings } from "../contexts/BookingContext";
+import { useAuth } from "../contexts/AuthContext";
 import { loadPublicVenueById, usePublicVenues } from "../contexts/PublicVenuesContext";
 import type { PartnerVenue } from "../lib/partnerVenues";
 import { courtPhotoStyle } from "../utils/venueAdapters";
@@ -54,6 +55,7 @@ const UPCOMING_DATES = (() => {
       label: i === 0 ? "Сегодня" : i === 1 ? "Завтра" : days[d.getDay()],
       date: `${d.getDate()} ${months[d.getMonth()]}`,
       full: d.toLocaleDateString("ru-RU"),
+      iso: d.toISOString().slice(0, 10),
     });
   }
   return result;
@@ -90,6 +92,7 @@ function useIsDesktop() {
 
 export function CourtDetailSheet({ court, onClose }: Props) {
   const { addBooking } = useBookings();
+  const { user } = useAuth();
   const { getVenue } = usePublicVenues();
   const isDesktop = useIsDesktop();
   const sidePad = isDesktop ? "0 32px 28px" : "0 16px 24px";
@@ -101,12 +104,12 @@ export function CourtDetailSheet({ court, onClose }: Props) {
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
   const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
   const [paying, setPaying] = useState(false);
+  const [payError, setPayError] = useState<string | null>(null);
+  const [requestCallback, setRequestCallback] = useState(true);
   const [partnerVenue, setPartnerVenue] = useState<PartnerVenue | null>(() =>
     court.partnerVenueId ? getVenue(court.partnerVenueId) ?? null : null,
   );
-  const [newBooking, setNewBooking] = useState<ReturnType<
-    typeof addBooking
-  > | null>(null);
+  const [newBooking, setNewBooking] = useState<Booking | null>(null);
 
   useEffect(() => {
     if (!court.partnerVenueId) return;
@@ -146,16 +149,28 @@ export function CourtDetailSheet({ court, onClose }: Props) {
   async function handlePay() {
     if (!selectedSlot || paying) return;
     setPaying(true);
-    await new Promise((r) => setTimeout(r, 1400));
-    const booking = addBooking(
-      court,
-      selectedDate.date,
-      selectedSlot,
-      selectedDuration.value,
-    );
-    setNewBooking(booking);
-    setPaying(false);
-    setStep("success");
+    setPayError(null);
+    try {
+      await new Promise((r) => setTimeout(r, 1400));
+      const booking = await addBooking(
+        court,
+        selectedDate.date,
+        selectedSlot,
+        selectedDuration.value,
+        {
+          isoDate: selectedDate.iso,
+          price: totalPrice,
+          paymentMethod: "online",
+          requestCallback,
+        },
+      );
+      setNewBooking(booking);
+      setStep("success");
+    } catch (e) {
+      setPayError(e instanceof Error ? e.message : "Не удалось создать бронь");
+    } finally {
+      setPaying(false);
+    }
   }
 
   return createPortal(
@@ -1246,6 +1261,32 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                   </span>
                 </div>
 
+                <label
+                  style={{
+                    display: "flex",
+                    alignItems: "flex-start",
+                    gap: 12,
+                    marginTop: 18,
+                    padding: "14px 16px",
+                    borderRadius: 14,
+                    background: "rgba(34,197,94,0.08)",
+                    border: "1px solid rgba(34,197,94,0.22)",
+                    cursor: "pointer",
+                  }}
+                >
+                  <input
+                    type="checkbox"
+                    checked={requestCallback}
+                    onChange={(e) => setRequestCallback(e.target.checked)}
+                    style={{ width: 18, height: 18, marginTop: 2, accentColor: "#22c55e" }}
+                  />
+                  <span style={{ fontSize: 13, color: "#cbd5e1", lineHeight: 1.45 }}>
+                    <strong style={{ color: "#f1f5f9" }}>Перезвонить для подтверждения</strong>
+                    <br />
+                    Менеджер свяжется по номеру {user?.phone ?? "из профиля"} перед визитом
+                  </span>
+                </label>
+
                 {/* Кнопка внизу контента */}
                 <motion.button
                   whileHover={{ scale: 1.02 }}
@@ -1277,6 +1318,7 @@ export function CourtDetailSheet({ court, onClose }: Props) {
               court={court}
               totalPrice={totalPrice}
               paying={paying}
+              error={payError}
               isDesktop={isDesktop}
               onBack={() => setStep("confirm")}
               onPay={handlePay}

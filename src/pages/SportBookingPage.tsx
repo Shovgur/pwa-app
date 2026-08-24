@@ -13,7 +13,7 @@ import { paths } from '../config/features'
 import { useBookingPageReset } from '../hooks/useBookingPageReset'
 import { colors } from '../theme/tokens'
 
-const DAYS = ['Пн 9', 'Вт 10', 'Ср 11', 'Чт 12', 'Пт 13', 'Сб 14', 'Вс 15']
+import { upcomingBookingDays } from '../utils/bookingDates'
 
 export function SportBookingPage() {
   const { id } = useParams()
@@ -22,12 +22,13 @@ export function SportBookingPage() {
   const { isAuthenticated } = useAuth()
   const court = getCourt(Number(id))
 
-  const [selectedDay, setSelectedDay] = useState(1)
+  const days = upcomingBookingDays()
+  const [selectedDay, setSelectedDay] = useState(0)
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
 
   useBookingPageReset(id, () => {
-    setSelectedDay(1)
+    setSelectedDay(0)
     setSelectedSlot(null)
     setSuccess(false)
   })
@@ -44,14 +45,20 @@ export function SportBookingPage() {
   const venue = court
   const price = venue.price
 
-  function handleBook() {
+  async function handleBook() {
     if (!selectedSlot) return
     if (!isAuthenticated) {
       navigate('/login', { state: { from: `/sport/${id}` } })
       return
     }
-    addBooking(venue, DAYS[selectedDay].split(' ')[1] + ' июня', selectedSlot, 60)
-    setSuccess(true)
+    try {
+      await addBooking(venue, days[selectedDay].date, selectedSlot, 60, {
+        isoDate: days[selectedDay].iso,
+      })
+      setSuccess(true)
+    } catch {
+      // ошибка пока без отдельного UI — пользователь остаётся на форме
+    }
   }
 
   const seoTitle = `${venue.name} — бронирование ${venue.sport.toLowerCase()}`
@@ -113,16 +120,16 @@ export function SportBookingPage() {
               </div>
             </div>
             <div className="booking-slots" style={{ marginBottom: 32 }}>
-              {DAYS.map((d, i) => (
+              {days.map((d, i) => (
                 <button
-                  key={d}
+                  key={d.iso}
                   type="button"
                   className={`booking-slot booking-slot--green ${selectedDay === i ? 'booking-slot--active' : ''}`}
                   onClick={() => setSelectedDay(i)}
                   style={{ minWidth: 72, textAlign: 'center' }}
                 >
-                  <span style={{ display: 'block', fontSize: 12, opacity: 0.8, marginBottom: 4 }}>{d.split(' ')[0]}</span>
-                  <span style={{ display: 'block', fontSize: 18, fontWeight: 800 }}>{d.split(' ')[1]}</span>
+                  <span style={{ display: 'block', fontSize: 12, opacity: 0.8, marginBottom: 4 }}>{d.label}</span>
+                  <span style={{ display: 'block', fontSize: 18, fontWeight: 800 }}>{d.date.split(' ')[0]}</span>
                 </button>
               ))}
             </div>
@@ -154,7 +161,7 @@ export function SportBookingPage() {
         venueMeta={`${venue.sport} · ${venue.location}`}
         venueImage={venue.photos[0]}
         metaChips={selectedSlot ? [
-          { icon: <Clock size={14} />, text: `${DAYS[selectedDay].split(' ')[1]} июня · ${selectedSlot}` },
+          { icon: <Clock size={14} />, text: `${days[selectedDay].date} · ${selectedSlot}` },
           { icon: <Tag size={14} />, text: '1 час' },
         ] : []}
         lines={[

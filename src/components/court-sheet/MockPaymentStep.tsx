@@ -6,12 +6,13 @@ interface Props {
   court: Court
   totalPrice: number
   paying: boolean
+  error?: string | null
   isDesktop: boolean
   onBack: () => void
   onPay: () => void
 }
 
-export function MockPaymentStep({ court, totalPrice, paying, isDesktop, onBack, onPay }: Props) {
+export function MockPaymentStep({ court, totalPrice, paying, error, isDesktop, onBack, onPay }: Props) {
   return (
     <motion.div
       key="payment"
@@ -143,9 +144,24 @@ export function MockPaymentStep({ court, totalPrice, paying, isDesktop, onBack, 
         }}>
           <Shield size={16} color="#22c55e" />
           <span style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.45 }}>
-            Демо-оплата: списание не производится, бронь сохранится локально
+            Демо-оплата: списание не производится, бронь сохранится в вашем кабинете
           </span>
         </div>
+
+        {error && (
+          <div style={{
+            marginBottom: 16,
+            padding: '12px 14px',
+            borderRadius: 12,
+            background: 'rgba(239,68,68,0.12)',
+            border: '1px solid rgba(239,68,68,0.35)',
+            color: '#fca5a5',
+            fontSize: 13,
+            lineHeight: 1.45,
+          }}>
+            {error}
+          </div>
+        )}
 
         <motion.button
           type="button"

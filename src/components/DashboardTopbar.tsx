@@ -12,6 +12,14 @@ import type { Court } from '../contexts/BookingContext'
 import { colors } from '../theme/tokens'
 import { CourtDetailSheet } from './CourtDetailSheet'
 import { courtCardBannerStyle } from '../utils/venueAdapters'
+import {
+  ALL_VENUE_CHIP,
+  buildVenueFilterChips,
+  courtMatchesQuery,
+  matchesVenueChip,
+  sportChipsMatchingQuery,
+} from '../data/sportTypes'
+import { SportFilterChips } from './ui/SportFilterChips'
 
 const HEADER_H = 94
 const TOPBAR_BG = '#1E293B'
@@ -26,6 +34,7 @@ export function DashboardTopbar() {
 
   const [searchOpen, setSearchOpen] = useState(false)
   const [query, setQuery] = useState('')
+  const [sportChip, setSportChip] = useState('all')
   const [selectedCourt, setSelectedCourt] = useState<Court | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -45,17 +54,23 @@ export function DashboardTopbar() {
   function closeSearch() {
     setSearchOpen(false)
     setQuery('')
+    setSportChip('all')
   }
 
   const allCourts = [...partnerCourts, ...COURTS]
+  const searchSportSuggestions = sportChipsMatchingQuery(query)
+  const filterChips = buildVenueFilterChips(allCourts)
+  const visibleChips = query.trim() && searchSportSuggestions.length
+    ? [ALL_VENUE_CHIP, ...searchSportSuggestions]
+    : query.trim()
+      ? filterChips.filter(c => c.kind === 'sport').slice(0, 8)
+      : []
 
-  const results = query.trim().length === 0
+  const results = (query.trim().length === 0 && sportChip === 'all')
     ? allCourts.filter(c => c.available).slice(0, 5)
-    : allCourts.filter(c =>
-        c.name.toLowerCase().includes(query.toLowerCase()) ||
-        c.location.toLowerCase().includes(query.toLowerCase()) ||
-        c.sport.toLowerCase().includes(query.toLowerCase())
-      ).slice(0, 8)
+    : allCourts
+        .filter(c => matchesVenueChip(c, sportChip) && courtMatchesQuery(c, query))
+        .slice(0, 8)
 
   return (
     <>
@@ -224,6 +239,17 @@ export function DashboardTopbar() {
                   }}>
                     {query.trim() ? `Результаты · ${results.length}` : 'Популярные сейчас'}
                   </div>
+
+                  {visibleChips.length > 0 && (
+                    <div style={{ padding: '0 10px 8px' }}>
+                      <SportFilterChips
+                        chips={visibleChips}
+                        activeId={sportChip}
+                        onSelect={setSportChip}
+                        size="sm"
+                      />
+                    </div>
+                  )}
 
                   <div style={{ overflowY: 'auto', padding: '0 6px 8px' }}>
                     {results.length === 0 ? (

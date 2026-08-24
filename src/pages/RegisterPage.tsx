@@ -7,6 +7,7 @@ import { ParticleField } from '../components/ParticleField'
 import { BackToSiteLink } from '../components/ui/BackToSiteLink'
 import { AuthTransitionLoader } from '../components/ui/Loaders'
 import { FieldError, errorInputStyle } from '../components/ui/FieldError'
+import { isValidPhone } from '../utils/authHelpers'
 import { useFieldErrors } from '../hooks/useFieldErrors'
 
 function BtnSpinner() {
@@ -56,6 +57,10 @@ export function RegisterPage() {
     e.preventDefault()
     setError('')
     setEmailExists(false)
+    if (!isValidPhone(phone)) {
+      setError('Укажите корректный номер телефона в формате +7 999 123-45-67')
+      return
+    }
     const result = await register(name, email, password, phone)
     if (!result.success) {
       setEmailExists(Boolean(result.emailExists))
@@ -209,6 +214,9 @@ export function RegisterPage() {
                     style={{ ...inputStyle, ...errorInputStyle(Boolean(errors.phone)) }}
                   />
                   <FieldError message={errors.phone} />
+                  <p style={{ color: '#64748b', fontSize: 11, margin: '6px 0 0' }}>
+                    Нужен для подтверждения брони менеджером площадки
+                  </p>
                 </div>
 
                 <div>

@@ -1,5 +1,15 @@
-import { createContext, useContext, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react'
 import type { Loft, AddOn } from '../data/venues'
+import { LOFTS } from '../data/venues'
+import { useAuth } from './AuthContext'
+import {
+  buildCreatePayloadFromCourt,
+  cancelClientBooking,
+  createClientBooking,
+  fetchClientBookings,
+  loftVenueRef,
+} from '../lib/clientBookings'
+import { todayIsoDate } from '../utils/bookingDates'
 
 export interface Court {
   id: number
@@ -24,6 +34,8 @@ export interface Court {
   venueType?: 'sport' | 'loft' | 'pool'
   /** ID площадки партнёра из API (для /venue/:id) */
   partnerVenueId?: string
+  /** ID вида спорта (tennis, football, …) */
+  sportTypeId?: string
   /** Обложка с сервера (если есть фото) */
   coverImage?: string
 }
@@ -40,6 +52,15 @@ export interface Booking {
   createdAt: string
   addOns?: { name: string; price: number }[]
   venueType?: 'sport' | 'loft' | 'pool'
+  code?: string
+}
+
+export interface AddBookingOptions {
+  isoDate?: string
+  price?: number
+  paymentMethod?: 'online' | 'cash'
+  addOns?: { name: string; price: number }[]
+  requestCallback?: boolean
 }
 
 export const COURTS: Court[] = [
@@ -135,41 +156,76 @@ export const COURTS: Court[] = [
   },
 ]
 
-const INITIAL_BOOKINGS: Booking[] = []
-
 interface BookingContextType {
   bookings: Booking[]
-  addBooking: (court: Court, date: string, time: string, duration: number) => Booking
-  addLoftBooking: (loft: Loft, timeSlot: string, addOns: AddOn[], totalPrice: number) => Booking
-  cancelBooking: (id: number) => void
+  isLoading: boolean
+  error: string | null
+  reload: () => Promise<void>
+  addBooking: (
+    court: Court,
+    date: string,
+    time: string,
+    duration: number,
+    options?: AddBookingOptions,
+  ) => Promise<Booking>
+  addLoftBooking: (loft: Loft, timeSlot: string, addOns: AddOn[], totalPrice: number) => Promise<Booking>
+  cancelBooking: (id: number) => Promise<void>
 }
 
 const BookingContext = createContext<BookingContextType | null>(null)
 
 export function BookingProvider({ children }: { children: ReactNode }) {
-  const [bookings, setBookings] = useState<Booking[]>(INITIAL_BOOKINGS)
+  const { isAuthenticated } = useAuth()
+  const [bookings, setBookings] = useState<Booking[]>([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  function addBooking(court: Court, date: string, time: string, duration: number): Booking {
-    const price = Math.round(court.price * (duration / 60))
-    const booking: Booking = {
-      id: Date.now(),
-      courtId: court.id,
-      court,
-      date,
-      time,
-      duration,
-      price,
-      status: 'upcoming',
-      createdAt: new Date().toISOString().slice(0, 10),
-      venueType: court.venueType ?? 'sport',
+  const reload = useCallback(async () => {
+    if (!isAuthenticated) {
+      setBookings([])
+      return
     }
-    setBookings(prev => [booking, ...prev])
+    setIsLoading(true)
+    setError(null)
+    try {
+      const rows = await fetchClientBookings()
+      setBookings(rows)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось загрузить брони')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [isAuthenticated])
+
+  useEffect(() => {
+    void reload()
+  }, [reload])
+
+  async function addBooking(
+    court: Court,
+    _dateLabel: string,
+    time: string,
+    duration: number,
+    options?: AddBookingOptions,
+  ): Promise<Booking> {
+    const price = options?.price ?? Math.round(court.price * (duration / 60))
+    const isoDate = options?.isoDate ?? todayIsoDate()
+
+    const payload = buildCreatePayloadFromCourt(court, isoDate, time, duration, price, {
+      paymentMethod: options?.paymentMethod ?? 'online',
+      addOns: options?.addOns,
+      requestCallback: options?.requestCallback,
+    })
+
+    const booking = await createClientBooking(payload)
+    setBookings(prev => [booking, ...prev.filter(b => b.id !== booking.id)])
     return booking
   }
 
   function loftAsCourt(loft: Loft): Court {
+    const idx = LOFTS.indexOf(loft)
     return {
-      id: 900 + loft.id.length,
+      id: 900 + (idx >= 0 ? idx : 0),
       emoji: '🏢',
       sport: 'Лофт',
       name: loft.name,
@@ -187,33 +243,36 @@ export function BookingProvider({ children }: { children: ReactNode }) {
       slots: loft.timeSlots,
       lat: 55.75,
       lng: 37.62,
+      venueType: 'loft',
     }
   }
 
-  function addLoftBooking(loft: Loft, timeSlot: string, addOns: AddOn[], totalPrice: number): Booking {
-    const booking: Booking = {
-      id: Date.now(),
-      courtId: 900,
-      court: loftAsCourt(loft),
-      date: '10 июня',
-      time: timeSlot,
-      duration: 120,
-      price: totalPrice,
-      status: 'upcoming',
-      createdAt: new Date().toISOString().slice(0, 10),
-      venueType: 'loft',
-      addOns: addOns.map((a) => ({ name: a.name, price: a.price })),
-    }
-    setBookings(prev => [booking, ...prev])
+  async function addLoftBooking(
+    loft: Loft,
+    timeSlot: string,
+    addOns: AddOn[],
+    totalPrice: number,
+  ): Promise<Booking> {
+    const court = loftAsCourt(loft)
+    const isoDate = todayIsoDate()
+    const payload = buildCreatePayloadFromCourt(court, isoDate, timeSlot, 120, totalPrice, {
+      paymentMethod: 'online',
+      addOns: addOns.map(a => ({ name: a.name, price: a.price })),
+    })
+    payload.venueRef = loftVenueRef(loft.id)
+
+    const booking = await createClientBooking(payload)
+    setBookings(prev => [booking, ...prev.filter(b => b.id !== booking.id)])
     return booking
   }
 
-  function cancelBooking(id: number) {
-    setBookings(prev => prev.map(b => b.id === id ? { ...b, status: 'cancelled' as const } : b))
+  async function cancelBooking(id: number) {
+    const updated = await cancelClientBooking(id)
+    setBookings(prev => prev.map(b => (b.id === id ? updated : b)))
   }
 
   return (
-    <BookingContext.Provider value={{ bookings, addBooking, addLoftBooking, cancelBooking }}>
+    <BookingContext.Provider value={{ bookings, isLoading, error, reload, addBooking, addLoftBooking, cancelBooking }}>
       {children}
     </BookingContext.Provider>
   )

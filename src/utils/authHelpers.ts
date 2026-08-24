@@ -15,6 +15,12 @@ export function normalizePhone(phone: string): string {
   return p
 }
 
+/** Valid RU mobile after normalization (+7 + 10 digits). */
+export function isValidPhone(phone: string): boolean {
+  const p = normalizePhone(phone.trim())
+  return /^\+7\d{10}$/.test(p)
+}
+
 /** Backend duplicate-email signals (500/409, Postgres unique constraint, etc.). */
 export function isDuplicateEmailError(message: string, status?: number): boolean {
   const m = message.toLowerCase()

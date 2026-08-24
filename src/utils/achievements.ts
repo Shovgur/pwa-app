@@ -4,6 +4,7 @@ import {
   Target, Star, Zap, Medal, Crown, MapPin,
 } from 'lucide-react'
 import type { Booking } from '../contexts/BookingContext'
+import { courtSportId, getSportById } from '../data/sportTypes'
 
 export type AchievementCategory = 'bookings' | 'sport' | 'explore' | 'special'
 export type AchievementTier = 'bronze' | 'silver' | 'gold' | 'platinum'
@@ -47,12 +48,22 @@ function activeBookings(bookings: Booking[]): Booking[] {
   return bookings.filter(b => b.status !== 'cancelled')
 }
 
-function countBySport(bookings: Booking[], sport: string): number {
-  return activeBookings(bookings).filter(b => b.court.sport === sport).length
+function countBySport(bookings: Booking[], sportId: string): number {
+  const label = getSportById(sportId)?.label
+  return activeBookings(bookings).filter(b => {
+    if (courtSportId(b.court) === sportId) return true
+    return label ? b.court.sport === label : false
+  }).length
 }
 
 function uniqueSports(bookings: Booking[]): number {
-  return new Set(activeBookings(bookings).map(b => b.court.sport)).size
+  const ids = new Set<string>()
+  for (const b of activeBookings(bookings)) {
+    if (b.venueType === 'loft' || b.venueType === 'pool') continue
+    const id = courtSportId(b.court)
+    if (id) ids.add(id)
+  }
+  return ids.size
 }
 
 function uniqueVenues(bookings: Booking[]): number {
@@ -142,7 +153,7 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
     color: '#22c55e',
     target: 3,
     xp: 100,
-    measure: b => countBySport(b, 'Теннис'),
+    measure: b => countBySport(b, 'tennis'),
   },
   {
     id: 'football-3',
@@ -155,7 +166,72 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
     color: '#3b82f6',
     target: 3,
     xp: 100,
-    measure: b => countBySport(b, 'Футбол'),
+    measure: b => countBySport(b, 'football'),
+  },
+  {
+    id: 'basketball-3',
+    title: 'Баскетболист',
+    description: '3 бронирования баскетбольных залов',
+    category: 'sport',
+    tier: 'silver',
+    icon: Star,
+    emoji: '🏀',
+    color: '#f97316',
+    target: 3,
+    xp: 100,
+    measure: b => countBySport(b, 'basketball'),
+  },
+  {
+    id: 'volleyball-3',
+    title: 'Волейболист',
+    description: '3 бронирования волейбольных площадок',
+    category: 'sport',
+    tier: 'silver',
+    icon: Star,
+    emoji: '🏐',
+    color: '#06b6d4',
+    target: 3,
+    xp: 100,
+    measure: b => countBySport(b, 'volleyball'),
+  },
+  {
+    id: 'badminton-3',
+    title: 'Бадминтонист',
+    description: '3 бронирования бадминтонных кортов',
+    category: 'sport',
+    tier: 'silver',
+    icon: Star,
+    emoji: '🏸',
+    color: '#a855f7',
+    target: 3,
+    xp: 100,
+    measure: b => countBySport(b, 'badminton'),
+  },
+  {
+    id: 'hockey-3',
+    title: 'Хоккеист',
+    description: '3 бронирования ледовых арен',
+    category: 'sport',
+    tier: 'silver',
+    icon: Star,
+    emoji: '🏒',
+    color: '#64748b',
+    target: 3,
+    xp: 100,
+    measure: b => countBySport(b, 'hockey'),
+  },
+  {
+    id: 'padel-2',
+    title: 'Паделист',
+    description: '2 бронирования падел-кортов',
+    category: 'sport',
+    tier: 'bronze',
+    icon: Star,
+    emoji: '🎾',
+    color: '#84cc16',
+    target: 2,
+    xp: 75,
+    measure: b => countBySport(b, 'padel'),
   },
   {
     id: 'pool-1',

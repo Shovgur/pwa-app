@@ -34,6 +34,7 @@ function migrateVenue(raw: Partial<PartnerVenue> & { pricePerHour?: number }): P
     isActive: raw.isActive ?? true,
     bookingsCount: raw.bookingsCount ?? 0,
     createdAt: raw.createdAt ?? new Date().toISOString(),
+    sportType: raw.sportType ?? null,
     lat: raw.lat ?? null,
     lng: raw.lng ?? null,
   }
@@ -98,6 +99,7 @@ export function mockCreateVenue(payload: CreateVenuePayload): Promise<PartnerVen
     durationRules: payload.durationRules,
     extraServices: payload.extraServices,
     amenities: payload.amenities,
+    sportType: payload.sportType ?? null,
     isActive: true,
     bookingsCount: 0,
     createdAt: new Date().toISOString(),

@@ -18,7 +18,7 @@ const STATUS_META: Record<Booking['status'], { label: string; color: string }> =
   cancelled: { label: 'Отменено', color: '#ef4444' },
 }
 
-function BookingRow({ booking, onCancel }: { booking: Booking; onCancel: (id: number) => void }) {
+function BookingRow({ booking, onCancel }: { booking: Booking; onCancel: (id: number) => void | Promise<void> }) {
   const meta = STATUS_META[booking.status]
   const court = booking.court
 

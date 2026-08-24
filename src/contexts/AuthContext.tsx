@@ -8,7 +8,7 @@ import {
 } from 'react'
 import { API_BASE } from '../config/api'
 import { AUTH_TOKEN_KEY, AUTH_USER_KEY, clearAuthToken } from '../config/auth'
-import { buildLoginPayload, isDuplicateEmailError, normalizePhone } from '../utils/authHelpers'
+import { buildLoginPayload, isDuplicateEmailError, isValidPhone, normalizePhone } from '../utils/authHelpers'
 
 const TOKEN_KEY = AUTH_TOKEN_KEY
 const USER_KEY  = AUTH_USER_KEY
@@ -136,8 +136,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = useCallback(async (name: string, email: string, password: string, phone?: string) => {
     setIsLoading(true)
     try {
-      const payload: Record<string, string> = { name, email, password }
-      if (phone?.trim()) payload.phone = normalizePhone(phone)
+      if (!phone?.trim() || !isValidPhone(phone)) {
+        return { success: false, error: 'Укажите корректный номер телефона' }
+      }
+      const payload: Record<string, string> = { name, email, password, phone: normalizePhone(phone) }
 
       await apiFetch<{ token?: string; userId: number; email: string; name: string; phone?: string | null }>(
         '/auth/register',
