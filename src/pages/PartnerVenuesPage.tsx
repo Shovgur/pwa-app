@@ -23,6 +23,9 @@ import {
 } from '../lib/partnerVenues'
 import { VenueBuilderForm } from '../components/partner/VenueBuilderForm'
 import { venuePriceSummary } from '../utils/venuePrice'
+import { usePartnerAuth } from '../contexts/PartnerAuthContext'
+import { Link } from 'react-router-dom'
+import { PARTNER_PROMOTIONS_PATH } from '../utils/partnerAccess'
 
 const KIND_COLORS: Record<VenueKind, string> = {
   sport:   '#22c55e',
@@ -36,11 +39,13 @@ function VenueCard({
   onToggle,
   onDelete,
   busy,
+  canManage,
 }: {
   venue: PartnerVenue
   onToggle: () => void
   onDelete: () => void
   busy: boolean
+  canManage: boolean
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const kindColor = KIND_COLORS[venue.venueKind]
@@ -99,6 +104,12 @@ function VenueCard({
               <span>+{venue.extraServices.length} услуг</span>
             )}
             <span>Броней: <strong style={{ color: '#f1f5f9' }}>{venue.bookingsCount}</strong></span>
+            {venue.managedByName && (
+              <span>Ведёт: <strong style={{ color: '#f1f5f9' }}>{venue.managedByName}</strong></span>
+            )}
+            {!canManage && (
+              <span style={{ color: '#64748b' }}>только просмотр</span>
+            )}
           </div>
 
           {venue.amenities.length > 0 && (
@@ -117,6 +128,8 @@ function VenueCard({
       </div>
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+        {canManage ? (
+          <>
         <button
           type="button"
           onClick={onToggle}
@@ -161,18 +174,29 @@ function VenueCard({
             <Trash2 size={14} />
           </button>
         )}
+          </>
+        ) : null}
       </div>
     </div>
   )
 }
 
 export function PartnerVenuesPage() {
+  const { partner } = usePartnerAuth()
   const [venues, setVenues]       = useState<PartnerVenue[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError]         = useState('')
   const [busyId, setBusyId]       = useState<string | null>(null)
   const [formOpen, setFormOpen]   = useState(false)
   const [creating, setCreating]   = useState(false)
+
+  function canManageVenue(venue: PartnerVenue): boolean {
+    if (venue.canEdit === true) return true
+    if (venue.canEdit === false) return false
+    if (!partner?.staffId) return true // пока бэкенд не отдаёт staffId — не блокируем менеджера
+    if (!venue.managedByStaffId) return true
+    return String(venue.managedByStaffId) === String(partner.staffId)
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -245,8 +269,8 @@ export function PartnerVenuesPage() {
           </h1>
           <p style={{ color: '#64748b', fontSize: 14, margin: 0 }}>
             {activeCount > 0
-              ? `${activeCount} активн${activeCount === 1 ? 'ая' : activeCount < 5 ? 'ые' : 'ых'} из ${venues.length}`
-              : 'Добавьте объекты вашей компании'}
+              ? `${activeCount} активн${activeCount === 1 ? 'ая' : activeCount < 5 ? 'ые' : 'ых'} из ${venues.length} · редактируете свою точку`
+              : 'Создайте площадку — она закрепится за вами'}
           </p>
         </div>
 
@@ -271,8 +295,8 @@ export function PartnerVenuesPage() {
           <Info size={17} color="#3b82f6" />
         </div>
         <p style={{ margin: 0, fontSize: 13.5, color: '#94a3b8', lineHeight: 1.6 }}>
-          Настройте фото, тарифы по времени, пакеты по часам и доп. услуги. Публичный каталог пока на демо-данных —
-          после подключения API ваши площадки появятся для клиентов.
+          Видны все объекты компании, менять можно только свою точку. Акции настраиваются во вкладке{' '}
+          <Link to={PARTNER_PROMOTIONS_PATH} style={{ color: '#22c55e', fontWeight: 600 }}>Акции</Link>.
         </p>
       </div>
 
@@ -317,6 +341,7 @@ export function PartnerVenuesPage() {
               key={venue.id}
               venue={venue}
               busy={busyId === venue.id}
+              canManage={canManageVenue(venue)}
               onToggle={() => void handleToggle(venue)}
               onDelete={() => void handleDelete(venue)}
             />

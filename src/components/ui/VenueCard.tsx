@@ -16,6 +16,8 @@ export interface VenueCardProps {
   delay?: number
   variant?: 'default' | 'featured'
   description?: string
+  /** Бейдж акции, например «−20%» */
+  promoBadge?: string | null
 }
 
 export function VenueCard({
@@ -30,6 +32,7 @@ export function VenueCard({
   delay = 0,
   variant = 'default',
   description,
+  promoBadge,
 }: VenueCardProps) {
   const featured = variant === 'featured'
 
@@ -68,6 +71,25 @@ export function VenueCard({
             )}
             <div className="venue-card-media-overlay" />
             <span className="venue-card-badge">{badge.replace(/^[^\s]+\s/, '') || badge}</span>
+            {promoBadge && (
+              <span
+                style={{
+                  position: 'absolute',
+                  top: 14,
+                  right: 14,
+                  zIndex: 2,
+                  padding: '6px 10px',
+                  borderRadius: 999,
+                  fontSize: 12,
+                  fontWeight: 800,
+                  background: 'linear-gradient(135deg, #f97316, #ea580c)',
+                  color: '#fff',
+                  boxShadow: '0 8px 20px rgba(249,115,22,0.35)',
+                }}
+              >
+                {promoBadge}
+              </span>
+            )}
             {featured && (
               <div className="venue-card-media-content">
                 <h3>{title}</h3>

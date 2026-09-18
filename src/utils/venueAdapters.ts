@@ -61,10 +61,12 @@ export function partnerVenueBadge(venue: PartnerVenue): string {
 export function partnerVenueToVenueCard(venue: PartnerVenue, delay = 0): VenueCardProps & {
   type: ReturnType<typeof partnerVenueCatalogType>
   sportTypeId?: string | null
+  hasPromo?: boolean
 } {
   const minPrice = venueMinPricePerHour(venue)
   const image = venueCoverImage(venue)
   const desc = venue.description.trim()
+  const activePromo = (venue.promotions ?? []).find(p => p.isFeatured) ?? (venue.promotions ?? [])[0]
   return {
     to: `/venue/${venue.id}`,
     badge: partnerVenueBadge(venue),
@@ -78,6 +80,8 @@ export function partnerVenueToVenueCard(venue: PartnerVenue, delay = 0): VenueCa
     delay,
     type: partnerVenueCatalogType(venue.venueKind),
     sportTypeId: venue.venueKind === 'sport' ? venue.sportType ?? null : null,
+    promoBadge: activePromo?.discountLabel ?? null,
+    hasPromo: (venue.promotions?.length ?? 0) > 0,
   }
 }
 

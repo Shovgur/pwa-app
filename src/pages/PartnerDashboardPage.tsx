@@ -4,7 +4,7 @@ import { motion } from 'framer-motion'
 import { ArrowRight, Building2, CalendarCheck, CheckCircle2, Info, Percent, ShieldAlert, UserPlus, Users } from 'lucide-react'
 import { usePartnerAuth } from '../contexts/PartnerAuthContext'
 import { usePartnerCrm } from '../contexts/PartnerCrmContext'
-import { isOwner, PARTNER_BOOKINGS_PATH, PARTNER_VENUES_PATH } from '../utils/partnerAccess'
+import { isOwner, PARTNER_BOOKINGS_PATH, PARTNER_VENUES_PATH, PARTNER_PROMOTIONS_PATH } from '../utils/partnerAccess'
 import { formatMoney } from '../utils/partnerCrmFormat'
 import { fetchPartnerVenues } from '../lib/partnerVenues'
 
@@ -120,7 +120,7 @@ function OwnerDashboard() {
           <UserPlus size={18} color="#22c55e" />
         </div>
         <p style={{ margin: 0, flex: 1, minWidth: 200, fontSize: 14, color: '#cbd5e1', lineHeight: 1.5 }}>
-          Добавьте сотрудников — они будут подтверждать брони и оплаты в своём кабинете
+          Добавьте управляющих — они создают площадки, акции и ведут брони по своим точкам
         </p>
         <Link
           to="/partner/staff"
@@ -140,39 +140,13 @@ function OwnerDashboard() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.32 }}
         className="card"
-        style={{ marginTop: 20, padding: '18px 22px', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}
-      >
-        <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(168,85,247,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <Building2 size={18} color="#a855f7" />
-        </div>
-        <p style={{ margin: 0, flex: 1, minWidth: 200, fontSize: 14, color: '#cbd5e1', lineHeight: 1.5 }}>
-          Добавьте корты, лофты и другие объекты — они появятся в вашем кабинете
-        </p>
-        <Link
-          to={PARTNER_VENUES_PATH}
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 16px',
-            borderRadius: 12, background: 'linear-gradient(135deg, #a855f7, #7c3aed)',
-            color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none',
-          }}
-        >
-          Площадки
-          <ArrowRight size={15} />
-        </Link>
-      </motion.div>
-
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.36 }}
-        className="card"
         style={{ marginTop: 20, padding: '20px 22px', display: 'flex', alignItems: 'center', gap: 14 }}
       >
         <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(59,130,246,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <Info size={18} color="#3b82f6" />
         </div>
         <p style={{ margin: 0, fontSize: 14, color: '#94a3b8', lineHeight: 1.5 }}>
-          Раздел «Брони» доступен только вашим сотрудникам-управляющим
+          Площадки и акции ведут управляющие. Вам доступны цифры по компании и список сотрудников
         </p>
       </motion.div>
     </>
@@ -212,6 +186,12 @@ function ManagerDashboard() {
         label: 'Завершено',
         value: completed,
         color: '#22c55e',
+      },
+      {
+        icon: Building2,
+        label: 'Новых заявок сейчас',
+        value: bookings.filter(b => b.status === 'pending').length,
+        color: '#f59e0b',
       },
     ]
   }, [bookings, monthPrefix])
@@ -282,16 +262,53 @@ function ManagerDashboard() {
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.18 }}
+        transition={{ delay: 0.16 }}
         className="card"
-        style={{ marginTop: 20, padding: '20px 22px', display: 'flex', alignItems: 'center', gap: 14 }}
+        style={{ marginTop: 20, padding: '18px 22px', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}
       >
-        <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(59,130,246,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-          <Info size={18} color="#3b82f6" />
+        <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(168,85,247,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <Building2 size={18} color="#a855f7" />
         </div>
-        <p style={{ margin: 0, fontSize: 14, color: '#94a3b8', lineHeight: 1.5 }}>
-          Полная информация доступна только владельцу
+        <p style={{ margin: 0, flex: 1, minWidth: 200, fontSize: 14, color: '#cbd5e1', lineHeight: 1.5 }}>
+          Создавайте и ведите свою площадку — клиенты увидят её в каталоге
         </p>
+        <Link
+          to={PARTNER_VENUES_PATH}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 16px',
+            borderRadius: 12, background: 'linear-gradient(135deg, #a855f7, #7c3aed)',
+            color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none',
+          }}
+        >
+          Площадки
+          <ArrowRight size={15} />
+        </Link>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="card"
+        style={{ marginTop: 20, padding: '18px 22px', display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}
+      >
+        <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(249,115,22,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <Percent size={18} color="#f97316" />
+        </div>
+        <p style={{ margin: 0, flex: 1, minWidth: 200, fontSize: 14, color: '#cbd5e1', lineHeight: 1.5 }}>
+          Запускайте акции — они появятся бейджами и лентой на сайте
+        </p>
+        <Link
+          to={PARTNER_PROMOTIONS_PATH}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 8, padding: '11px 16px',
+            borderRadius: 12, background: 'linear-gradient(135deg, #f97316, #ea580c)',
+            color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none',
+          }}
+        >
+          Акции
+          <ArrowRight size={15} />
+        </Link>
       </motion.div>
     </>
   )

@@ -20,12 +20,15 @@ export type Capability =
   | 'finances'    // комиссия, выручка, финансовая аналитика
   | 'companyInfo' // реквизиты компании
   | 'staff'       // управление сотрудниками
-  | 'venues'      // управление площадками
+  | 'venues'      // создание/редактирование площадок (по точке)
+  | 'promotions'  // акции по своим площадкам
   | 'crm'         // работа с бронями и оплатами
 
 const CAPABILITIES: Record<PartnerRole, readonly Capability[]> = {
-  owner:   ['overview', 'finances', 'companyInfo', 'staff', 'venues'],
-  manager: ['crm'],
+  // Владелец: цифры, сотрудники, компания. Площадки ведут менеджеры.
+  owner:   ['overview', 'finances', 'companyInfo', 'staff'],
+  // Управляющий: CRM, свои площадки, акции. Операционные цифры — на дашборде без финансов.
+  manager: ['crm', 'venues', 'promotions'],
 }
 
 export function can(role: PartnerRole | null | undefined, cap: Capability): boolean {
@@ -42,6 +45,9 @@ export const PARTNER_BOOKINGS_PATH = '/partner/bookings'
 
 /** Управление площадками партнёра */
 export const PARTNER_VENUES_PATH = '/partner/venues'
+
+/** Акции партнёра */
+export const PARTNER_PROMOTIONS_PATH = '/partner/promotions'
 
 export function isOwner(role: PartnerRole | null | undefined): boolean {
   return (role ?? 'owner') === 'owner'

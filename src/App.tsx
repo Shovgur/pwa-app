@@ -24,6 +24,7 @@ import { PartnerDashboardPage } from './pages/PartnerDashboardPage'
 import { PartnerCrmPage } from './pages/PartnerCrmPage'
 import { PartnerStaffPage } from './pages/PartnerStaffPage'
 import { PartnerVenuesPage } from './pages/PartnerVenuesPage'
+import { PartnerPromotionsPage } from './pages/PartnerPromotionsPage'
 import { PartnerSettingsPage } from './pages/PartnerSettingsPage'
 import { PublicVenuePage } from './pages/PublicVenuePage'
 import { can, partnerHomeRoute, PARTNER_BOOKINGS_PATH, type Capability } from './utils/partnerAccess'
@@ -111,6 +112,11 @@ function AppRoutes() {
         <Route path="/partner/venues" element={
           <PartnerCapabilityRoute cap="venues">
             <PartnerVenuesPage />
+          </PartnerCapabilityRoute>
+        } />
+        <Route path="/partner/promotions" element={
+          <PartnerCapabilityRoute cap="promotions">
+            <PartnerPromotionsPage />
           </PartnerCapabilityRoute>
         } />
         <Route path="/partner/settings" element={<PartnerSettingsPage />} />

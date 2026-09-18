@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { SeoHead } from '../components/SeoHead'
 import { motion } from 'framer-motion'
-import { SlidersHorizontal, MapPin, Calendar, Search, X } from 'lucide-react'
+import { SlidersHorizontal, MapPin, Calendar, Search, X, Sparkles } from 'lucide-react'
 import { VenueCard } from '../components/ui/VenueCard'
 import { SportFilterChips } from '../components/ui/SportFilterChips'
 import { usePublicVenues } from '../contexts/PublicVenuesContext'
@@ -17,6 +17,7 @@ import {
   type VenueFilterChip,
 } from '../data/sportTypes'
 import { colors } from '../theme/tokens'
+import { fetchPublicPromotions, type VenuePromotion } from '../lib/partnerPromotions'
 
 type CatalogItem = {
   to: string
@@ -30,6 +31,8 @@ type CatalogItem = {
   image?: string
   type: 'sport' | 'loft' | 'pool' | 'meeting'
   sportTypeId?: string | null
+  promoBadge?: string | null
+  hasPromo?: boolean
 }
 
 function itemMatchesSearch(item: CatalogItem, q: string): boolean {
@@ -60,15 +63,27 @@ export function CatalogPage() {
   const initialQuery = params.get('q') ?? ''
   const city = params.get('city') ?? ''
   const date = params.get('date') ?? ''
+  const initialPromo = params.get('promo') === '1'
   const [filter, setFilter] = useState<string>(initialType)
   const [sportFilter, setSportFilter] = useState(initialSport)
   const [search, setSearch] = useState(initialQuery)
+  const [promosOnly, setPromosOnly] = useState(initialPromo)
+  const [promoFeed, setPromoFeed] = useState<VenuePromotion[]>([])
 
   useEffect(() => {
     setFilter(initialType)
     setSportFilter(initialSport)
     setSearch(initialQuery)
-  }, [initialType, initialSport, initialQuery])
+    setPromosOnly(initialPromo)
+  }, [initialType, initialSport, initialQuery, initialPromo])
+
+  useEffect(() => {
+    let cancelled = false
+    void fetchPublicPromotions().then(list => {
+      if (!cancelled) setPromoFeed(list.filter(p => p.isActive && p.isFeatured))
+    })
+    return () => { cancelled = true }
+  }, [])
 
   const sportItems = useMemo<CatalogItem[]>(() => COURTS.filter((c) => c.available).map((c) => ({
     to: `/sport/${c.id}`,
@@ -124,14 +139,17 @@ export function CatalogPage() {
       image: item.image,
       type: item.type,
       sportTypeId: 'sportTypeId' in item ? (item as CatalogItem).sportTypeId : null,
+      promoBadge: 'promoBadge' in item ? (item as CatalogItem).promoBadge ?? null : null,
+      hasPromo: 'hasPromo' in item ? Boolean((item as CatalogItem).hasPromo) : Boolean((item as CatalogItem).promoBadge),
     })),
     [catalogItems],
   )
 
-  const allItems = useMemo(
-    () => [...partnerItems, ...sportItems, ...loftItems, ...poolItems],
-    [partnerItems, sportItems, loftItems, poolItems],
-  )
+  const allItems = useMemo(() => {
+    const merged = [...partnerItems, ...sportItems, ...loftItems, ...poolItems]
+    // Площадки с featured-акциями поднимаем вверх
+    return merged.sort((a, b) => Number(Boolean(b.promoBadge)) - Number(Boolean(a.promoBadge)))
+  }, [partnerItems, sportItems, loftItems, poolItems])
 
   const sportChips = useMemo((): VenueFilterChip[] => {
     const sportIds = new Set<string>()
@@ -193,8 +211,12 @@ export function CatalogPage() {
       items = items.filter(i => itemMatchesSearch(i, search))
     }
 
+    if (promosOnly) {
+      items = items.filter(i => i.hasPromo || Boolean(i.promoBadge))
+    }
+
     return items
-  }, [filter, sportFilter, search, allItems])
+  }, [filter, sportFilter, search, allItems, promosOnly])
 
   const pills = [
     { id: 'all', emoji: '✨', label: `Все · ${allItems.length}` },
@@ -206,6 +228,8 @@ export function CatalogPage() {
       : []),
   ]
 
+  const promoCount = allItems.filter(i => i.hasPromo || i.promoBadge).length
+
   function updateParams(patch: Record<string, string | null>) {
     const next = new URLSearchParams(params)
     for (const [key, value] of Object.entries(patch)) {
@@ -213,6 +237,11 @@ export function CatalogPage() {
       else next.set(key, value)
     }
     setParams(next)
+  }
+
+  function setPromosOnlyAndUrl(on: boolean) {
+    setPromosOnly(on)
+    updateParams({ promo: on ? '1' : null })
   }
 
   function setFilterAndUrl(id: string) {
@@ -266,6 +295,52 @@ export function CatalogPage() {
         )}
       </motion.div>
 
+      {promoFeed.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{
+            marginBottom: 22,
+            padding: '16px 18px',
+            borderRadius: 18,
+            background: 'linear-gradient(135deg, rgba(249,115,22,0.16), rgba(234,88,12,0.06))',
+            border: '1px solid rgba(249,115,22,0.28)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <Sparkles size={16} color="#fb923c" />
+            <span style={{ fontSize: 13, fontWeight: 800, color: '#fb923c', letterSpacing: '0.04em' }}>АКЦИИ СЕЙЧАС</span>
+          </div>
+          <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
+            {promoFeed.slice(0, 8).map(p => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => setPromosOnlyAndUrl(true)}
+                style={{
+                  flex: '0 0 auto',
+                  minWidth: 180,
+                  padding: '12px 14px',
+                  borderRadius: 14,
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'rgba(15,23,42,0.45)',
+                  color: '#e2e8f0',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                <div style={{ fontSize: 12, fontWeight: 800, color: '#fb923c', marginBottom: 4 }}>
+                  {p.discountPercent ? `−${p.discountPercent}%` : 'Акция'}
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 700 }}>{p.title}</div>
+                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>{p.venueName}</div>
+              </button>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -314,6 +389,16 @@ export function CatalogPage() {
             <span>{p.emoji}</span> {p.label}
           </motion.button>
         ))}
+        <motion.button
+          type="button"
+          onClick={() => setPromosOnlyAndUrl(!promosOnly)}
+          className={`catalog-filter-chip ${promosOnly ? 'catalog-filter-chip--active' : ''}`}
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.97 }}
+          style={promosOnly ? undefined : { borderColor: 'rgba(249,115,22,0.35)', color: '#fb923c' }}
+        >
+          <span>🔥</span> Акции{promoCount > 0 ? ` · ${promoCount}` : ''}
+        </motion.button>
         <motion.button
           type="button"
           className="catalog-filter-chip catalog-filter-chip--filters"

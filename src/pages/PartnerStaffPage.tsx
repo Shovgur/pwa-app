@@ -87,7 +87,7 @@ function CredentialsPanel({ login, password }: { login: string; password: string
         </button>
       </div>
       <p style={{ margin: '10px 0 0', fontSize: 12, color: '#64748b' }}>
-        Вход — на странице /login, таб «Я партнёр». Сотрудник увидит только раздел «Брони».
+        Вход — на странице /login, таб «Я партнёр». Сотрудник ведёт брони, площадки и акции по своей точке.
       </p>
     </div>
   )

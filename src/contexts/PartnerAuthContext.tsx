@@ -27,6 +27,8 @@ export interface Partner {
   role: PartnerRole
   /** Имя сотрудника; у владельца пусто — там используется название компании */
   name: string | null
+  /** id сотрудника (partner_staff), только у manager */
+  staffId: number | null
 }
 
 interface ChangePasswordPayload {
@@ -71,6 +73,7 @@ function loadProfile(): Partner | null {
       ...cached,
       role: parsePartnerRole(cached.role),
       name: cached.name ?? null,
+      staffId: cached.staffId ?? null,
     }
   } catch {
     return null
@@ -95,6 +98,9 @@ function mapProfile(data: Record<string, unknown>): Partner {
     status:            (data.status as string | undefined) ?? 'active',
     role:              parsePartnerRole(data.role),
     name:              (data.name as string | undefined) ?? null,
+    staffId:           data.staff_id != null || data.staffId != null
+      ? Number(data.staff_id ?? data.staffId)
+      : null,
   }
 }
 

@@ -74,6 +74,21 @@ export interface PartnerVenue {
   lat?: number | null
   lng?: number | null
   sportType?: string | null
+  /** Сотрудник, который ведёт эту точку */
+  managedByStaffId?: string | null
+  managedByName?: string | null
+  /** Можно ли текущему пользователю редактировать */
+  canEdit?: boolean
+  /** Активные акции (для публичного каталога / кабинета) */
+  promotions?: VenuePromotionSummary[]
+}
+
+export interface VenuePromotionSummary {
+  id: string
+  title: string
+  promoType: string
+  discountLabel: string
+  isFeatured: boolean
 }
 
 export interface CreateVenuePayload {
