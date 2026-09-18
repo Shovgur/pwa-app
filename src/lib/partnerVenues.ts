@@ -164,6 +164,21 @@ export function setPartnerVenueActive(id: string, isActive: boolean): Promise<Pa
   }).then(r => r.venue)
 }
 
+export function updatePartnerVenue(id: string, payload: CreateVenuePayload): Promise<PartnerVenue> {
+  if (USE_VENUE_MOCKS) {
+    return mockSetVenueActive(id, true).then(async () => {
+      const list = await mockListVenues()
+      const found = list.find(v => v.id === id)
+      if (!found) throw new Error('Площадка не найдена')
+      return { ...found, ...payload, pricePerHour: payload.basePricePerHour }
+    })
+  }
+  return partnerRequest<{ venue: PartnerVenue }>(`/partner/venues/${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  }).then(r => r.venue)
+}
+
 export function deletePartnerVenue(id: string): Promise<void> {
   if (USE_VENUE_MOCKS) return mockDeleteVenue(id)
   return partnerRequest<unknown>(`/partner/venues/${id}`, { method: 'DELETE' }).then(() => undefined)

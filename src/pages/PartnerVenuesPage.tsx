@@ -6,6 +6,7 @@ import {
   ImageIcon,
   Info,
   MapPin,
+  Pencil,
   Plus,
   Power,
   Trash2,
@@ -16,6 +17,7 @@ import {
   deletePartnerVenue,
   fetchPartnerVenues,
   setPartnerVenueActive,
+  updatePartnerVenue,
   VENUE_KIND_LABEL,
   type CreateVenuePayload,
   type PartnerVenue,
@@ -38,12 +40,14 @@ function VenueCard({
   venue,
   onToggle,
   onDelete,
+  onEdit,
   busy,
   canManage,
 }: {
   venue: PartnerVenue
   onToggle: () => void
   onDelete: () => void
+  onEdit: () => void
   busy: boolean
   canManage: boolean
 }) {
@@ -132,6 +136,20 @@ function VenueCard({
           <>
         <button
           type="button"
+          onClick={onEdit}
+          disabled={busy}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: 7, padding: '9px 13px', borderRadius: 11,
+            border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)',
+            color: '#cbd5e1', fontSize: 12, fontWeight: 600, fontFamily: 'inherit',
+            cursor: busy ? 'default' : 'pointer', opacity: busy ? 0.6 : 1, whiteSpace: 'nowrap',
+          }}
+        >
+          <Pencil size={14} />
+          Изменить
+        </button>
+        <button
+          type="button"
           onClick={onToggle}
           disabled={busy}
           style={{
@@ -189,6 +207,8 @@ export function PartnerVenuesPage() {
   const [busyId, setBusyId]       = useState<string | null>(null)
   const [formOpen, setFormOpen]   = useState(false)
   const [creating, setCreating]   = useState(false)
+  const [editingVenue, setEditingVenue] = useState<PartnerVenue | null>(null)
+  const [savingEdit, setSavingEdit] = useState(false)
 
   function canManageVenue(venue: PartnerVenue): boolean {
     if (venue.canEdit === true) return true
@@ -225,6 +245,41 @@ export function PartnerVenuesPage() {
       throw e
     } finally {
       setCreating(false)
+    }
+  }
+
+  function venueToPayload(venue: PartnerVenue): CreateVenuePayload {
+    return {
+      name: venue.name,
+      venueKind: venue.venueKind,
+      sportType: venue.sportType ?? null,
+      city: venue.city,
+      address: venue.address,
+      description: venue.description,
+      photos: venue.photos,
+      basePricePerHour: venue.basePricePerHour,
+      timePriceRules: venue.timePriceRules,
+      durationRules: venue.durationRules,
+      extraServices: venue.extraServices,
+      amenities: venue.amenities,
+      lat: venue.lat ?? null,
+      lng: venue.lng ?? null,
+    }
+  }
+
+  async function handleUpdate(payload: CreateVenuePayload) {
+    if (!editingVenue) return
+    setError('')
+    setSavingEdit(true)
+    try {
+      const updated = await updatePartnerVenue(editingVenue.id, payload)
+      setVenues(prev => prev.map(v => (v.id === updated.id ? updated : v)))
+      setEditingVenue(null)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось сохранить площадку')
+      throw e
+    } finally {
+      setSavingEdit(false)
     }
   }
 
@@ -276,7 +331,10 @@ export function PartnerVenuesPage() {
 
         <button
           type="button"
-          onClick={() => setFormOpen(o => !o)}
+          onClick={() => {
+            setEditingVenue(null)
+            setFormOpen(o => !o)
+          }}
           style={{
             display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 18px',
             borderRadius: 12, border: 'none',
@@ -300,7 +358,28 @@ export function PartnerVenuesPage() {
         </p>
       </div>
 
-      {formOpen && (
+      {editingVenue && (
+        <motion.div
+          className="card"
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          style={{ padding: '20px 22px', marginBottom: 20 }}
+        >
+          <div style={{ fontSize: 15, fontWeight: 700, color: '#f1f5f9', marginBottom: 16 }}>
+            Редактирование: {editingVenue.name}
+          </div>
+          <VenueBuilderForm
+            key={editingVenue.id}
+            initial={venueToPayload(editingVenue)}
+            submitting={savingEdit}
+            submitLabel="Сохранить изменения"
+            onCancel={() => setEditingVenue(null)}
+            onSubmit={handleUpdate}
+          />
+        </motion.div>
+      )}
+
+      {formOpen && !editingVenue && (
         <motion.div
           className="card"
           initial={{ opacity: 0, y: -8 }}
@@ -344,6 +423,11 @@ export function PartnerVenuesPage() {
               canManage={canManageVenue(venue)}
               onToggle={() => void handleToggle(venue)}
               onDelete={() => void handleDelete(venue)}
+              onEdit={() => {
+                setFormOpen(false)
+                setEditingVenue(venue)
+                window.scrollTo({ top: 0, behavior: 'smooth' })
+              }}
             />
           ))
         )}

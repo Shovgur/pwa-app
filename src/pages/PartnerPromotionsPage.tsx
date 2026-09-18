@@ -5,6 +5,7 @@ import {
   Building2,
   ChevronDown,
   Info,
+  Pencil,
   Percent,
   Plus,
   Sparkles,
@@ -51,23 +52,27 @@ const labelStyle: React.CSSProperties = {
 function PromoForm({
   venueId,
   submitting,
+  initial,
   onCancel,
   onSubmit,
 }: {
   venueId: string
   submitting: boolean
+  initial?: VenuePromotion | null
   onCancel: () => void
   onSubmit: (payload: CreatePromotionPayload) => Promise<void>
 }) {
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [promoType, setPromoType] = useState<PromoType>('evening')
-  const [discountPercent, setDiscountPercent] = useState('15')
-  const [timeFrom, setTimeFrom] = useState('18:00')
-  const [timeTo, setTimeTo] = useState('22:00')
-  const [startsAt, setStartsAt] = useState('')
-  const [endsAt, setEndsAt] = useState('')
-  const [isFeatured, setIsFeatured] = useState(true)
+  const [title, setTitle] = useState(initial?.title ?? '')
+  const [description, setDescription] = useState(initial?.description ?? '')
+  const [promoType, setPromoType] = useState<PromoType>(initial?.promoType ?? 'evening')
+  const [discountPercent, setDiscountPercent] = useState(
+    initial?.discountPercent != null ? String(initial.discountPercent) : '15',
+  )
+  const [timeFrom, setTimeFrom] = useState(initial?.timeFrom ?? '18:00')
+  const [timeTo, setTimeTo] = useState(initial?.timeTo ?? '22:00')
+  const [startsAt, setStartsAt] = useState(initial?.startsAt ?? '')
+  const [endsAt, setEndsAt] = useState(initial?.endsAt ?? '')
+  const [isFeatured, setIsFeatured] = useState(initial?.isFeatured ?? true)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -86,7 +91,7 @@ function PromoForm({
         : null,
       startsAt: startsAt || null,
       endsAt: endsAt || null,
-      isActive: true,
+      isActive: initial?.isActive ?? true,
       isFeatured,
     })
   }
@@ -168,7 +173,7 @@ function PromoForm({
         </div>
       </div>
       <p style={{ margin: '-6px 0 0', fontSize: 12, color: '#64748b', lineHeight: 1.4 }}>
-        Оставьте пустым, чтобы акция сразу появилась на сайте. Дата в будущем — клиенты увидят её только с этого дня.
+        Можно запланировать заранее (например через 3 дня). До даты начала акция будет только в кабинете; на сайте появится автоматически.
       </p>
 
       <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13, color: '#cbd5e1' }}>
@@ -202,7 +207,7 @@ function PromoForm({
             cursor: submitting ? 'default' : 'pointer', opacity: submitting ? 0.7 : 1,
           }}
         >
-          {submitting ? 'Сохраняем…' : 'Создать акцию'}
+          {submitting ? 'Сохраняем…' : (initial ? 'Сохранить' : 'Создать акцию')}
         </button>
       </div>
     </form>
@@ -226,6 +231,7 @@ function VenuePromoCard({
 }) {
   const [open, setOpen] = useState(false)
   const [formOpen, setFormOpen] = useState(false)
+  const [editing, setEditing] = useState<VenuePromotion | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
@@ -238,6 +244,23 @@ function VenuePromoCard({
       setFormOpen(false)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не удалось создать акцию')
+      throw e
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function handleUpdate(payload: CreatePromotionPayload) {
+    if (!editing) return
+    setBusy(true)
+    setError('')
+    try {
+      const { venueId: _venueId, ...rest } = payload
+      const updated = await updatePartnerPromotion(editing.id, rest)
+      onUpdated(updated)
+      setEditing(null)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось сохранить акцию')
       throw e
     } finally {
       setBusy(false)
@@ -326,6 +349,27 @@ function VenuePromoCard({
               )}
 
               {promotions.map(promo => (
+                editing?.id === promo.id ? (
+                  <div
+                    key={promo.id}
+                    style={{ padding: 14, borderRadius: 14, background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(255,255,255,0.08)' }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: '#f1f5f9' }}>Редактирование акции</span>
+                      <button type="button" onClick={() => setEditing(null)} style={{ background: 'none', border: 'none', color: '#64748b', cursor: 'pointer' }}>
+                        <X size={16} />
+                      </button>
+                    </div>
+                    <PromoForm
+                      key={promo.id}
+                      venueId={venue.id}
+                      initial={promo}
+                      submitting={busy}
+                      onCancel={() => setEditing(null)}
+                      onSubmit={handleUpdate}
+                    />
+                  </div>
+                ) : (
                 <div
                   key={promo.id}
                   style={{
@@ -345,10 +389,11 @@ function VenuePromoCard({
                     <div style={{ fontSize: 12, color: '#64748b', marginTop: 3 }}>
                       {PROMO_TYPE_META[promo.promoType]?.label ?? promo.promoType}
                       {promo.isFeatured ? ' · в ленте' : ''}
-                      {!promo.isActive ? ' · выкл.' : ''}
+                      {!promo.isActive ? ' · скрыта' : ''}
                       {promo.isActive && promo.startsAt && promo.startsAt > new Date().toISOString().slice(0, 10)
                         ? ` · на сайте с ${promo.startsAt.slice(8, 10)}.${promo.startsAt.slice(5, 7)}`
                         : ''}
+                      {promo.endsAt ? ` · до ${promo.endsAt.slice(8, 10)}.${promo.endsAt.slice(5, 7)}` : ''}
                     </div>
                     {promo.description && (
                       <p style={{ margin: '6px 0 0', fontSize: 12, color: '#94a3b8', lineHeight: 1.45 }}>{promo.description}</p>
@@ -359,6 +404,21 @@ function VenuePromoCard({
                       <button
                         type="button"
                         disabled={busy}
+                        onClick={() => {
+                          setFormOpen(false)
+                          setEditing(promo)
+                        }}
+                        aria-label="Изменить"
+                        style={{
+                          padding: 8, borderRadius: 10, border: '1px solid rgba(255,255,255,0.1)',
+                          background: 'rgba(255,255,255,0.04)', color: '#cbd5e1', cursor: 'pointer',
+                        }}
+                      >
+                        <Pencil size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busy}
                         onClick={() => void toggleActive(promo)}
                         style={{
                           padding: '7px 10px', borderRadius: 10, fontSize: 11, fontWeight: 700,
@@ -366,7 +426,7 @@ function VenuePromoCard({
                           color: '#cbd5e1', cursor: 'pointer', fontFamily: 'inherit',
                         }}
                       >
-                        {promo.isActive ? 'Выкл' : 'Вкл'}
+                        {promo.isActive ? 'Скрыть' : 'Показать'}
                       </button>
                       <button
                         type="button"
@@ -383,9 +443,10 @@ function VenuePromoCard({
                     </div>
                   )}
                 </div>
+                )
               ))}
 
-              {canManage && !formOpen && (
+              {canManage && !formOpen && !editing && (
                 <button
                   type="button"
                   onClick={() => setFormOpen(true)}
@@ -400,7 +461,7 @@ function VenuePromoCard({
                 </button>
               )}
 
-              {formOpen && (
+              {formOpen && !editing && (
                 <div style={{ padding: 14, borderRadius: 14, background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(255,255,255,0.08)' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
                     <span style={{ fontSize: 14, fontWeight: 700, color: '#f1f5f9' }}>Новая акция</span>

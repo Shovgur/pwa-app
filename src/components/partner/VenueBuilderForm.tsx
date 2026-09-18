@@ -178,9 +178,18 @@ export interface VenueBuilderFormProps {
   onSubmit: (payload: CreateVenuePayload) => Promise<void>
   onCancel: () => void
   submitting: boolean
+  /** Prefill for edit mode */
+  initial?: CreateVenuePayload | null
+  submitLabel?: string
 }
 
-export function VenueBuilderForm({ onSubmit, onCancel, submitting }: VenueBuilderFormProps) {
+export function VenueBuilderForm({
+  onSubmit,
+  onCancel,
+  submitting,
+  initial = null,
+  submitLabel,
+}: VenueBuilderFormProps) {
   const fileRef = useRef<HTMLInputElement>(null)
   const { errors, handleInvalid, clearError } = useFieldErrors()
 
@@ -192,19 +201,25 @@ export function VenueBuilderForm({ onSubmit, onCancel, submitting }: VenueBuilde
     amenities: false,
   })
 
-  const [name, setName] = useState('')
-  const [venueKind, setVenueKind] = useState<VenueKind>('sport')
-  const [sportType, setSportType] = useState('tennis')
-  const [city, setCity] = useState('')
-  const [address, setAddress] = useState('')
-  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
-  const [description, setDescription] = useState('')
-  const [photos, setPhotos] = useState<VenuePhoto[]>([])
-  const [basePrice, setBasePrice] = useState('')
-  const [timeRules, setTimeRules] = useState<VenueTimePriceRule[]>([])
-  const [durationRules, setDurationRules] = useState<VenueDurationRule[]>([])
-  const [extras, setExtras] = useState<VenueExtraService[]>([])
-  const [amenities, setAmenities] = useState<string[]>([])
+  const [name, setName] = useState(initial?.name ?? '')
+  const [venueKind, setVenueKind] = useState<VenueKind>(initial?.venueKind ?? 'sport')
+  const [sportType, setSportType] = useState(initial?.sportType ?? 'tennis')
+  const [city, setCity] = useState(initial?.city ?? '')
+  const [address, setAddress] = useState(initial?.address ?? '')
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(
+    initial?.lat != null && initial?.lng != null
+      ? { lat: initial.lat, lng: initial.lng }
+      : null,
+  )
+  const [description, setDescription] = useState(initial?.description ?? '')
+  const [photos, setPhotos] = useState<VenuePhoto[]>(initial?.photos ?? [])
+  const [basePrice, setBasePrice] = useState(
+    initial?.basePricePerHour ? String(initial.basePricePerHour) : '',
+  )
+  const [timeRules, setTimeRules] = useState<VenueTimePriceRule[]>(initial?.timePriceRules ?? [])
+  const [durationRules, setDurationRules] = useState<VenueDurationRule[]>(initial?.durationRules ?? [])
+  const [extras, setExtras] = useState<VenueExtraService[]>(initial?.extraServices ?? [])
+  const [amenities, setAmenities] = useState<string[]>(initial?.amenities ?? [])
   const [customAmenity, setCustomAmenity] = useState('')
   const [formError, setFormError] = useState('')
 
@@ -719,7 +734,7 @@ export function VenueBuilderForm({ onSubmit, onCancel, submitting }: VenueBuilde
           }}
         >
           <Plus size={16} />
-          {submitting ? 'Сохраняем...' : 'Создать площадку'}
+          {submitting ? 'Сохраняем...' : (submitLabel ?? (initial ? 'Сохранить изменения' : 'Создать площадку'))}
         </button>
         <button
           type="button"
