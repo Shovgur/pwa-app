@@ -45,6 +45,8 @@ CREATE TABLE IF NOT EXISTS partner_venue_promotions (
 
 CREATE INDEX IF NOT EXISTS idx_partner_venue_promotions_venue ON partner_venue_promotions(venue_id);
 CREATE INDEX IF NOT EXISTS idx_partner_venue_promotions_active ON partner_venue_promotions(is_active, is_featured);
+GRANT ALL ON TABLE partner_venue_promotions TO bookingo_user;
+GRANT USAGE, SELECT ON SEQUENCE partner_venue_promotions_id_seq TO bookingo_user;
 """
 r = subprocess.run(
     ['sudo', '-u', 'postgres', 'psql', '-d', 'bookingo', '-v', 'ON_ERROR_STOP=1', '-c', SQL],
