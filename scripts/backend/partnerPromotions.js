@@ -5,6 +5,19 @@
 export function registerPartnerPromotionRoutes(app, pool, { authenticateToken, requirePartner, helpers }) {
   const { toISO, toTimeHHMM } = helpers;
 
+  function toDateYMD(value) {
+    if (!value) return null;
+    if (value instanceof Date && !Number.isNaN(value.getTime())) {
+      const y = value.getFullYear();
+      const m = String(value.getMonth() + 1).padStart(2, '0');
+      const d = String(value.getDate()).padStart(2, '0');
+      return `${y}-${m}-${d}`;
+    }
+    const s = String(value);
+    const m = s.match(/^(\d{4}-\d{2}-\d{2})/);
+    return m ? m[1] : null;
+  }
+
   function mapPromoRow(row) {
     return {
       id: String(row.id),
@@ -17,8 +30,8 @@ export function registerPartnerPromotionRoutes(app, pool, { authenticateToken, r
       discountAmount: row.discount_amount != null ? Number(row.discount_amount) : null,
       timeFrom: row.time_from ? String(row.time_from).slice(0, 5) : null,
       timeTo: row.time_to ? String(row.time_to).slice(0, 5) : null,
-      startsAt: row.starts_at ? String(row.starts_at).slice(0, 10) : null,
-      endsAt: row.ends_at ? String(row.ends_at).slice(0, 10) : null,
+      startsAt: toDateYMD(row.starts_at),
+      endsAt: toDateYMD(row.ends_at),
       isActive: Boolean(row.is_active),
       isFeatured: Boolean(row.is_featured),
       createdAt: toISO(row.created_at),

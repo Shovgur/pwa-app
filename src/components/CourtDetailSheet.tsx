@@ -398,18 +398,35 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                     }}
                   >
                     <div>
-                      <span
-                        style={{
-                          fontSize: 12,
-                          color: court.color,
-                          fontWeight: 600,
-                          background: `${court.color}18`,
-                          padding: "2px 8px",
-                          borderRadius: 6,
-                        }}
-                      >
-                        {court.sport}
-                      </span>
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
+                        <span
+                          style={{
+                            fontSize: 12,
+                            color: court.color,
+                            fontWeight: 600,
+                            background: `${court.color}18`,
+                            padding: "2px 8px",
+                            borderRadius: 6,
+                          }}
+                        >
+                          {court.sport}
+                        </span>
+                        {(partnerVenue?.promotions ?? []).slice(0, 2).map((p) => (
+                          <span
+                            key={p.id}
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 800,
+                              color: "#fb923c",
+                              background: "rgba(249,115,22,0.18)",
+                              padding: "2px 8px",
+                              borderRadius: 6,
+                            }}
+                          >
+                            {p.discountLabel || p.title}
+                          </span>
+                        ))}
+                      </div>
                       <h2
                         style={{
                           fontSize: 22,

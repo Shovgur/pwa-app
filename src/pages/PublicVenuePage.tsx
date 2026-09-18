@@ -170,15 +170,39 @@ export function PublicVenuePage() {
             )}
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(15,23,42,0.85), transparent)' }} />
             <div style={{ position: 'absolute', bottom: 20, left: 20, right: 20 }}>
-              <span style={{ display: 'inline-block', padding: '4px 10px', borderRadius: 999, background: 'rgba(34,197,94,0.2)', color: '#4ade80', fontSize: 11, fontWeight: 700, marginBottom: 8 }}>
-                {VENUE_KIND_LABEL[venue.venueKind]}
-              </span>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+                <span style={{ display: 'inline-block', padding: '4px 10px', borderRadius: 999, background: 'rgba(34,197,94,0.2)', color: '#4ade80', fontSize: 11, fontWeight: 700 }}>
+                  {VENUE_KIND_LABEL[venue.venueKind]}
+                </span>
+                {(venue.promotions ?? []).slice(0, 2).map(p => (
+                  <span
+                    key={p.id}
+                    style={{ display: 'inline-block', padding: '4px 10px', borderRadius: 999, background: 'rgba(249,115,22,0.25)', color: '#fb923c', fontSize: 11, fontWeight: 800 }}
+                  >
+                    {p.discountLabel || p.title}
+                  </span>
+                ))}
+              </div>
               <h1 style={{ fontSize: 32, fontWeight: 800, color: '#fff', margin: '0 0 8px' }}>{venue.name}</h1>
               <p style={{ margin: 0, color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: 6, fontSize: 14 }}>
                 <MapPin size={14} /> {venue.city}, {venue.address}
               </p>
             </div>
           </div>
+
+          {(venue.promotions?.length ?? 0) > 0 && (
+            <div style={{ marginBottom: 20, padding: 14, borderRadius: 14, border: '1px solid rgba(249,115,22,0.25)', background: 'rgba(249,115,22,0.08)' }}>
+              <h3 style={{ fontSize: 14, fontWeight: 700, color: '#fb923c', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Tag size={14} /> Акции
+              </h3>
+              {venue.promotions!.map(p => (
+                <div key={p.id} style={{ fontSize: 13, color: colors.text2, marginBottom: 4 }}>
+                  <strong style={{ color: colors.text }}>{p.discountLabel}</strong>
+                  {' · '}{p.title}
+                </div>
+              ))}
+            </div>
+          )}
 
           <p style={{ color: colors.text2, lineHeight: 1.65, marginBottom: 20 }}>{venue.description}</p>
 

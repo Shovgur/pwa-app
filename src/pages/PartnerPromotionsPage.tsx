@@ -167,6 +167,9 @@ function PromoForm({
           <input type="date" value={endsAt} onChange={e => setEndsAt(e.target.value)} style={inputStyle} />
         </div>
       </div>
+      <p style={{ margin: '-6px 0 0', fontSize: 12, color: '#64748b', lineHeight: 1.4 }}>
+        Оставьте пустым, чтобы акция сразу появилась на сайте. Дата в будущем — клиенты увидят её только с этого дня.
+      </p>
 
       <label style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer', fontSize: 13, color: '#cbd5e1' }}>
         <input
@@ -343,6 +346,9 @@ function VenuePromoCard({
                       {PROMO_TYPE_META[promo.promoType]?.label ?? promo.promoType}
                       {promo.isFeatured ? ' · в ленте' : ''}
                       {!promo.isActive ? ' · выкл.' : ''}
+                      {promo.isActive && promo.startsAt && promo.startsAt > new Date().toISOString().slice(0, 10)
+                        ? ` · на сайте с ${promo.startsAt.slice(8, 10)}.${promo.startsAt.slice(5, 7)}`
+                        : ''}
                     </div>
                     {promo.description && (
                       <p style={{ margin: '6px 0 0', fontSize: 12, color: '#94a3b8', lineHeight: 1.45 }}>{promo.description}</p>
