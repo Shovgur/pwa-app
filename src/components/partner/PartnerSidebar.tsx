@@ -30,9 +30,9 @@ export function PartnerSidebarContent({ onNavigate }: { onNavigate?: () => void 
   const { pendingCount } = usePartnerCrm()
   const navigate = useNavigate()
 
-  const role = partner?.role ?? 'owner'
-  const roleMeta = ROLE_META[role]
-  const items = NAV.filter(item => item.cap === null || can(role, item.cap))
+  const role = partner?.role
+  const roleMeta = role ? ROLE_META[role] : { label: '…', color: '#64748b' }
+  const items = NAV.filter(item => item.cap === null || (role != null && can(role, item.cap)))
 
   // Управляющий работает от имени компании, поэтому в шапке — его имя,
   // а компания уходит во вторую строку

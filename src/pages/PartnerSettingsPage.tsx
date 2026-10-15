@@ -60,7 +60,7 @@ export function PartnerSettingsPage() {
   const { partner, changePartnerPassword } = usePartnerAuth()
   // Реквизиты и комиссия — информация владельца, управляющему доступна только
   // смена собственного логина и пароля
-  const showCompanyInfo = can(partner?.role ?? 'owner', 'companyInfo')
+  const showCompanyInfo = partner?.role ? can(partner.role, 'companyInfo') : false
 
   const [currentPassword, setCurrentPassword] = useState('')
   const [newLogin, setNewLogin]               = useState('')

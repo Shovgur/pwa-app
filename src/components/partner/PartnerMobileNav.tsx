@@ -27,8 +27,8 @@ export function PartnerMobileNav() {
   const { pendingCount } = usePartnerCrm()
   const navigate = useNavigate()
 
-  const role = partner?.role ?? 'owner'
-  const items = NAV.filter(item => item.cap === null || can(role, item.cap))
+  const role = partner?.role
+  const items = NAV.filter(item => item.cap === null || (role != null && can(role, item.cap)))
 
   function handleLogout() {
     logoutPartner()

@@ -9,6 +9,8 @@ import {
 } from 'react'
 import { API_BASE } from '../config/api'
 import { parsePartnerRole, type PartnerRole } from '../utils/partnerAccess'
+import { isDemoMode } from '../demo/demoMode'
+import { getDemoSessionFromToken, getPartnerProfileFromDemoToken, tryPartnerLogin } from '../demo/demoAuth'
 
 const PARTNER_TOKEN_KEY = 'partnerAuthToken'
 const PARTNER_USER_KEY = 'partnerAuthUser'
@@ -159,6 +161,14 @@ export function PartnerAuthProvider({ children }: { children: ReactNode }) {
     const run = (async () => {
       if (!options?.background) setIsLoading(true)
       try {
+        if (isDemoMode() && getDemoSessionFromToken(token)) {
+          const p = getPartnerProfileFromDemoToken(token)
+          if (p) {
+            setPartner(p)
+            saveProfile(p)
+          }
+          return
+        }
         const res = await fetchPartnerProfile(token)
         if (res.status === 401) {
           clearSession()
@@ -196,6 +206,16 @@ export function PartnerAuthProvider({ children }: { children: ReactNode }) {
   const loginPartner = useCallback(async (login: string, password: string) => {
     setIsLoading(true)
     try {
+      if (isDemoMode()) {
+        const demo = tryPartnerLogin(login, password)
+        if (!demo) return { success: false, error: 'Неверный логин или пароль' }
+        saveToken(demo.token)
+        setHasToken(true)
+        setPartner(demo.partner)
+        saveProfile(demo.partner)
+        setIsInitializing(false)
+        return { success: true }
+      }
       const res = await fetchWithTimeout(`${API_BASE}/partner/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

@@ -1,6 +1,7 @@
 /** Feature flags — flip when sections are ready for production. */
 export const features = {
   dashboard: true,
+  demo: import.meta.env.VITE_DEMO_MODE === 'true',
 } as const
 
 export const paths = {

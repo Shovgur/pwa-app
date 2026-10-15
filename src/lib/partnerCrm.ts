@@ -1,5 +1,14 @@
 import { API_BASE } from '../config/api'
 import { getPartnerToken } from '../contexts/PartnerAuthContext'
+import { isDemoMode } from '../demo/demoMode'
+import {
+  demoCreatePartnerStaff,
+  demoDeletePartnerStaff,
+  demoFetchPartnerBookings,
+  demoFetchPartnerStaff,
+  demoSetPartnerStaffActive,
+  demoUpdatePartnerBookingStatus,
+} from '../demo/api/partnerCrm'
 
 // ─── модель брони ────────────────────────────────────────
 export type BookingStatus = 'pending' | 'confirmed' | 'paid' | 'completed' | 'cancelled'
@@ -124,7 +133,8 @@ async function partnerRequest<T>(
 
 // ─── брони ───────────────────────────────────────────────
 export function fetchPartnerBookings(): Promise<PartnerBooking[]> {
-  return partnerRequest<{ bookings: PartnerBooking[] }>('/partner/bookings', {}, true)
+  if (isDemoMode()) return demoFetchPartnerBookings()
+  return partnerRequest<{ bookings: PartnerBooking[] }>('/partner/bookings')
     .then(r => r.bookings)
 }
 
@@ -132,6 +142,7 @@ export function updatePartnerBookingStatus(
   id: string,
   status: BookingStatus,
 ): Promise<PartnerBooking> {
+  if (isDemoMode()) return demoUpdatePartnerBookingStatus(id, status)
   return partnerRequest<{ booking: PartnerBooking }>(`/partner/bookings/${id}/status`, {
     method: 'PATCH',
     body: JSON.stringify({ status }),
@@ -140,11 +151,13 @@ export function updatePartnerBookingStatus(
 
 // ─── сотрудники ──────────────────────────────────────────
 export function fetchPartnerStaff(): Promise<PartnerStaff[]> {
-  return partnerRequest<{ staff: PartnerStaff[] }>('/partner/staff', {}, true)
+  if (isDemoMode()) return demoFetchPartnerStaff()
+  return partnerRequest<{ staff: PartnerStaff[] }>('/partner/staff')
     .then(r => r.staff)
 }
 
 export function createPartnerStaff(payload: CreateStaffPayload): Promise<PartnerStaff> {
+  if (isDemoMode()) return demoCreatePartnerStaff(payload)
   return partnerRequest<{ staff: PartnerStaff }>('/partner/staff', {
     method: 'POST',
     body: JSON.stringify(payload),
@@ -152,6 +165,7 @@ export function createPartnerStaff(payload: CreateStaffPayload): Promise<Partner
 }
 
 export function setPartnerStaffActive(id: string, isActive: boolean): Promise<PartnerStaff> {
+  if (isDemoMode()) return demoSetPartnerStaffActive(id, isActive)
   return partnerRequest<{ staff: PartnerStaff }>(`/partner/staff/${id}`, {
     method: 'PATCH',
     body: JSON.stringify({ isActive }),
@@ -159,5 +173,6 @@ export function setPartnerStaffActive(id: string, isActive: boolean): Promise<Pa
 }
 
 export function deletePartnerStaff(id: string): Promise<void> {
+  if (isDemoMode()) return demoDeletePartnerStaff(id)
   return partnerRequest<unknown>(`/partner/staff/${id}`, { method: 'DELETE' }).then(() => undefined)
 }

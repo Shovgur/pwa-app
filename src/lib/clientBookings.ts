@@ -1,11 +1,22 @@
 import { API_BASE } from '../config/api'
 import { getAuthToken } from '../config/auth'
+import {
+  AuthExpiredError,
+  clearClientAuthStorage,
+  isAuthFailureStatus,
+} from './authErrors'
 import type { Booking, Court } from '../contexts/BookingContext'
 import { COURTS } from '../contexts/BookingContext'
 import { LOFTS, loftToCourt } from '../data/venues'
 import { POOLS, poolToCourt } from '../data/pools'
 import { partnerVenueCourtId } from '../utils/venueAdapters'
 import { formatBookingDisplayDate } from '../utils/bookingDates'
+import { isDemoMode } from '../demo/demoMode'
+import {
+  demoCancelClientBooking,
+  demoCreateClientBooking,
+  demoFetchClientBookings,
+} from '../demo/api/clientBookings'
 
 export type VenueKind = 'sport' | 'loft' | 'pool' | 'meeting'
 
@@ -46,15 +57,22 @@ export interface ApiClientBooking {
   paymentMethod: string | null
   code: string | null
   createdAt: string
+  crmStatus?: import('./partnerCrm').BookingStatus
+  statusLabel?: string
 }
 
 async function authRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getAuthToken()
+  if (!token) {
+    clearClientAuthStorage()
+    throw new AuthExpiredError('Войдите в аккаунт, чтобы забронировать', 401)
+  }
+
   const res = await fetch(`${API_BASE}${path}`, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      Authorization: `Bearer ${token}`,
       ...(options.headers as Record<string, string> | undefined),
     },
   })
@@ -62,6 +80,14 @@ async function authRequest<T>(path: string, options: RequestInit = {}): Promise<
   const data = (await res.json().catch(() => ({}))) as Record<string, unknown>
 
   if (!res.ok) {
+    if (isAuthFailureStatus(res.status, data)) {
+      clearClientAuthStorage()
+      throw new AuthExpiredError(
+        (data.message ?? data.error) as string | undefined
+          ?? 'Сессия истекла. Войдите снова.',
+        res.status,
+      )
+    }
     const raw = (data.message ?? data.error) as string | undefined
     throw new Error(raw ?? `Ошибка ${res.status}`)
   }
@@ -128,8 +154,14 @@ export function buildCreatePayloadFromCourt(
   }
 }
 
+function partnerIdFromVenueRef(venueRef: string): string | undefined {
+  if (venueRef.startsWith('partner:')) return venueRef.slice('partner:'.length) || undefined
+  return undefined
+}
+
 function courtIdFromVenueRef(venueRef: string, partnerVenueId: number | null): number {
-  if (partnerVenueId) return partnerVenueCourtId(String(partnerVenueId))
+  const partnerKey = partnerIdFromVenueRef(venueRef) ?? (partnerVenueId ? String(partnerVenueId) : null)
+  if (partnerKey) return partnerVenueCourtId(partnerKey)
   const match = venueRef.match(/^mock:(court|pool|loft):(.+)$/)
   if (!match) return 1
   const [, kind, id] = match
@@ -183,7 +215,9 @@ function rebuildCourt(row: ApiClientBooking): Court {
     photos: [row.venueColor ? `linear-gradient(135deg, ${row.venueColor} 0%, #1e293b 100%)` : 'linear-gradient(135deg, #064e3b 0%, #15803d 100%)'],
     slots: [],
     venueType,
-    partnerVenueId: row.partnerVenueId ? String(row.partnerVenueId) : undefined,
+    partnerVenueId:
+      partnerIdFromVenueRef(row.venueRef)
+      ?? (row.partnerVenueId ? String(row.partnerVenueId) : undefined),
   }
 }
 
@@ -206,15 +240,19 @@ export function apiBookingToBooking(row: ApiClientBooking): Booking {
     createdAt: row.createdAt?.slice(0, 10) ?? row.date,
     venueType,
     code: row.code ?? undefined,
+    crmStatus: row.crmStatus,
+    statusLabel: row.statusLabel,
   }
 }
 
 export async function fetchClientBookings(): Promise<Booking[]> {
+  if (isDemoMode()) return demoFetchClientBookings()
   const data = await authRequest<{ bookings: ApiClientBooking[] }>('/bookings')
   return (data.bookings ?? []).map(apiBookingToBooking)
 }
 
 export async function createClientBooking(payload: CreateBookingPayload): Promise<Booking> {
+  if (isDemoMode()) return demoCreateClientBooking(payload)
   const data = await authRequest<{ booking: ApiClientBooking }>('/bookings', {
     method: 'POST',
     body: JSON.stringify(payload),
@@ -223,6 +261,7 @@ export async function createClientBooking(payload: CreateBookingPayload): Promis
 }
 
 export async function cancelClientBooking(id: number): Promise<Booking> {
+  if (isDemoMode()) return demoCancelClientBooking(id)
   const data = await authRequest<{ booking: ApiClientBooking }>(`/bookings/${id}/cancel`, {
     method: 'PATCH',
   })

@@ -14,10 +14,13 @@ import {
 } from '../utils/venueAdapters'
 import type { VenueCardProps } from '../components/ui/VenueCard'
 import type { Court } from './BookingContext'
+import { isDemoMode } from '../demo/demoMode'
+import { subscribe as subscribeDemoStore } from '../demo/demoStore'
 
 interface PublicVenuesCtx {
   venues: PublicVenue[]
   isLoading: boolean
+  error: string | null
   catalogItems: (VenueCardProps & {
     type: 'sport' | 'loft' | 'pool' | 'meeting'
     sportTypeId?: string | null
@@ -33,13 +36,17 @@ const PublicVenuesContext = createContext<PublicVenuesCtx | null>(null)
 export function PublicVenuesProvider({ children }: { children: ReactNode }) {
   const [venues, setVenues] = useState<PublicVenue[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const load = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
     try {
       const list = await fetchPublicVenues()
       setVenues(list)
-    } catch {
+    } catch (e) {
       setVenues([])
+      setError(e instanceof Error ? e.message : 'Не удалось загрузить площадки')
     } finally {
       setIsLoading(false)
     }
@@ -47,6 +54,13 @@ export function PublicVenuesProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     void load()
+  }, [load])
+
+  useEffect(() => {
+    if (!isDemoMode()) return
+    return subscribeDemoStore(() => {
+      void load()
+    })
   }, [load])
 
   const catalogItems = useMemo(
@@ -63,7 +77,7 @@ export function PublicVenuesProvider({ children }: { children: ReactNode }) {
 
   return (
     <PublicVenuesContext.Provider
-      value={{ venues, isLoading, catalogItems, courts, getVenue, refresh: load }}
+      value={{ venues, isLoading, error, catalogItems, courts, getVenue, refresh: load }}
     >
       {children}
     </PublicVenuesContext.Provider>

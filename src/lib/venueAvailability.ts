@@ -1,4 +1,9 @@
 import { API_BASE } from '../config/api'
+import { isDemoMode } from '../demo/demoMode'
+import {
+  demoFetchAvailabilityByRef,
+  demoFetchVenueAvailability,
+} from '../demo/api/venueAvailability'
 
 export interface VenueSlot {
   time: string
@@ -31,6 +36,7 @@ export async function fetchVenueAvailability(
   date: string,
   durationMinutes = 60,
 ): Promise<VenueAvailability> {
+  if (isDemoMode()) return demoFetchVenueAvailability(venueId, date, durationMinutes)
   const params = new URLSearchParams({
     date,
     duration: String(durationMinutes),
@@ -45,6 +51,7 @@ export async function fetchAvailabilityByRef(
   date: string,
   durationMinutes = 60,
 ): Promise<VenueAvailability> {
+  if (isDemoMode()) return demoFetchAvailabilityByRef(venueRef, date, durationMinutes)
   const params = new URLSearchParams({
     venueRef,
     date,

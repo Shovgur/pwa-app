@@ -8,6 +8,7 @@ import { getLoft, getAddonPrice, getAddonOption } from '../data/venues'
 import type { AddOn } from '../data/venues'
 import { useBookings } from '../contexts/BookingContext'
 import { useAuth } from '../contexts/AuthContext'
+import { isAuthExpiredError } from '../lib/authErrors'
 import { Button } from '../components/ui/Button'
 import { AddonCard } from '../components/ui/AddonCard'
 import { BookingSummaryPanel } from '../components/ui/BookingSummaryPanel'
@@ -114,8 +115,10 @@ export function LoftBookingPage() {
     try {
       await addLoftBooking(venue, venue.timeSlots[selectedSlot], addons, total - discount)
       setSuccess(true)
-    } catch {
-      // остаёмся на форме
+    } catch (e) {
+      if (isAuthExpiredError(e)) {
+        navigate('/login', { state: { from: `/loft/${id}` } })
+      }
     }
   }
 

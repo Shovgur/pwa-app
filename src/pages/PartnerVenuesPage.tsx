@@ -218,19 +218,20 @@ export function PartnerVenuesPage() {
     return String(venue.managedByStaffId) === String(partner.staffId)
   }
 
+  async function reload() {
+    setIsLoading(true)
+    setError('')
+    try {
+      setVenues(await fetchPartnerVenues())
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось загрузить площадки')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   useEffect(() => {
-    let cancelled = false
-    void (async () => {
-      try {
-        const list = await fetchPartnerVenues()
-        if (!cancelled) setVenues(list)
-      } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : 'Не удалось загрузить площадки')
-      } finally {
-        if (!cancelled) setIsLoading(false)
-      }
-    })()
-    return () => { cancelled = true }
+    void reload()
   }, [])
 
   async function handleCreate(payload: CreateVenuePayload) {
@@ -396,9 +397,26 @@ export function PartnerVenuesPage() {
       )}
 
       {error && (
-        <p style={{ padding: '11px 14px', borderRadius: 11, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', fontSize: 13, margin: '0 0 16px' }}>
-          {error}
-        </p>
+        <div style={{ padding: '11px 14px', borderRadius: 11, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', fontSize: 13, margin: '0 0 16px', display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <span style={{ flex: 1 }}>{error}</span>
+          <button
+            type="button"
+            onClick={() => void reload()}
+            style={{
+              border: 'none',
+              borderRadius: 8,
+              padding: '6px 12px',
+              background: 'rgba(255,255,255,0.08)',
+              color: '#f1f5f9',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            Повторить
+          </button>
+        </div>
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

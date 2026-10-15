@@ -492,22 +492,22 @@ export function PartnerPromotionsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
+  async function reload() {
+    setLoading(true)
+    setError('')
+    try {
+      const [v, p] = await Promise.all([fetchPartnerVenues(), fetchPartnerPromotions()])
+      setVenues(v)
+      setPromotions(p)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Ошибка загрузки')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   useEffect(() => {
-    let cancelled = false
-    void (async () => {
-      try {
-        const [v, p] = await Promise.all([fetchPartnerVenues(), fetchPartnerPromotions()])
-        if (!cancelled) {
-          setVenues(v)
-          setPromotions(p)
-        }
-      } catch (e) {
-        if (!cancelled) setError(e instanceof Error ? e.message : 'Ошибка загрузки')
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    })()
-    return () => { cancelled = true }
+    void reload()
   }, [])
 
   const byVenue = useMemo(() => {
@@ -552,9 +552,26 @@ export function PartnerPromotionsPage() {
       </div>
 
       {error && (
-        <p style={{ padding: '11px 14px', borderRadius: 11, background: 'rgba(239,68,68,0.1)', color: '#f87171', fontSize: 13, marginBottom: 16 }}>
-          {error}
-        </p>
+        <div style={{ padding: '11px 14px', borderRadius: 11, background: 'rgba(239,68,68,0.1)', color: '#f87171', fontSize: 13, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+          <span style={{ flex: 1 }}>{error}</span>
+          <button
+            type="button"
+            onClick={() => void reload()}
+            style={{
+              border: 'none',
+              borderRadius: 8,
+              padding: '6px 12px',
+              background: 'rgba(255,255,255,0.08)',
+              color: '#f1f5f9',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            Повторить
+          </button>
+        </div>
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>

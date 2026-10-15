@@ -6,6 +6,7 @@ import type { Court } from '../../contexts/BookingContext'
 import { usePublicVenues } from '../../contexts/PublicVenuesContext'
 import { LOFTS, loftToCourt } from '../../data/venues'
 import { POOLS, FEATURED_POOL_IDS, poolToCourt } from '../../data/pools'
+import { isDemoMode } from '../../demo/demoMode'
 import {
   ALL_VENUE_CHIP,
   buildVenueFilterChips,
@@ -31,6 +32,7 @@ export function CourtsTab() {
   const [selected, setSelected] = useState<Court | null>(null)
 
   const allVenues = useMemo<Court[]>(() => {
+    if (isDemoMode()) return [...partnerCourts]
     const lofts = LOFTS.map((loft, i) => loftToCourt(loft, i))
     const pools = FEATURED_POOL_IDS
       .map(id => POOLS.find(p => p.id === id))

@@ -14,6 +14,8 @@ import {
   type BookingStatus,
   type PartnerBooking,
 } from '../lib/partnerCrm'
+import { isDemoMode } from '../demo/demoMode'
+import { subscribe as subscribeDemoStore } from '../demo/demoStore'
 import { can } from '../utils/partnerAccess'
 
 interface PartnerCrmCtx {
@@ -32,7 +34,7 @@ const PartnerCrmContext = createContext<PartnerCrmCtx | null>(null)
 /** Брони грузим только для управляющего — владельцу CRM недоступен. */
 export function PartnerCrmProvider({ children }: { children: ReactNode }) {
   const { partner } = usePartnerAuth()
-  const crmEnabled = can(partner?.role ?? 'owner', 'crm')
+  const crmEnabled = partner?.role ? can(partner.role, 'crm') : false
 
   const [bookings, setBookings]   = useState<PartnerBooking[]>([])
   const [isLoading, setIsLoading] = useState(crmEnabled)
@@ -60,6 +62,13 @@ export function PartnerCrmProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     void reload()
   }, [reload])
+
+  useEffect(() => {
+    if (!isDemoMode() || !crmEnabled) return
+    return subscribeDemoStore(() => {
+      void reload()
+    })
+  }, [crmEnabled, reload])
 
   const changeStatus = useCallback(async (id: string, status: BookingStatus) => {
     setUpdatingId(id)

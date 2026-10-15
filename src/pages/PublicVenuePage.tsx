@@ -12,10 +12,12 @@ import { loadPublicVenueById, usePublicVenues } from '../contexts/PublicVenuesCo
 import type { PartnerVenue } from '../lib/partnerVenues'
 import { VENUE_KIND_LABEL } from '../lib/partnerVenues'
 import { partnerVenueToCourt, resolveVenueImageUrl, venueCoverImage } from '../utils/venueAdapters'
+import { isAuthExpiredError } from '../lib/authErrors'
 import { fetchCourtAvailability, isSlotTakenError } from '../lib/venueAvailability'
 import { venueMinPricePerHour } from '../utils/venuePrice'
 import { colors } from '../theme/tokens'
 import { paths } from '../config/features'
+import { isDemoMode } from '../demo/demoMode'
 import { BILLING_LABEL } from '../utils/venueBuilderPresets'
 
 import { upcomingBookingDays } from '../utils/bookingDates'
@@ -37,6 +39,9 @@ export function PublicVenuePage() {
   const [selectedDay, setSelectedDay] = useState(0)
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [bookingCode, setBookingCode] = useState<string | null>(null)
+  const [bookError, setBookError] = useState<string | null>(null)
+  const [booking, setBooking] = useState(false)
 
   const selectedDateIso = days[selectedDay]?.iso ?? days[0].iso
   const {
@@ -93,11 +98,13 @@ export function PublicVenuePage() {
   const court = partnerVenueToCourt(venue)
 
   async function handleBook() {
-    if (!selectedSlot || !id) return
+    if (!selectedSlot || !id || booking) return
     if (!isAuthenticated) {
       navigate('/login', { state: { from: `/venue/${id}` } })
       return
     }
+    setBookError(null)
+    setBooking(true)
     try {
       const fresh = await fetchCourtAvailability({
         venueId: id,
@@ -107,19 +114,31 @@ export function PublicVenuePage() {
       if (!fresh.slots.some((s) => s.time === selectedSlot)) {
         reloadSlots()
         setSelectedSlot(null)
+        setBookError('Слот занят')
         return
       }
-      await addBooking(court, days[selectedDay].date, selectedSlot, BOOKING_DURATION_MINUTES, {
+      const created = await addBooking(court, days[selectedDay].date, selectedSlot, BOOKING_DURATION_MINUTES, {
         isoDate: days[selectedDay].iso,
+        paymentMethod: 'online',
       })
       reloadSlots()
+      setBookingCode(created.code ?? null)
       setSuccess(true)
     } catch (e) {
-      const message = e instanceof Error ? e.message : ''
+      if (isAuthExpiredError(e)) {
+        navigate('/login', { state: { from: `/venue/${id}` } })
+        return
+      }
+      const message = e instanceof Error ? e.message : 'Не удалось создать заявку'
       if (isSlotTakenError(message)) {
         reloadSlots()
         setSelectedSlot(null)
+        setBookError('Слот занят')
+        return
       }
+      setBookError(message)
+    } finally {
+      setBooking(false)
     }
   }
 
@@ -127,8 +146,20 @@ export function PublicVenuePage() {
     return (
       <motion.div className="page-center" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
         <CheckCircle2 size={64} color={colors.green} />
-        <h2 style={{ fontSize: 28, fontWeight: 800, margin: '24px 0 8px' }}>Бронь подтверждена!</h2>
-        <p style={{ color: colors.muted, marginBottom: 32 }}>{venue.name} · {selectedSlot}</p>
+        <h2 style={{ fontSize: 28, fontWeight: 800, margin: '24px 0 8px' }}>
+          {isDemoMode()
+            ? 'Заявка отправлена · ожидает подтверждения'
+            : 'Бронь создана!'}
+        </h2>
+        <p style={{ color: colors.muted, marginBottom: isDemoMode() ? 12 : 32 }}>
+          {venue.name} · {selectedSlot}
+          {bookingCode ? ` · код ${bookingCode}` : ''}
+        </p>
+        {isDemoMode() && (
+          <p style={{ color: colors.muted, marginBottom: 32, fontSize: 14 }}>
+            Демо: списание не производится
+          </p>
+        )}
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
           <Link to={paths.catalog}><Button>К каталогу</Button></Link>
           <Link to="/dashboard"><Button variant="ghost">В кабинет</Button></Link>
@@ -317,11 +348,28 @@ export function PublicVenuePage() {
           emptyMessage={!selectedSlot ? 'Выберите время' : undefined}
           total={selectedSlot ? minPrice : 0}
           accent="green"
-          buttonLabel="Забронировать"
-          buttonDisabled={!selectedSlot}
+          buttonLabel={booking ? 'Отправляем…' : (isDemoMode() ? 'Отправить заявку' : 'Забронировать')}
+          buttonDisabled={!selectedSlot || booking}
           onConfirm={handleBook}
-          footerNote="4.9 · Партнёр BookinGo"
+          footerNote={isDemoMode()
+            ? 'Демо: списание не производится · партнёр подтвердит заявку'
+            : '4.9 · Партнёр BookinGo'}
         />
+        {bookError && (
+          <div
+            style={{
+              marginTop: 12,
+              padding: '12px 14px',
+              borderRadius: 12,
+              background: 'rgba(239,68,68,0.12)',
+              border: '1px solid rgba(239,68,68,0.35)',
+              color: '#fca5a5',
+              fontSize: 13,
+            }}
+          >
+            {bookError}
+          </div>
+        )}
       </div>
 
       {venue.photos.length > 1 && (

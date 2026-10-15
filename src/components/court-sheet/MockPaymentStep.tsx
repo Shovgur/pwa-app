@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { ChevronLeft, CreditCard, Loader2, Shield } from 'lucide-react'
 import type { Court } from '../../contexts/BookingContext'
+import { isDemoMode } from '../../demo/demoMode'
 
 interface Props {
   court: Court
@@ -13,6 +14,7 @@ interface Props {
 }
 
 export function MockPaymentStep({ court, totalPrice, paying, error, isDesktop, onBack, onPay }: Props) {
+  const demo = isDemoMode()
   return (
     <motion.div
       key="payment"
@@ -144,7 +146,9 @@ export function MockPaymentStep({ court, totalPrice, paying, error, isDesktop, o
         }}>
           <Shield size={16} color="#22c55e" />
           <span style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.45 }}>
-            Демо-оплата: списание не производится, бронь сохранится в вашем кабинете
+            {demo
+              ? 'Демо: списание не производится. После подтверждения уйдёт заявка партнёру'
+              : 'Демо-оплата: списание не производится, бронь сохранится в вашем кабинете'}
           </span>
         </div>
 
@@ -193,7 +197,7 @@ export function MockPaymentStep({ court, totalPrice, paying, error, isDesktop, o
               Обрабатываем…
             </>
           ) : (
-            <>Оплатить {totalPrice.toLocaleString('ru-RU')} ₽</>
+            <>{demo ? 'Отправить заявку' : 'Оплатить'} · {totalPrice.toLocaleString('ru-RU')} ₽</>
           )}
         </motion.button>
         <div style={{ height: 90 }} />

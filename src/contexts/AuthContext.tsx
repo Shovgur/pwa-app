@@ -7,8 +7,10 @@ import {
   type ReactNode,
 } from 'react'
 import { API_BASE } from '../config/api'
-import { AUTH_TOKEN_KEY, AUTH_USER_KEY, clearAuthToken } from '../config/auth'
+import { AUTH_TOKEN_KEY, AUTH_USER_KEY, clearAuthToken, getAuthToken } from '../config/auth'
 import { buildLoginPayload, isDuplicateEmailError, isValidPhone, normalizePhone } from '../utils/authHelpers'
+import { isDemoMode } from '../demo/demoMode'
+import { tryClientLogin } from '../demo/demoAuth'
 
 const TOKEN_KEY = AUTH_TOKEN_KEY
 const USER_KEY  = AUTH_USER_KEY
@@ -54,6 +56,11 @@ function clearSession() {
 
 function loadSession(): User | null {
   try {
+    // Без токена «залогиненный» user — ложная сессия (на проде даёт 403 Invalid token)
+    if (!localStorage.getItem(TOKEN_KEY)) {
+      localStorage.removeItem(USER_KEY)
+      return null
+    }
     const raw = localStorage.getItem(USER_KEY)
     return raw ? (JSON.parse(raw) as User) : null
   } catch {
@@ -101,17 +108,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(() => loadSession())
   const [isLoading, setIsLoading] = useState(false)
 
-  // Clean up legacy keys once on mount
+  // Clean up legacy keys / рассинхрон user↔token; слушаем истечение сессии из lib
   useEffect(() => {
     const legacy = localStorage.getItem('bookingo_user') ?? localStorage.getItem('nexus_user')
     if (legacy && !localStorage.getItem(USER_KEY)) {
       if (!localStorage.getItem(TOKEN_KEY)) clearSession()
     }
+    if (localStorage.getItem(USER_KEY) && !localStorage.getItem(TOKEN_KEY)) {
+      clearSession()
+      setUser(null)
+    }
+
+    const onExpired = () => setUser(null)
+    window.addEventListener('bookingo:auth-expired', onExpired)
+    return () => window.removeEventListener('bookingo:auth-expired', onExpired)
   }, [])
 
   const login = useCallback(async (loginValue: string, password: string) => {
     setIsLoading(true)
     try {
+      if (isDemoMode()) {
+        const demo = tryClientLogin(loginValue, password)
+        if (!demo) return { success: false, error: 'Неверный логин или пароль' }
+        setUser(demo.user)
+        saveSession(demo.token, demo.user)
+        return { success: true }
+      }
       const data = await apiFetch<{ token: string; userId: number; email: string; name: string; phone?: string | null }>(
         '/auth/login',
         buildLoginPayload(loginValue, password),
@@ -211,7 +233,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, register, sendCode, verifyCodeAndLogin, logout }}>
+    <AuthContext.Provider value={{
+      user,
+      isAuthenticated: !!user && !!getAuthToken(),
+      isLoading,
+      login,
+      register,
+      sendCode,
+      verifyCodeAndLogin,
+      logout,
+    }}>
       {children}
     </AuthContext.Provider>
   )

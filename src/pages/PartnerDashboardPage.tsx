@@ -6,7 +6,9 @@ import { usePartnerAuth } from '../contexts/PartnerAuthContext'
 import { usePartnerCrm } from '../contexts/PartnerCrmContext'
 import { isOwner, PARTNER_BOOKINGS_PATH, PARTNER_VENUES_PATH, PARTNER_PROMOTIONS_PATH } from '../utils/partnerAccess'
 import { formatMoney } from '../utils/partnerCrmFormat'
+import { fetchPartnerBookings } from '../lib/partnerCrm'
 import { fetchPartnerVenues } from '../lib/partnerVenues'
+import { computePartnerOwnerStats, type PartnerOwnerStats } from '../utils/partnerStats'
 
 type LocationState = { accessDenied?: boolean }
 
@@ -53,25 +55,48 @@ function AccessDeniedBanner({ onClose }: { onClose: () => void }) {
 
 function OwnerDashboard() {
   const { partner } = usePartnerAuth()
-  const [activeVenues, setActiveVenues] = useState(0)
+  const [ownerStats, setOwnerStats] = useState<PartnerOwnerStats>({
+    clientCount: 0,
+    monthBookings: 0,
+    commissionAmount: 0,
+    activeVenues: 0,
+  })
+  const [statsError, setStatsError] = useState('')
+  const [statsLoading, setStatsLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
-    void fetchPartnerVenues()
-      .then(list => {
-        if (!cancelled) setActiveVenues(list.filter(v => v.isActive).length)
+    void Promise.all([fetchPartnerBookings(), fetchPartnerVenues()])
+      .then(([bookings, venues]) => {
+        if (cancelled) return
+        setStatsError('')
+        setOwnerStats(computePartnerOwnerStats(
+          bookings,
+          venues,
+          partner?.commissionPercent ?? 0,
+        ))
       })
-      .catch(() => {
-        if (!cancelled) setActiveVenues(0)
+      .catch((e) => {
+        if (cancelled) return
+        setStatsError(e instanceof Error ? e.message : 'Не удалось загрузить сводку')
+        setOwnerStats({
+          clientCount: 0,
+          monthBookings: 0,
+          commissionAmount: 0,
+          activeVenues: 0,
+        })
+      })
+      .finally(() => {
+        if (!cancelled) setStatsLoading(false)
       })
     return () => { cancelled = true }
-  }, [])
+  }, [partner?.commissionPercent])
 
   const stats = [
-    { icon: Users,         label: 'Всего клиентов',             value: '0', color: '#22c55e' },
-    { icon: CalendarCheck, label: 'Бронирований в этом месяце', value: '0', color: '#3b82f6' },
-    { icon: Percent,       label: 'Сумма комиссии',             value: formatMoney(0), color: '#f97316' },
-    { icon: Building2,     label: 'Активных площадок',          value: String(activeVenues), color: '#a855f7' },
+    { icon: Users,         label: 'Всего клиентов',             value: String(ownerStats.clientCount), color: '#22c55e' },
+    { icon: CalendarCheck, label: 'Бронирований в этом месяце', value: String(ownerStats.monthBookings), color: '#3b82f6' },
+    { icon: Percent,       label: 'Сумма комиссии',             value: formatMoney(ownerStats.commissionAmount), color: '#f97316' },
+    { icon: Building2,     label: 'Активных площадок',          value: String(ownerStats.activeVenues), color: '#a855f7' },
   ]
 
   return (
@@ -83,7 +108,23 @@ function OwnerDashboard() {
         <p className="partner-dashboard-subtitle">Обзор вашего партнёрского аккаунта</p>
       </motion.div>
 
-      <div className="partner-stats-grid">
+      {statsError && (
+        <div
+          className="card"
+          style={{
+            marginBottom: 16,
+            padding: '12px 14px',
+            color: '#fca5a5',
+            fontSize: 13,
+            background: 'rgba(239,68,68,0.08)',
+            border: '1px solid rgba(239,68,68,0.25)',
+          }}
+        >
+          {statsError}
+        </div>
+      )}
+
+      <div className="partner-stats-grid" style={{ opacity: statsLoading ? 0.7 : 1 }}>
         {stats.map((s, i) => {
           const Icon = s.icon
           return (

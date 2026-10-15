@@ -7,6 +7,7 @@ import { ArrowLeft, Star, MapPin, CheckCircle2, Clock, Tag } from 'lucide-react'
 import { getCourt } from '../data/venues'
 import { useBookings } from '../contexts/BookingContext'
 import { useAuth } from '../contexts/AuthContext'
+import { isAuthExpiredError } from '../lib/authErrors'
 import { Button } from '../components/ui/Button'
 import { BookingSummaryPanel } from '../components/ui/BookingSummaryPanel'
 import { paths } from '../config/features'
@@ -56,8 +57,10 @@ export function SportBookingPage() {
         isoDate: days[selectedDay].iso,
       })
       setSuccess(true)
-    } catch {
-      // ошибка пока без отдельного UI — пользователь остаётся на форме
+    } catch (e) {
+      if (isAuthExpiredError(e)) {
+        navigate('/login', { state: { from: `/sport/${id}` } })
+      }
     }
   }
 

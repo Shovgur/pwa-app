@@ -1,5 +1,13 @@
 import { API_BASE } from '../config/api'
 import { getPartnerToken } from '../contexts/PartnerAuthContext'
+import { isDemoMode } from '../demo/demoMode'
+import {
+  demoCreatePartnerVenue,
+  demoDeletePartnerVenue,
+  demoFetchPartnerVenues,
+  demoSetPartnerVenueActive,
+  demoUpdatePartnerVenue,
+} from '../demo/api/partnerVenues'
 import {
   mockCreateVenue,
   mockDeleteVenue,
@@ -13,7 +21,7 @@ import { VENUE_KIND_LABEL } from './partnerCrm'
  * Пока бэкенд /api/partner/venues не готов — данные в localStorage.
  * Когда эндпоинты появятся → поставить false.
  */
-export const USE_VENUE_MOCKS = false
+export const USE_VENUE_MOCKS = isDemoMode()
 
 export type { VenueKind }
 export { VENUE_KIND_LABEL }
@@ -143,12 +151,14 @@ async function partnerRequest<T>(
 }
 
 export function fetchPartnerVenues(): Promise<PartnerVenue[]> {
+  if (isDemoMode()) return demoFetchPartnerVenues()
   if (USE_VENUE_MOCKS) return mockListVenues()
-  return partnerRequest<{ venues: PartnerVenue[] }>('/partner/venues', {}, true)
+  return partnerRequest<{ venues: PartnerVenue[] }>('/partner/venues')
     .then(r => r.venues)
 }
 
 export function createPartnerVenue(payload: CreateVenuePayload): Promise<PartnerVenue> {
+  if (isDemoMode()) return demoCreatePartnerVenue(payload)
   if (USE_VENUE_MOCKS) return mockCreateVenue(payload)
   return partnerRequest<{ venue: PartnerVenue }>('/partner/venues', {
     method: 'POST',
@@ -157,6 +167,7 @@ export function createPartnerVenue(payload: CreateVenuePayload): Promise<Partner
 }
 
 export function setPartnerVenueActive(id: string, isActive: boolean): Promise<PartnerVenue> {
+  if (isDemoMode()) return demoSetPartnerVenueActive(id, isActive)
   if (USE_VENUE_MOCKS) return mockSetVenueActive(id, isActive)
   return partnerRequest<{ venue: PartnerVenue }>(`/partner/venues/${id}`, {
     method: 'PATCH',
@@ -165,6 +176,7 @@ export function setPartnerVenueActive(id: string, isActive: boolean): Promise<Pa
 }
 
 export function updatePartnerVenue(id: string, payload: CreateVenuePayload): Promise<PartnerVenue> {
+  if (isDemoMode()) return demoUpdatePartnerVenue(id, payload)
   if (USE_VENUE_MOCKS) {
     return mockSetVenueActive(id, true).then(async () => {
       const list = await mockListVenues()
@@ -180,6 +192,7 @@ export function updatePartnerVenue(id: string, payload: CreateVenuePayload): Pro
 }
 
 export function deletePartnerVenue(id: string): Promise<void> {
+  if (isDemoMode()) return demoDeletePartnerVenue(id)
   if (USE_VENUE_MOCKS) return mockDeleteVenue(id)
   return partnerRequest<unknown>(`/partner/venues/${id}`, { method: 'DELETE' }).then(() => undefined)
 }

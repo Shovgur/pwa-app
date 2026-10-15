@@ -87,7 +87,10 @@ export function partnerVenueToVenueCard(venue: PartnerVenue, delay = 0): VenueCa
 
 export function partnerVenueCourtId(dbId: string): number {
   const n = parseInt(dbId, 10)
-  return Number.isFinite(n) ? 60_000 + n : 60_000
+  if (Number.isFinite(n) && String(n) === dbId) return 60_000 + n
+  let h = 0
+  for (let i = 0; i < dbId.length; i++) h = (h * 31 + dbId.charCodeAt(i)) >>> 0
+  return 70_000 + (h % 20_000)
 }
 
 export function courtPhotoStyle(court: Court, index = 0): CSSProperties {

@@ -1,5 +1,13 @@
 import { API_BASE } from '../config/api'
 import { getPartnerToken } from '../contexts/PartnerAuthContext'
+import { isDemoMode } from '../demo/demoMode'
+import {
+  demoCreatePartnerPromotion,
+  demoDeletePartnerPromotion,
+  demoFetchPartnerPromotions,
+  demoFetchPublicPromotions,
+  demoUpdatePartnerPromotion,
+} from '../demo/api/partnerPromotions'
 
 export type PromoType =
   | 'time_window'
@@ -95,15 +103,13 @@ async function partnerRequest<T>(path: string, options: RequestInit = {}): Promi
 }
 
 export async function fetchPartnerPromotions(): Promise<VenuePromotion[]> {
-  try {
-    const data = await partnerRequest<{ promotions: VenuePromotion[] }>('/partner/promotions')
-    return data.promotions ?? []
-  } catch {
-    return []
-  }
+  if (isDemoMode()) return demoFetchPartnerPromotions()
+  const data = await partnerRequest<{ promotions: VenuePromotion[] }>('/partner/promotions')
+  return data.promotions ?? []
 }
 
 export async function createPartnerPromotion(payload: CreatePromotionPayload): Promise<VenuePromotion> {
+  if (isDemoMode()) return demoCreatePartnerPromotion(payload)
   const data = await partnerRequest<{ promotion: VenuePromotion }>('/partner/promotions', {
     method: 'POST',
     body: JSON.stringify(payload),
@@ -115,6 +121,7 @@ export async function updatePartnerPromotion(
   id: string,
   payload: UpdatePromotionPayload,
 ): Promise<VenuePromotion> {
+  if (isDemoMode()) return demoUpdatePartnerPromotion(id, payload)
   const data = await partnerRequest<{ promotion: VenuePromotion }>(`/partner/promotions/${id}`, {
     method: 'PATCH',
     body: JSON.stringify(payload),
@@ -123,10 +130,12 @@ export async function updatePartnerPromotion(
 }
 
 export async function deletePartnerPromotion(id: string): Promise<void> {
+  if (isDemoMode()) return demoDeletePartnerPromotion(id)
   await partnerRequest(`/partner/promotions/${id}`, { method: 'DELETE' })
 }
 
 export async function fetchPublicPromotions(): Promise<VenuePromotion[]> {
+  if (isDemoMode()) return demoFetchPublicPromotions()
   try {
     const res = await fetch(`${API_BASE}/promotions`)
     if (!res.ok) return []

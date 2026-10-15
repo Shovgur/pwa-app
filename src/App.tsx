@@ -28,10 +28,17 @@ import { PartnerPromotionsPage } from './pages/PartnerPromotionsPage'
 import { PartnerSettingsPage } from './pages/PartnerSettingsPage'
 import { PublicVenuePage } from './pages/PublicVenuePage'
 import { can, partnerHomeRoute, PARTNER_BOOKINGS_PATH, type Capability } from './utils/partnerAccess'
+import { isDemoMode } from './demo/demoMode'
+import { DemoBadge } from './demo/DemoBadge'
 
 const DashboardPage = lazy(() =>
   import('./pages/DashboardPage').then((m) => ({ default: m.DashboardPage })),
 )
+
+/** В демо статические /sport|/loft|/pools ведут в каталог; страницы не удаляем. */
+function LegacyVenueRedirect() {
+  return <Navigate to="/catalog" replace />
+}
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth()
@@ -61,8 +68,8 @@ function PartnerCapabilityRoute({
   children: React.ReactNode
 }) {
   const { partner } = usePartnerAuth()
-  const role = partner?.role ?? 'owner'
-  if (!can(role, cap)) {
+  const role = partner?.role
+  if (!role || !can(role, cap)) {
     return <Navigate to={partnerHomeRoute(role)} replace state={{ accessDenied: true }} />
   }
   return <>{children}</>
@@ -76,11 +83,11 @@ function AppRoutes() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/catalog" element={<CatalogPage />} />
         <Route path="/venue/:id" element={<PublicVenuePage />} />
-        <Route path="/sport/:id" element={<SportBookingPage />} />
-        <Route path="/loft/:id" element={<LoftBookingPage />} />
+        <Route path="/sport/:id" element={isDemoMode() ? <LegacyVenueRedirect /> : <SportBookingPage />} />
+        <Route path="/loft/:id" element={isDemoMode() ? <LegacyVenueRedirect /> : <LoftBookingPage />} />
         <Route path="/how-it-works" element={<HowItWorksPage />} />
-        <Route path="/pools" element={<PoolsPage />} />
-        <Route path="/pools/:id" element={<PoolDetailPage />} />
+        <Route path="/pools" element={isDemoMode() ? <LegacyVenueRedirect /> : <PoolsPage />} />
+        <Route path="/pools/:id" element={isDemoMode() ? <LegacyVenueRedirect /> : <PoolDetailPage />} />
       </Route>
 
       {/* Аутентификация — гостевые маршруты */}
@@ -148,6 +155,7 @@ export default function App() {
           <PublicVenuesProvider>
             <BookingProvider>
               <AppRoutes />
+              <DemoBadge />
             </BookingProvider>
           </PublicVenuesProvider>
         </PartnerAuthProvider>

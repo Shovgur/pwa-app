@@ -14,6 +14,10 @@ import { BackToSiteLink } from "../components/ui/BackToSiteLink";
 import { AuthTransitionLoader } from "../components/ui/Loaders";
 import { FieldError, errorInputStyle } from "../components/ui/FieldError";
 import { useFieldErrors } from "../hooks/useFieldErrors";
+import { isDemoMode } from "../demo/demoMode";
+import { DEMO_PASSWORD } from "../demo/demoAuth";
+
+const demoMode = isDemoMode();
 
 const SPORTS = ["⚽", "🎾", "🏀", "🏐", "🏸", "🏊"];
 
@@ -83,6 +87,30 @@ export function LoginPage() {
     e.preventDefault();
     setPartnerError("");
     const result = await loginPartner(partnerLogin, partnerPassword);
+    if (result.success) {
+      setRedirecting(true);
+      navigate("/partner/dashboard", { replace: true });
+    } else setPartnerError(result.error ?? "Ошибка входа");
+  }
+
+  async function quickClientLogin() {
+    setMode("client");
+    setLogin("demo@bookingo.ru");
+    setPassword(DEMO_PASSWORD);
+    setError("");
+    const result = await authLogin("demo@bookingo.ru", DEMO_PASSWORD);
+    if (result.success) {
+      setRedirecting(true);
+      navigate("/dashboard", { replace: true });
+    } else setError(result.error ?? "Ошибка входа");
+  }
+
+  async function quickPartnerLogin(partnerUser: string) {
+    setMode("partner");
+    setPartnerLogin(partnerUser);
+    setPartnerPassword(DEMO_PASSWORD);
+    setPartnerError("");
+    const result = await loginPartner(partnerUser, DEMO_PASSWORD);
     if (result.success) {
       setRedirecting(true);
       navigate("/partner/dashboard", { replace: true });
@@ -506,22 +534,24 @@ export function LoginPage() {
                         </button>
                       </div>
                       <FieldError message={errors.password} />
-                      <div style={{ textAlign: "right", marginTop: 8 }}>
-                        <Link
-                          to={
-                            login.includes("@")
-                              ? `/forgot-password?email=${encodeURIComponent(login.trim())}`
-                              : "/forgot-password"
-                          }
-                          style={{
-                            color: "#64748b",
-                            fontSize: 12,
-                            textDecoration: "none",
-                          }}
-                        >
-                          Забыли пароль?
-                        </Link>
-                      </div>
+                      {!demoMode && (
+                        <div style={{ textAlign: "right", marginTop: 8 }}>
+                          <Link
+                            to={
+                              login.includes("@")
+                                ? `/forgot-password?email=${encodeURIComponent(login.trim())}`
+                                : "/forgot-password"
+                            }
+                            style={{
+                              color: "#64748b",
+                              fontSize: 12,
+                              textDecoration: "none",
+                            }}
+                          >
+                            Забыли пароль?
+                          </Link>
+                        </div>
+                      )}
                     </div>
 
                     <AnimatePresence>
@@ -830,6 +860,64 @@ export function LoginPage() {
                 </motion.div>
               )}
             </AnimatePresence>
+
+            {demoMode && (
+              <div
+                style={{
+                  marginTop: 24,
+                  paddingTop: 20,
+                  borderTop: "1px solid rgba(255,255,255,0.08)",
+                }}
+              >
+                <p
+                  style={{
+                    margin: "0 0 12px",
+                    fontSize: 12,
+                    fontWeight: 700,
+                    color: "#94a3b8",
+                    letterSpacing: "0.04em",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  Быстрый вход
+                </p>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "1fr 1fr",
+                    gap: 8,
+                  }}
+                >
+                  {(
+                    [
+                      { label: "Клиент", onClick: () => void quickClientLogin() },
+                      { label: "Owner", onClick: () => void quickPartnerLogin("owner-demo") },
+                      { label: "Manager", onClick: () => void quickPartnerLogin("manager-demo") },
+                      { label: "Solo", onClick: () => void quickPartnerLogin("solo-demo") },
+                    ] as const
+                  ).map(btn => (
+                    <button
+                      key={btn.label}
+                      type="button"
+                      onClick={btn.onClick}
+                      style={{
+                        padding: "10px 8px",
+                        borderRadius: 10,
+                        border: "1px solid rgba(255,255,255,0.1)",
+                        background: "rgba(255,255,255,0.04)",
+                        color: "#e2e8f0",
+                        fontSize: 12,
+                        fontWeight: 600,
+                        cursor: "pointer",
+                        fontFamily: "inherit",
+                      }}
+                    >
+                      {btn.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </motion.div>
       </div>

@@ -25,9 +25,7 @@ export type Capability =
   | 'crm'         // работа с бронями и оплатами
 
 const CAPABILITIES: Record<PartnerRole, readonly Capability[]> = {
-  // Владелец: цифры, сотрудники, компания. Площадки ведут менеджеры.
-  owner:   ['overview', 'finances', 'companyInfo', 'staff'],
-  // Управляющий: CRM, свои площадки, акции. Операционные цифры — на дашборде без финансов.
+  owner:   ['overview', 'finances', 'companyInfo', 'staff', 'crm', 'venues', 'promotions'],
   manager: ['crm', 'venues', 'promotions'],
 }
 
@@ -37,6 +35,7 @@ export function can(role: PartnerRole | null | undefined, cap: Capability): bool
 
 /** Стартовая страница кабинета — у обеих ролей своя «Главная». */
 export function partnerHomeRoute(_role?: PartnerRole | null): string {
+  void _role
   return '/partner/dashboard'
 }
 
@@ -50,7 +49,7 @@ export const PARTNER_VENUES_PATH = '/partner/venues'
 export const PARTNER_PROMOTIONS_PATH = '/partner/promotions'
 
 export function isOwner(role: PartnerRole | null | undefined): boolean {
-  return (role ?? 'owner') === 'owner'
+  return role === 'owner'
 }
 
 /**

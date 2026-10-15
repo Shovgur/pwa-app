@@ -9,6 +9,8 @@ import {
   fetchClientBookings,
   loftVenueRef,
 } from '../lib/clientBookings'
+import { isDemoMode } from '../demo/demoMode'
+import { subscribe as subscribeDemoStore } from '../demo/demoStore'
 import { todayIsoDate } from '../utils/bookingDates'
 
 export interface Court {
@@ -53,6 +55,8 @@ export interface Booking {
   addOns?: { name: string; price: number }[]
   venueType?: 'sport' | 'loft' | 'pool'
   code?: string
+  crmStatus?: import('../lib/partnerCrm').BookingStatus
+  statusLabel?: string
 }
 
 export interface AddBookingOptions {
@@ -200,6 +204,13 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     void reload()
   }, [reload])
+
+  useEffect(() => {
+    if (!isDemoMode() || !isAuthenticated) return
+    return subscribeDemoStore(() => {
+      void reload()
+    })
+  }, [isAuthenticated, reload])
 
   async function addBooking(
     court: Court,

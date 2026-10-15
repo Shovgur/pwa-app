@@ -7,6 +7,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { COURTS } from '../../contexts/BookingContext'
 import { usePublicVenues } from '../../contexts/PublicVenuesContext'
+import { isDemoMode } from '../../demo/demoMode'
 import { CourtDetailSheet } from '../CourtDetailSheet'
 import type { Court } from '../../contexts/BookingContext'
 import { courtCardBannerStyle } from '../../utils/venueAdapters'
@@ -44,9 +45,13 @@ export function HomeTab() {
   const [selectedCourt, setSelectedCourt] = useState<Court | null>(null)
   const [slide, setSlide] = useState(0)
 
-  const allCourts = useMemo(() => [...partnerCourts, ...COURTS], [partnerCourts])
+  const allCourts = useMemo(
+    () => (isDemoMode() ? [...partnerCourts] : [...partnerCourts, ...COURTS]),
+    [partnerCourts],
+  )
 
   const POPULAR = useMemo(() => {
+    if (isDemoMode()) return partnerCourts.slice(0, 6)
     const mocks = COURTS.filter(c => c.available).slice(0, 3)
     const partners = partnerCourts.slice(0, 3)
     return [...partners, ...mocks].slice(0, 6)

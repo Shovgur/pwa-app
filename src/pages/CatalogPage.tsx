@@ -9,6 +9,7 @@ import { usePublicVenues } from '../contexts/PublicVenuesContext'
 import { COURTS } from '../contexts/BookingContext'
 import { LOFTS } from '../data/venues'
 import { POOLS } from '../data/pools'
+import { isDemoMode } from '../demo/demoMode'
 import {
   ALL_VENUE_CHIP,
   buildVenueFilterChips,
@@ -56,7 +57,8 @@ function itemMatchesSportChip(item: CatalogItem, chipId: string): boolean {
 }
 
 export function CatalogPage() {
-  const { catalogItems } = usePublicVenues()
+  const { catalogItems, error: catalogError, refresh, isLoading } = usePublicVenues()
+  const demoMode = isDemoMode()
   const [params, setParams] = useSearchParams()
   const initialType = params.get('type') ?? 'all'
   const initialSport = params.get('sport') ?? 'all'
@@ -146,10 +148,12 @@ export function CatalogPage() {
   )
 
   const allItems = useMemo(() => {
-    const merged = [...partnerItems, ...sportItems, ...loftItems, ...poolItems]
+    const merged = demoMode
+      ? [...partnerItems]
+      : [...partnerItems, ...sportItems, ...loftItems, ...poolItems]
     // Площадки с featured-акциями поднимаем вверх
     return merged.sort((a, b) => Number(Boolean(b.promoBadge)) - Number(Boolean(a.promoBadge)))
-  }, [partnerItems, sportItems, loftItems, poolItems])
+  }, [demoMode, partnerItems, sportItems, loftItems, poolItems])
 
   const sportChips = useMemo((): VenueFilterChip[] => {
     const sportIds = new Set<string>()
@@ -278,7 +282,46 @@ export function CatalogPage() {
       />
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
         <h1 className="page-title" style={{ fontSize: 36, fontWeight: 800, marginBottom: 8 }}>Все площадки</h1>
-        <p style={{ color: colors.muted, fontSize: 16, marginBottom: 16 }}>Спорт, лофты, бассейны и переговорные</p>
+        <p style={{ color: colors.muted, fontSize: 16, marginBottom: 16 }}>
+          {demoMode ? 'Площадки партнёров BookinGo' : 'Спорт, лофты, бассейны и переговорные'}
+        </p>
+        {catalogError && (
+          <div
+            style={{
+              marginBottom: 16,
+              padding: '12px 14px',
+              borderRadius: 12,
+              background: 'rgba(239,68,68,0.12)',
+              border: '1px solid rgba(239,68,68,0.3)',
+              color: '#fca5a5',
+              fontSize: 13,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              flexWrap: 'wrap',
+            }}
+          >
+            <span style={{ flex: 1 }}>{catalogError}</span>
+            <button
+              type="button"
+              onClick={() => void refresh()}
+              disabled={isLoading}
+              style={{
+                border: 'none',
+                borderRadius: 8,
+                padding: '6px 12px',
+                background: 'rgba(255,255,255,0.08)',
+                color: '#f1f5f9',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: isLoading ? 'wait' : 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              Повторить
+            </button>
+          </div>
+        )}
         {(city || dateLabel) && (
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
             {city && (

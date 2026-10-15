@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { CalendarCheck, Clock, MapPin, X, CalendarPlus } from 'lucide-react'
 import { useBookings } from '../../contexts/BookingContext'
 import type { Booking } from '../../contexts/BookingContext'
+import { BOOKING_STATUS_META, type BookingStatus } from '../../lib/partnerCrm'
 
 const FILTERS = [
   { id: 'all', label: 'Все' },
@@ -18,8 +19,27 @@ const STATUS_META: Record<Booking['status'], { label: string; color: string }> =
   cancelled: { label: 'Отменено', color: '#ef4444' },
 }
 
-function BookingRow({ booking, onCancel }: { booking: Booking; onCancel: (id: number) => void | Promise<void> }) {
-  const meta = STATUS_META[booking.status]
+function resolveStatusMeta(booking: Booking): { label: string; color: string } {
+  if (booking.crmStatus && booking.crmStatus in BOOKING_STATUS_META) {
+    const crm = BOOKING_STATUS_META[booking.crmStatus as BookingStatus]
+    return { label: booking.statusLabel ?? crm.label, color: crm.color }
+  }
+  if (booking.statusLabel) {
+    return { label: booking.statusLabel, color: STATUS_META[booking.status].color }
+  }
+  return STATUS_META[booking.status]
+}
+
+function BookingRow({
+  booking,
+  onCancel,
+  cancelling,
+}: {
+  booking: Booking
+  onCancel: (id: number) => void | Promise<void>
+  cancelling: boolean
+}) {
+  const meta = resolveStatusMeta(booking)
   const court = booking.court
 
   return (
@@ -51,6 +71,11 @@ function BookingRow({ booking, onCancel }: { booking: Booking; onCancel: (id: nu
             <MapPin size={11} color="#64748b" />
             <span style={{ fontSize: 12, color: '#64748b' }}>{court.location}</span>
           </div>
+          {booking.code && (
+            <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4, fontWeight: 600 }}>
+              Код брони · {booking.code}
+            </div>
+          )}
         </div>
       </div>
 
@@ -74,12 +99,16 @@ function BookingRow({ booking, onCancel }: { booking: Booking; onCancel: (id: nu
         </span>
         {booking.status === 'upcoming' && (
           <button
+            type="button"
             onClick={() => onCancel(booking.id)}
+            disabled={cancelling}
             aria-label="Отменить бронь"
             style={{
               width: 30, height: 30, borderRadius: 10, flexShrink: 0,
               border: '1px solid rgba(239,68,68,0.25)', background: 'rgba(239,68,68,0.08)',
-              color: '#f87171', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: '#f87171', cursor: cancelling ? 'wait' : 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              opacity: cancelling ? 0.55 : 1,
             }}
           >
             <X size={14} />
@@ -92,8 +121,23 @@ function BookingRow({ booking, onCancel }: { booking: Booking; onCancel: (id: nu
 
 export function BookingsTab() {
   const navigate = useNavigate()
-  const { bookings, cancelBooking } = useBookings()
+  const { bookings, cancelBooking, error: loadError, reload } = useBookings()
   const [filter, setFilter] = useState<typeof FILTERS[number]['id']>('all')
+  const [actionError, setActionError] = useState<string | null>(null)
+  const [cancellingId, setCancellingId] = useState<number | null>(null)
+
+  async function handleCancel(id: number) {
+    if (cancellingId != null) return
+    setActionError(null)
+    setCancellingId(id)
+    try {
+      await cancelBooking(id)
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : 'Не удалось отменить бронь')
+    } finally {
+      setCancellingId(null)
+    }
+  }
 
   const filtered = filter === 'all' ? bookings : bookings.filter(b => b.status === filter)
   const counts = {
@@ -102,6 +146,7 @@ export function BookingsTab() {
     completed: bookings.filter(b => b.status === 'completed').length,
     cancelled: bookings.filter(b => b.status === 'cancelled').length,
   }
+  const bannerError = actionError ?? loadError
 
   return (
     <div className="dashboard-page">
@@ -165,11 +210,55 @@ export function BookingsTab() {
         ))}
       </motion.div>
 
+      {bannerError && (
+        <div
+          style={{
+            marginBottom: 16,
+            padding: '12px 14px',
+            borderRadius: 12,
+            background: 'rgba(239,68,68,0.12)',
+            border: '1px solid rgba(239,68,68,0.3)',
+            color: '#fca5a5',
+            fontSize: 13,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            flexWrap: 'wrap',
+          }}
+        >
+          <span style={{ flex: 1 }}>{bannerError}</span>
+          {loadError && (
+            <button
+              type="button"
+              onClick={() => void reload()}
+              style={{
+                border: 'none',
+                borderRadius: 8,
+                padding: '6px 12px',
+                background: 'rgba(255,255,255,0.08)',
+                color: '#f1f5f9',
+                fontSize: 12,
+                fontWeight: 600,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              Повторить
+            </button>
+          )}
+        </div>
+      )}
+
       {filtered.length > 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <AnimatePresence>
             {filtered.map(b => (
-              <BookingRow key={b.id} booking={b} onCancel={cancelBooking} />
+              <BookingRow
+                key={b.id}
+                booking={b}
+                onCancel={handleCancel}
+                cancelling={cancellingId === b.id}
+              />
             ))}
           </AnimatePresence>
         </div>

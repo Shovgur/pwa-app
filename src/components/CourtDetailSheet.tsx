@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -22,6 +23,8 @@ import { BILLING_LABEL } from "../utils/venueBuilderPresets";
 import { calcBookingTotal } from "../utils/partnerBookingPrice";
 import { upcomingBookingDays } from "../utils/bookingDates";
 import { courtVenueRef } from "../lib/clientBookings";
+import { isAuthExpiredError } from "../lib/authErrors";
+import { isDemoMode } from "../demo/demoMode";
 import {
   fetchCourtAvailability,
   isSlotTakenError,
@@ -70,8 +73,9 @@ function useIsDesktop() {
 }
 
 export function CourtDetailSheet({ court, onClose }: Props) {
+  const navigate = useNavigate();
   const { addBooking } = useBookings();
-  const { user } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { getVenue } = usePublicVenues();
   const isDesktop = useIsDesktop();
   const sidePad = isDesktop ? "0 32px 28px" : "0 16px 24px";
@@ -160,8 +164,19 @@ export function CourtDetailSheet({ court, onClose }: Props) {
     setStep("booking");
   }
 
+  function requireAuthOrRedirect(): boolean {
+    if (isAuthenticated) return true;
+    const from = court.partnerVenueId
+      ? `/venue/${court.partnerVenueId}`
+      : "/catalog";
+    onClose();
+    navigate("/login", { state: { from } });
+    return false;
+  }
+
   async function handlePay() {
     if (!selectedSlot || paying) return;
+    if (!requireAuthOrRedirect()) return;
     setPaying(true);
     setPayError(null);
     try {
@@ -195,6 +210,14 @@ export function CourtDetailSheet({ court, onClose }: Props) {
       reloadSlots();
       setStep("success");
     } catch (e) {
+      if (isAuthExpiredError(e)) {
+        const from = court.partnerVenueId
+          ? `/venue/${court.partnerVenueId}`
+          : "/catalog";
+        onClose();
+        navigate("/login", { state: { from } });
+        return;
+      }
       const message = e instanceof Error ? e.message : "Не удалось создать бронь";
       if (isSlotTakenError(message)) {
         reloadSlots();
@@ -1330,7 +1353,10 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.97 }}
-                  onClick={() => setStep("payment")}
+                  onClick={() => {
+                    if (!requireAuthOrRedirect()) return;
+                    setStep("payment");
+                  }}
                   style={{
                     width: "100%",
                     padding: "16px",
@@ -1421,7 +1447,9 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                     marginBottom: 8,
                   }}
                 >
-                  Бронь подтверждена!
+                  {isDemoMode()
+                    ? "Заявка отправлена · ожидает подтверждения"
+                    : "Бронь подтверждена!"}
                 </h2>
                 <p
                   style={{
@@ -1431,8 +1459,9 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                     lineHeight: 1.6,
                   }}
                 >
-                  {court.name} забронирован на {selectedDate.date} в{" "}
-                  {selectedSlot ?? newBooking?.time}
+                  {isDemoMode()
+                    ? `${court.name} · ${selectedDate.date} в ${selectedSlot ?? newBooking?.time}${newBooking?.code ? ` · код ${newBooking.code}` : ""}. Списание не производится — статус меняет партнёр.`
+                    : `${court.name} забронирован на ${selectedDate.date} в ${selectedSlot ?? newBooking?.time}`}
                 </p>
 
                 <div
@@ -1478,7 +1507,13 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                       ["📅 Дата", selectedDate.date],
                       ["⏰ Время", selectedSlot ?? newBooking?.time],
                       ["⏱ Длительность", selectedDuration.label],
-                      ["💳 Оплачено", `${totalPrice.toLocaleString()} ₽`],
+                      [
+                        isDemoMode() ? "📋 Сумма заявки" : "💳 Оплачено",
+                        `${totalPrice.toLocaleString()} ₽`,
+                      ],
+                      ...(isDemoMode() && newBooking?.code
+                        ? [["🔖 Код", newBooking.code] as [string, string]]
+                        : []),
                     ].map(([label, value]) => (
                       <div
                         key={label as string}
