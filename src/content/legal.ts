@@ -5,7 +5,7 @@ export const SELLER = {
   fullName: 'Новожилов Антон',
   inn: '773435479282',
   ogrnip: '325774600550880',
-  email: 's.showgur@yandex.by',
+  email: 'contact.bookingo@mail.ru',
   bank: {
     name: 'ПАО Сбербанк',
     account: '40802810338720117017',
