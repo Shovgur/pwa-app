@@ -8,17 +8,28 @@ const FACTS = [
   `ОГРНИП ${SELLER.ogrnip}`,
 ] as const
 
-/** Тихая строка продавца и одни и те же юридические ссылки на всех публичных экранах. */
+/** Тихая строка продавца и ссылки на PDF / реквизиты. */
 export function SiteLegalBar({ anchored = false }: { anchored?: boolean }) {
   return (
     <div className={anchored ? 'site-legal site-legal--anchored' : 'site-legal'}>
       <div className="site-container">
         <nav className="site-legal-nav" aria-label="Юридические документы">
-          {FOOTER_LEGAL_LINKS.map((item) => (
-            <Link key={item.path} to={item.path} className="site-legal-nav-link">
-              {item.label}
-            </Link>
-          ))}
+          {FOOTER_LEGAL_LINKS.map((item) =>
+            item.download ? (
+              <a
+                key={item.href}
+                href={item.href}
+                download={item.download}
+                className="site-legal-nav-link"
+              >
+                {item.label}
+              </a>
+            ) : (
+              <Link key={item.href} to={item.href} className="site-legal-nav-link">
+                {item.label}
+              </Link>
+            ),
+          )}
         </nav>
         <p className="site-legal-line">
           {FACTS.map((fact) => (

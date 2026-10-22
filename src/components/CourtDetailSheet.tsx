@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -1351,7 +1351,13 @@ export function CourtDetailSheet({ court, onClose }: Props) {
 
                 <p style={{ margin: "12px 0 0", fontSize: 12, color: "#64748b", lineHeight: 1.5 }}>
                   Имя и телефон из профиля уходят площадке для брони.{" "}
-                  <Link to="/privacy" style={{ color: "#94a3b8" }}>Политика конфиденциальности</Link>
+                  <a
+                    href="/docs/politika-bookingo.pdf"
+                    download="Politika-konfidencialnosti-BookinGo.pdf"
+                    style={{ color: "#94a3b8" }}
+                  >
+                    Политика конфиденциальности
+                  </a>
                 </p>
 
                 {/* Кнопка внизу контента */}
