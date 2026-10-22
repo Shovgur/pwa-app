@@ -13,6 +13,7 @@ import { CatalogPage } from './pages/CatalogPage'
 import { SportBookingPage } from './pages/SportBookingPage'
 import { LoftBookingPage } from './pages/LoftBookingPage'
 import { HowItWorksPage } from './pages/HowItWorksPage'
+import { RequisitesPage } from './pages/RequisitesPage'
 import { PoolsPage } from './pages/PoolsPage'
 import { PoolDetailPage } from './pages/PoolDetailPage'
 import { LoginPage } from './pages/LoginPage'
@@ -86,6 +87,7 @@ function AppRoutes() {
         <Route path="/sport/:id" element={isDemoMode() ? <LegacyVenueRedirect /> : <SportBookingPage />} />
         <Route path="/loft/:id" element={isDemoMode() ? <LegacyVenueRedirect /> : <LoftBookingPage />} />
         <Route path="/how-it-works" element={<HowItWorksPage />} />
+        <Route path="/requisites" element={<RequisitesPage />} />
         <Route path="/pools" element={isDemoMode() ? <LegacyVenueRedirect /> : <PoolsPage />} />
         <Route path="/pools/:id" element={isDemoMode() ? <LegacyVenueRedirect /> : <PoolDetailPage />} />
       </Route>

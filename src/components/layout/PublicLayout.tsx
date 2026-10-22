@@ -10,6 +10,7 @@ import { Logo } from '../ui/Logo'
 import { Button } from '../ui/Button'
 import { SiteAmbientBg } from './SiteAmbientBg'
 import { colors } from '../../theme/tokens'
+import { SELLER } from '../../content/legal'
 import { useAuth } from '../../contexts/AuthContext'
 import { useBookings } from '../../contexts/BookingContext'
 
@@ -536,11 +537,17 @@ export function PublicLayout() {
             }}
           >
             <Logo to="/" />
-            <p style={{ fontSize: 13, color: colors.muted }}>© 2026 BookinGo · Бронирование площадок</p>
+            <p style={{ fontSize: 13, color: colors.muted, margin: 0, lineHeight: 1.55, maxWidth: 520 }}>
+              {SELLER.legalName}
+              <br />
+              ИНН {SELLER.inn} · ОГРНИП {SELLER.ogrnip}
+              <br />
+              <a href={`mailto:${SELLER.email}`} style={{ color: colors.text2 }}>{SELLER.email}</a>
+            </p>
             <div style={{ display: 'flex', gap: 24 }}>
-              {['Политика', 'Поддержка', 'API'].map((l) => (
-                <span key={l} style={{ fontSize: 13, color: colors.text2, cursor: 'pointer' }}>{l}</span>
-              ))}
+              <Link to="/requisites" style={{ fontSize: 13, color: colors.text2, textDecoration: 'none' }}>
+                Реквизиты
+              </Link>
             </div>
           </div>
         </footer>
