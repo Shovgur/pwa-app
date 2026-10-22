@@ -8,12 +8,6 @@ const ROWS: { label: string; value: string }[] = [
   { label: 'ИНН', value: SELLER.inn },
   { label: 'ОГРНИП', value: SELLER.ogrnip },
   { label: 'Email', value: SELLER.email },
-  { label: 'Расчётный счёт', value: SELLER.bank.account },
-  { label: 'Банк', value: SELLER.bank.name },
-  { label: 'БИК', value: SELLER.bank.bik },
-  { label: 'Корреспондентский счёт', value: SELLER.bank.corr },
-  { label: 'ИНН банка', value: SELLER.bank.inn },
-  { label: 'КПП банка', value: SELLER.bank.kpp },
 ]
 
 export function RequisitesPage() {

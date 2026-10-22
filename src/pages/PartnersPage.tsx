@@ -5,6 +5,7 @@ import {
   CheckCircle2, Handshake, Send,
 } from 'lucide-react'
 import { ParticleField } from '../components/ParticleField'
+import { SiteLegalBar } from '../components/layout/SiteLegalBar'
 import { BackToSiteLink } from '../components/ui/BackToSiteLink'
 import { SeoHead } from '../components/SeoHead'
 import { FieldError, errorInputStyle } from '../components/ui/FieldError'
@@ -135,7 +136,7 @@ export function PartnersPage() {
           animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 10, repeat: Infinity, delay: 3 }} />
       </div>
 
-      <div style={{ position: 'relative', zIndex: 10, padding: 'calc(96px + env(safe-area-inset-top, 0px)) 24px 80px' }}>
+      <div style={{ position: 'relative', zIndex: 10, padding: 'calc(96px + env(safe-area-inset-top, 0px)) 24px 120px' }}>
         <div className="site-container" style={{ maxWidth: 1080, margin: '0 auto', padding: 0 }}>
 
           {/* HERO */}
@@ -393,6 +394,7 @@ export function PartnersPage() {
           </motion.div>
         </div>
       </div>
+      <SiteLegalBar anchored />
     </div>
   )
 }

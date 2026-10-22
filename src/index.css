@@ -322,6 +322,66 @@ input:-webkit-autofill:focus {
   z-index: 30;
 }
 
+.site-footer-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 22px;
+  padding-bottom: 4px;
+}
+
+.site-footer-link {
+  font-size: 13px;
+  font-weight: 500;
+  color: #94A3B8;
+  text-decoration: none;
+}
+
+.site-footer-link:hover {
+  color: #F1F5F9;
+}
+
+.site-legal {
+  padding-bottom: 22px;
+}
+
+.site-legal--anchored {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  padding-top: 18px;
+  padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(to top, rgba(10, 14, 23, 0.96) 60%, rgba(10, 14, 23, 0));
+}
+
+.site-legal-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.7;
+  color: #64748B;
+}
+
+.site-legal-line > * + *::before {
+  content: '·';
+  margin: 0 8px;
+  color: rgba(255, 255, 255, 0.22);
+}
+
+.site-legal-line a {
+  color: #94A3B8;
+  text-decoration: none;
+}
+
+.site-legal-line a:hover {
+  color: #F1F5F9;
+}
+
 .site-footer--compact {
   margin-top: 0;
 }
@@ -2812,12 +2872,8 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     margin-top: 40px;
   }
 
-  .site-footer .site-container {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 20px;
-    padding-top: 28px;
-    padding-bottom: 28px;
+  .site-footer-top {
+    padding-top: 20px;
   }
 }
 

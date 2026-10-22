@@ -10,7 +10,7 @@ import { Logo } from '../ui/Logo'
 import { Button } from '../ui/Button'
 import { SiteAmbientBg } from './SiteAmbientBg'
 import { colors } from '../../theme/tokens'
-import { SELLER } from '../../content/legal'
+import { SiteLegalBar } from './SiteLegalBar'
 import { useAuth } from '../../contexts/AuthContext'
 import { useBookings } from '../../contexts/BookingContext'
 
@@ -523,33 +523,11 @@ export function PublicLayout() {
             background: 'rgba(255,255,255,0.02)',
           }}
         >
-          <div
-            className="site-container"
-            style={{
-              display: 'flex',
-              flexDirection: 'row',
-              flexWrap: 'wrap',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 16,
-              paddingTop: 32,
-              paddingBottom: 32,
-            }}
-          >
+          <div className="site-container site-footer-top">
             <Logo to="/" />
-            <p style={{ fontSize: 13, color: colors.muted, margin: 0, lineHeight: 1.55, maxWidth: 520 }}>
-              {SELLER.legalName}
-              <br />
-              ИНН {SELLER.inn} · ОГРНИП {SELLER.ogrnip}
-              <br />
-              <a href={`mailto:${SELLER.email}`} style={{ color: colors.text2 }}>{SELLER.email}</a>
-            </p>
-            <div style={{ display: 'flex', gap: 24 }}>
-              <Link to="/requisites" style={{ fontSize: 13, color: colors.text2, textDecoration: 'none' }}>
-                Реквизиты
-              </Link>
-            </div>
+            <Link to="/requisites" className="site-footer-link">Реквизиты</Link>
           </div>
+          <SiteLegalBar />
         </footer>
       </div>
     </div>

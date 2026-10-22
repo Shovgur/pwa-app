@@ -10,6 +10,7 @@ import { MapPin, Eye, EyeOff, LogIn, User, Handshake } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { usePartnerAuth } from "../contexts/PartnerAuthContext";
 import { ParticleField } from "../components/ParticleField";
+import { SiteLegalBar } from "../components/layout/SiteLegalBar";
 import { BackToSiteLink } from "../components/ui/BackToSiteLink";
 import { AuthTransitionLoader } from "../components/ui/Loaders";
 import { FieldError, errorInputStyle } from "../components/ui/FieldError";
@@ -132,6 +133,7 @@ export function LoginPage() {
         minHeight: "100vh",
         display: "flex",
         position: "relative",
+        paddingBottom: "calc(72px + env(safe-area-inset-bottom, 0px))",
         background:
           "linear-gradient(160deg, #0a1628 0%, #0f1e35 50%, #0d1f2d 100%)",
       }}
@@ -921,6 +923,7 @@ export function LoginPage() {
           </div>
         </motion.div>
       </div>
+      <SiteLegalBar anchored />
     </div>
   );
 }

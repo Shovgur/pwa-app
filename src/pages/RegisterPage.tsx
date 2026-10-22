@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Eye, EyeOff, UserPlus, LogIn, KeyRound } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { ParticleField } from '../components/ParticleField'
+import { SiteLegalBar } from '../components/layout/SiteLegalBar'
 import { BackToSiteLink } from '../components/ui/BackToSiteLink'
 import { AuthTransitionLoader } from '../components/ui/Loaders'
 import { FieldError, errorInputStyle } from '../components/ui/FieldError'
@@ -116,7 +117,7 @@ export function RegisterPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 24px', paddingTop: 'calc(80px + env(safe-area-inset-top, 0px))', position: 'relative', background: 'linear-gradient(160deg, #0a1628 0%, #0f1e35 50%, #0d1f2d 100%)', boxSizing: 'border-box' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 24px', paddingTop: 'calc(80px + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(88px + env(safe-area-inset-bottom, 0px))', position: 'relative', background: 'linear-gradient(160deg, #0a1628 0%, #0f1e35 50%, #0d1f2d 100%)', boxSizing: 'border-box' }}>
       <AnimatePresence>
         {(showOverlay || redirecting) && (
           <AuthTransitionLoader
@@ -427,6 +428,7 @@ export function RegisterPage() {
           )}
         </div>
       </motion.div>
+      <SiteLegalBar anchored />
     </div>
   )
 }

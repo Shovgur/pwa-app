@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { KeyRound, ArrowLeft } from 'lucide-react'
 import { ParticleField } from '../components/ParticleField'
+import { SiteLegalBar } from '../components/layout/SiteLegalBar'
 import { BackToSiteLink } from '../components/ui/BackToSiteLink'
 import { FieldError, errorInputStyle } from '../components/ui/FieldError'
 import { useFieldErrors } from '../hooks/useFieldErrors'
@@ -32,7 +33,7 @@ export function ForgotPasswordPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 24px', paddingTop: 'calc(80px + env(safe-area-inset-top, 0px))', position: 'relative', background: 'linear-gradient(160deg, #0a1628 0%, #0f1e35 50%, #0d1f2d 100%)', boxSizing: 'border-box' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 24px', paddingTop: 'calc(80px + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(88px + env(safe-area-inset-bottom, 0px))', position: 'relative', background: 'linear-gradient(160deg, #0a1628 0%, #0f1e35 50%, #0d1f2d 100%)', boxSizing: 'border-box' }}>
       <ParticleField />
 
       <div style={{ position: 'fixed', top: 'calc(24px + env(safe-area-inset-top, 0px))', left: 24, zIndex: 50 }}>
@@ -111,6 +112,7 @@ export function ForgotPasswordPage() {
           </Link>
         </div>
       </motion.div>
+      <SiteLegalBar anchored />
     </div>
   )
 }

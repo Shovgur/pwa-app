@@ -6,12 +6,4 @@ export const SELLER = {
   inn: '773435479282',
   ogrnip: '325774600550880',
   email: 'contact.bookingo@mail.ru',
-  bank: {
-    name: 'ПАО Сбербанк',
-    account: '40802810338720117017',
-    bik: '044525225',
-    corr: '30101810400000000225',
-    inn: '7707083893',
-    kpp: '773643001',
-  },
 } as const
