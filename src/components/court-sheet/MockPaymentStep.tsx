@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ChevronLeft, CreditCard, Loader2, Shield } from 'lucide-react'
 import type { Court } from '../../contexts/BookingContext'
@@ -200,6 +201,10 @@ export function MockPaymentStep({ court, totalPrice, paying, error, isDesktop, o
             <>{demo ? 'Отправить заявку' : 'Оплатить'} · {totalPrice.toLocaleString('ru-RU')} ₽</>
           )}
         </motion.button>
+        <p style={{ margin: '12px 0 0', fontSize: 12, color: '#64748b', lineHeight: 1.5, textAlign: 'center' }}>
+          {demo ? 'Отправляя заявку' : 'Оплачивая'}, вы принимаете{' '}
+          <Link to="/offer" style={{ color: '#94a3b8' }}>оферту</Link>
+        </p>
         <div style={{ height: 90 }} />
       </div>
     </motion.div>

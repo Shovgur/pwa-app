@@ -14,6 +14,8 @@ import { SportBookingPage } from './pages/SportBookingPage'
 import { LoftBookingPage } from './pages/LoftBookingPage'
 import { HowItWorksPage } from './pages/HowItWorksPage'
 import { RequisitesPage } from './pages/RequisitesPage'
+import { LegalDocPage } from './pages/LegalDocPage'
+import { ConsentNotice } from './components/ConsentNotice'
 import { PoolsPage } from './pages/PoolsPage'
 import { PoolDetailPage } from './pages/PoolDetailPage'
 import { LoginPage } from './pages/LoginPage'
@@ -88,6 +90,11 @@ function AppRoutes() {
         <Route path="/loft/:id" element={isDemoMode() ? <LegacyVenueRedirect /> : <LoftBookingPage />} />
         <Route path="/how-it-works" element={<HowItWorksPage />} />
         <Route path="/requisites" element={<RequisitesPage />} />
+        <Route path="/privacy" element={<LegalDocPage />} />
+        <Route path="/consent" element={<LegalDocPage />} />
+        <Route path="/terms" element={<LegalDocPage />} />
+        <Route path="/offer" element={<LegalDocPage />} />
+        <Route path="/partner-terms" element={<LegalDocPage />} />
         <Route path="/pools" element={isDemoMode() ? <LegacyVenueRedirect /> : <PoolsPage />} />
         <Route path="/pools/:id" element={isDemoMode() ? <LegacyVenueRedirect /> : <PoolDetailPage />} />
       </Route>
@@ -157,6 +164,7 @@ export default function App() {
           <PublicVenuesProvider>
             <BookingProvider>
               <AppRoutes />
+              <ConsentNotice />
               <DemoBadge />
             </BookingProvider>
           </PublicVenuesProvider>

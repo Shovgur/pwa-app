@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Users, Percent, Zap, BarChart3,
@@ -88,6 +89,8 @@ export function PartnersPage() {
   const [form, setForm] = useState<PartnerApplicationPayload>(EMPTY_FORM)
   const [status, setStatus] = useState<Status>('idle')
   const [error, setError] = useState('')
+  const [acceptedLegal, setAcceptedLegal] = useState(false)
+  const [legalError, setLegalError] = useState('')
   const { errors, handleInvalid, clearError, resetErrors } = useFieldErrors()
 
   function update<K extends keyof PartnerApplicationPayload>(key: K, value: string) {
@@ -97,6 +100,11 @@ export function PartnersPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    setLegalError('')
+    if (!acceptedLegal) {
+      setLegalError('Отметьте согласие с документами, чтобы продолжить')
+      return
+    }
     setStatus('loading')
     setError('')
     try {
@@ -369,20 +377,44 @@ export function PartnersPage() {
                       )}
                     </AnimatePresence>
 
+                    <div className="full-width" style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                      <input
+                        id="partner-legal"
+                        type="checkbox"
+                        checked={acceptedLegal}
+                        onChange={(e) => {
+                          setAcceptedLegal(e.target.checked)
+                          if (e.target.checked) setLegalError('')
+                        }}
+                        style={{ width: 18, height: 18, marginTop: 2, accentColor: '#22c55e', flexShrink: 0 }}
+                      />
+                      <label htmlFor="partner-legal" style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.5, cursor: 'pointer' }}>
+                        Соглашаюсь на{' '}
+                        <Link to="/consent" style={{ color: '#22c55e' }}>обработку персональных данных</Link>
+                        {', '}
+                        <Link to="/privacy" style={{ color: '#22c55e' }}>политику</Link>
+                        {' и '}
+                        <Link to="/partner-terms" style={{ color: '#22c55e' }}>условия для партнёра</Link>.
+                      </label>
+                    </div>
+                    {legalError && (
+                      <p className="full-width" role="alert" style={{ margin: 0, color: '#f87171', fontSize: 13 }}>{legalError}</p>
+                    )}
+
                     <motion.button
                       type="submit"
-                      disabled={status === 'loading'}
+                      disabled={status === 'loading' || !acceptedLegal}
                       className="full-width"
-                      whileHover={status === 'loading' ? {} : { scale: 1.01 }}
-                      whileTap={status === 'loading' ? {} : { scale: 0.98 }}
+                      whileHover={status === 'loading' || !acceptedLegal ? {} : { scale: 1.01 }}
+                      whileTap={status === 'loading' || !acceptedLegal ? {} : { scale: 0.98 }}
                       style={{
                         width: '100%', padding: 15, borderRadius: 12, marginTop: 4,
                         background: 'linear-gradient(135deg, #22c55e, #16a34a)',
                         border: 'none', color: '#fff', fontSize: 15, fontWeight: 700,
-                        cursor: status === 'loading' ? 'default' : 'pointer', fontFamily: 'inherit',
+                        cursor: status === 'loading' || !acceptedLegal ? 'default' : 'pointer', fontFamily: 'inherit',
                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                         boxShadow: '0 8px 24px rgba(34,197,94,0.3)',
-                        opacity: status === 'loading' ? 0.8 : 1,
+                        opacity: status === 'loading' || !acceptedLegal ? 0.8 : 1,
                       }}
                     >
                       {status === 'loading' ? <BtnSpinner /> : <><Send size={16} /><span>Отправить заявку</span></>}

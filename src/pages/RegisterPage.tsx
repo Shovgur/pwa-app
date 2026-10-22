@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
+import type { FormEvent } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Eye, EyeOff, UserPlus, LogIn, KeyRound } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
@@ -48,16 +49,23 @@ export function RegisterPage() {
   const [codeSent, setCodeSent] = useState(false)
   const [sendingCode, setSendingCode] = useState(false)
   const [redirecting, setRedirecting] = useState(false)
+  const [acceptedLegal, setAcceptedLegal] = useState(false)
+  const [legalError, setLegalError] = useState('')
   const { errors, handleInvalid, clearError } = useFieldErrors()
   const { errors: verifyErrors, handleInvalid: handleVerifyInvalid, clearError: clearVerifyError } = useFieldErrors()
 
   const { register, sendCode, verifyCodeAndLogin, isLoading } = useAuth()
   const navigate = useNavigate()
 
-  async function handleRegister(e: React.FormEvent) {
+  async function handleRegister(e: FormEvent) {
     e.preventDefault()
     setError('')
     setEmailExists(false)
+    setLegalError('')
+    if (!acceptedLegal) {
+      setLegalError('Отметьте согласие с документами, чтобы продолжить')
+      return
+    }
     if (!isValidPhone(phone)) {
       setError('Укажите корректный номер телефона в формате +7 999 123-45-67')
       return
@@ -306,9 +314,36 @@ export function RegisterPage() {
                   )}
                 </AnimatePresence>
 
-                <motion.button type="submit" disabled={isLoading}
-                  style={{ width: '100%', padding: 15, borderRadius: 12, marginTop: 4, background: 'linear-gradient(135deg, #22c55e, #16a34a)', border: 'none', color: '#fff', fontSize: 15, fontWeight: 700, cursor: isLoading ? 'default' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 8px 24px rgba(34,197,94,0.3)', opacity: isLoading ? 0.8 : 1 }}
-                  whileHover={isLoading ? {} : { scale: 1.02 }} whileTap={isLoading ? {} : { scale: 0.97 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                  <input
+                    id="register-legal"
+                    type="checkbox"
+                    checked={acceptedLegal}
+                    onChange={(e) => {
+                      setAcceptedLegal(e.target.checked)
+                      if (e.target.checked) setLegalError('')
+                    }}
+                    style={{ width: 18, height: 18, marginTop: 2, accentColor: '#22c55e', flexShrink: 0 }}
+                  />
+                  <label htmlFor="register-legal" style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.5, cursor: 'pointer' }}>
+                    Соглашаюсь на{' '}
+                    <Link to="/consent" style={{ color: '#22c55e' }}>обработку персональных данных</Link>
+                    {' '}и принимаю{' '}
+                    <Link to="/privacy" style={{ color: '#22c55e' }}>политику</Link>
+                    {', '}
+                    <Link to="/terms" style={{ color: '#22c55e' }}>правила</Link>
+                    {' и '}
+                    <Link to="/offer" style={{ color: '#22c55e' }}>оферту</Link>
+                    . Имя и телефон передаются площадке для брони.
+                  </label>
+                </div>
+                {legalError && (
+                  <p role="alert" style={{ margin: 0, color: '#f87171', fontSize: 13 }}>{legalError}</p>
+                )}
+
+                <motion.button type="submit" disabled={isLoading || !acceptedLegal}
+                  style={{ width: '100%', padding: 15, borderRadius: 12, marginTop: 4, background: 'linear-gradient(135deg, #22c55e, #16a34a)', border: 'none', color: '#fff', fontSize: 15, fontWeight: 700, cursor: isLoading || !acceptedLegal ? 'default' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 8px 24px rgba(34,197,94,0.3)', opacity: isLoading || !acceptedLegal ? 0.8 : 1 }}
+                  whileHover={isLoading || !acceptedLegal ? {} : { scale: 1.02 }} whileTap={isLoading || !acceptedLegal ? {} : { scale: 0.97 }}>
                   {isLoading ? <BtnSpinner /> : <><UserPlus size={17} /><span>Создать аккаунт</span></>}
                 </motion.button>
               </motion.form>

@@ -525,7 +525,6 @@ export function PublicLayout() {
         >
           <div className="site-container site-footer-top">
             <Logo to="/" />
-            <Link to="/requisites" className="site-footer-link">Реквизиты</Link>
           </div>
           <SiteLegalBar />
         </footer>
