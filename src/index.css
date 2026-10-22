@@ -359,15 +359,27 @@ input:-webkit-autofill:focus {
   border-radius: 4px;
 }
 
+/* fixed: не увеличивает высоту страницы и не даёт лишний скролл на логине/регистрации */
 .site-legal--anchored {
-  position: absolute;
+  position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
   z-index: 20;
-  padding-top: 18px;
-  padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
-  background: linear-gradient(to top, rgba(10, 14, 23, 0.96) 60%, rgba(10, 14, 23, 0));
+  padding-top: 10px;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  background: linear-gradient(to top, rgba(10, 14, 23, 0.98) 55%, rgba(10, 14, 23, 0));
+  pointer-events: none;
+}
+
+.site-legal--anchored .site-legal-nav,
+.site-legal--anchored .site-legal-line,
+.site-legal--anchored a {
+  pointer-events: auto;
+}
+
+.site-legal--anchored .site-legal-nav {
+  margin-bottom: 4px;
 }
 
 .site-legal-line {

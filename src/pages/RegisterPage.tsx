@@ -117,7 +117,7 @@ export function RegisterPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 24px', paddingTop: 'calc(80px + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(88px + env(safe-area-inset-bottom, 0px))', position: 'relative', background: 'linear-gradient(160deg, #0a1628 0%, #0f1e35 50%, #0d1f2d 100%)', boxSizing: 'border-box' }}>
+    <div style={{ minHeight: '100dvh', height: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px', paddingTop: 'calc(72px + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(56px + env(safe-area-inset-bottom, 0px))', position: 'relative', overflow: 'hidden', background: 'linear-gradient(160deg, #0a1628 0%, #0f1e35 50%, #0d1f2d 100%)', boxSizing: 'border-box' }}>
       <AnimatePresence>
         {(showOverlay || redirecting) && (
           <AuthTransitionLoader
@@ -138,7 +138,7 @@ export function RegisterPage() {
           animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 10, repeat: Infinity, delay: 3 }} />
       </div>
 
-      <motion.div style={{ width: '100%', maxWidth: 420, position: 'relative', zIndex: 10 }}
+      <motion.div style={{ width: '100%', maxWidth: 420, maxHeight: '100%', overflowY: 'auto', position: 'relative', zIndex: 10 }}
         initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
 
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
