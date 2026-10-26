@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Home, Search, CalendarCheck, MapPin, User,
@@ -58,17 +58,22 @@ export function Sidebar() {
         overflow: 'visible',
       }}
     >
-      {/* Logo — высота совпадает с топбаром (94px) */}
-      <div style={{
-        height: HEADER_H,
-        padding: '0 14px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: 10,
-        overflow: 'hidden',
-        flexShrink: 0,
-        borderBottom: '1px solid rgba(255,255,255,0.06)',
-      }}>
+      {/* Logo — высота совпадает с топбаром (94px); бренд всегда на главную */}
+      <Link
+        to="/"
+        style={{
+          height: HEADER_H,
+          padding: '0 14px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+          overflow: 'hidden',
+          flexShrink: 0,
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          textDecoration: 'none',
+          color: 'inherit',
+        }}
+      >
         <img
           src={APP_ICON_SRC}
           alt="BookinGo"
@@ -100,7 +105,7 @@ export function Sidebar() {
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
+      </Link>
 
       {/* Основная навигация */}
       <nav style={{

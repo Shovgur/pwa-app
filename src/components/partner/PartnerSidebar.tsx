@@ -1,4 +1,4 @@
-import { NavLink, useNavigate } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
 import { Building2, ClipboardList, Home, LogOut, Percent, Settings, Users } from 'lucide-react'
 import { usePartnerAuth } from '../../contexts/PartnerAuthContext'
 import { usePartnerCrm } from '../../contexts/PartnerCrmContext'
@@ -46,15 +46,15 @@ export function PartnerSidebarContent({ onNavigate }: { onNavigate?: () => void 
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Логотип */}
+      {/* Логотип — бренд всегда на главную */}
       <div style={{ padding: '22px 20px 18px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, textDecoration: 'none', color: 'inherit' }}>
           <img src={APP_ICON_SRC} alt="BookinGo" width={36} height={36} style={{ width: 36, height: 36, borderRadius: 9, flexShrink: 0 }} />
           <div>
             <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', fontFamily: 'var(--font-display)' }}>BookinGo</div>
             <div style={{ fontSize: 10, color: roleMeta.color, fontWeight: 700, letterSpacing: '0.06em' }}>{roleMeta.label}</div>
           </div>
-        </div>
+        </Link>
 
         {/* Кто вошёл */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}>

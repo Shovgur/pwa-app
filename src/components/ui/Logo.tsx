@@ -40,6 +40,7 @@ export function Logo({ to = '/', size = 'md' }: LogoProps) {
     </motion.div>
   )
 
-  if (to) return <Link to={to} style={{ textDecoration: 'none' }}>{content}</Link>
-  return content
+  // Бренд всегда ведёт на главную, даже если to передали пустым.
+  const href = to || '/'
+  return <Link to={href} style={{ textDecoration: 'none' }}>{content}</Link>
 }

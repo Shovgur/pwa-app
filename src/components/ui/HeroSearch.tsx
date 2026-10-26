@@ -120,9 +120,9 @@ export function HeroStats() {
       transition={{ delay: 0.55 }}
     >
       {stats.map((s, i) => (
-        <div key={s.l} className="hero-stat-item">
-          {i > 0 && <div className="hero-stat-divider" />}
-          <div>
+        <div key={s.l} className="hero-stat-cluster">
+          {i > 0 && <div className="hero-stat-divider" aria-hidden />}
+          <div className="hero-stat-item">
             <p className="hero-stat-value">{s.v}</p>
             <p className="hero-stat-label">{s.l}</p>
           </div>

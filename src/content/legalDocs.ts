@@ -3,7 +3,7 @@
 export const LEGAL_PDFS = [
   {
     href: '/docs/politika-bookingo.pdf',
-    label: 'Политика',
+    label: 'Политика конфиденциальности',
     download: 'Politika-konfidencialnosti-BookinGo.pdf',
   },
   {

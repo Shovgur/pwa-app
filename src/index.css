@@ -1753,7 +1753,7 @@ input:-webkit-autofill:focus {
 
 .hero-stats {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   justify-content: center;
   gap: 0;
   margin-top: 56px;
@@ -1763,18 +1763,29 @@ input:-webkit-autofill:focus {
   max-width: 560px;
 }
 
+.hero-stat-cluster {
+  display: flex;
+  align-items: stretch;
+  flex: 1;
+  min-width: 0;
+}
+
 .hero-stat-item {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  flex: 1;
   justify-content: center;
+  flex: 1;
+  text-align: center;
+  padding: 0 12px;
 }
 
 .hero-stat-divider {
   width: 1px;
+  align-self: center;
   height: 40px;
+  flex-shrink: 0;
   background: rgba(255, 255, 255, 0.1);
-  margin-right: 32px;
 }
 
 .hero-stat-value {
@@ -2929,9 +2940,13 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     flex-wrap: nowrap;
   }
 
-  .hero-stat-item {
+  .hero-stat-cluster {
     flex: 1;
     min-width: 0;
+  }
+
+  .hero-stat-item {
+    padding: 0 6px;
   }
 }
 
