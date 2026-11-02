@@ -6,7 +6,7 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, Eye, EyeOff, LogIn, User, Handshake } from "lucide-react";
+import { Eye, EyeOff, LogIn, User, Handshake } from "lucide-react";
 import { useAuth } from "../contexts/AuthContext";
 import { usePartnerAuth } from "../contexts/PartnerAuthContext";
 import { ParticleField } from "../components/ParticleField";
@@ -15,10 +15,7 @@ import { BackToSiteLink } from "../components/ui/BackToSiteLink";
 import { AuthTransitionLoader } from "../components/ui/Loaders";
 import { FieldError, errorInputStyle } from "../components/ui/FieldError";
 import { useFieldErrors } from "../hooks/useFieldErrors";
-import { isDemoMode } from "../demo/demoMode";
-import { DEMO_PASSWORD } from "../demo/demoAuth";
-
-const demoMode = isDemoMode();
+import { APP_ICON_SRC } from "../config/branding";
 
 const SPORTS = ["⚽", "🎾", "🏀", "🏐", "🏸", "🏊"];
 
@@ -80,7 +77,12 @@ export function LoginPage() {
     const result = await authLogin(login, password);
     if (result.success) {
       setRedirecting(true);
-      navigate("/dashboard", { replace: true });
+      const from = (location.state as { from?: string } | null)?.from;
+      const next =
+        typeof from === "string" && from.startsWith("/") && !from.startsWith("//")
+          ? from
+          : "/dashboard";
+      navigate(next, { replace: true });
     } else setError(result.error ?? "Ошибка входа");
   }
 
@@ -88,30 +90,6 @@ export function LoginPage() {
     e.preventDefault();
     setPartnerError("");
     const result = await loginPartner(partnerLogin, partnerPassword);
-    if (result.success) {
-      setRedirecting(true);
-      navigate("/partner/dashboard", { replace: true });
-    } else setPartnerError(result.error ?? "Ошибка входа");
-  }
-
-  async function quickClientLogin() {
-    setMode("client");
-    setLogin("demo@bookingo.ru");
-    setPassword(DEMO_PASSWORD);
-    setError("");
-    const result = await authLogin("demo@bookingo.ru", DEMO_PASSWORD);
-    if (result.success) {
-      setRedirecting(true);
-      navigate("/dashboard", { replace: true });
-    } else setError(result.error ?? "Ошибка входа");
-  }
-
-  async function quickPartnerLogin(partnerUser: string) {
-    setMode("partner");
-    setPartnerLogin(partnerUser);
-    setPartnerPassword(DEMO_PASSWORD);
-    setPartnerError("");
-    const result = await loginPartner(partnerUser, DEMO_PASSWORD);
     if (result.success) {
       setRedirecting(true);
       navigate("/partner/dashboard", { replace: true });
@@ -136,7 +114,6 @@ export function LoginPage() {
         display: "flex",
         position: "relative",
         overflow: "hidden",
-        paddingBottom: "calc(56px + env(safe-area-inset-bottom, 0px))",
         background:
           "linear-gradient(160deg, #0a1628 0%, #0f1e35 50%, #0d1f2d 100%)",
       }}
@@ -213,20 +190,22 @@ export function LoginPage() {
               marginBottom: 48,
             }}
           >
-            <div
+            <img
+              src={APP_ICON_SRC}
+              alt="BookinGo"
+              width={44}
+              height={44}
+              decoding="async"
               style={{
                 width: 44,
                 height: 44,
-                borderRadius: 14,
-                background: "linear-gradient(135deg, #22c55e, #3b82f6)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
+                borderRadius: "50%",
+                display: "block",
+                flexShrink: 0,
+                objectFit: "cover",
                 boxShadow: "0 4px 16px rgba(34,197,94,0.3)",
               }}
-            >
-              <MapPin size={22} color="#fff" strokeWidth={2.5} />
-            </div>
+            />
             <span
               className="logo-text"
               style={{
@@ -291,23 +270,25 @@ export function LoginPage() {
         </motion.div>
       </div>
 
-      {/* Правая панель — форма */}
+      {/* Правая панель — форма (скролл на низком окне, «Войти» не под SiteLegalBar) */}
       <div
         style={{
           flex: 1,
           minHeight: 0,
           display: "flex",
-          alignItems: "center",
+          alignItems: "flex-start",
           justifyContent: "center",
           padding: "24px",
           paddingTop: "calc(72px + env(safe-area-inset-top, 0px))",
+          paddingBottom: "calc(120px + env(safe-area-inset-bottom, 0px))",
           position: "relative",
           zIndex: 10,
           overflowY: "auto",
+          WebkitOverflowScrolling: "touch",
         }}
       >
         <motion.div
-          style={{ width: "100%", maxWidth: 420, margin: "auto 0" }}
+          style={{ width: "100%", maxWidth: 420, margin: "0 auto" }}
           initial={{ opacity: 0, y: 24 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -325,19 +306,21 @@ export function LoginPage() {
                 marginBottom: 8,
               }}
             >
-              <div
+              <img
+                src={APP_ICON_SRC}
+                alt="BookinGo"
+                width={40}
+                height={40}
+                decoding="async"
                 style={{
                   width: 40,
                   height: 40,
-                  borderRadius: 13,
-                  background: "linear-gradient(135deg, #22c55e, #3b82f6)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
+                  borderRadius: "50%",
+                  display: "block",
+                  flexShrink: 0,
+                  objectFit: "cover",
                 }}
-              >
-                <MapPin size={20} color="#fff" strokeWidth={2.5} />
-              </div>
+              />
               <span
                 style={{ fontSize: 24, fontWeight: 900, color: "#fff" }}
                 className="logo-text"
@@ -541,24 +524,22 @@ export function LoginPage() {
                         </button>
                       </div>
                       <FieldError message={errors.password} />
-                      {!demoMode && (
-                        <div style={{ textAlign: "right", marginTop: 8 }}>
-                          <Link
-                            to={
-                              login.includes("@")
-                                ? `/forgot-password?email=${encodeURIComponent(login.trim())}`
-                                : "/forgot-password"
-                            }
-                            style={{
-                              color: "#64748b",
-                              fontSize: 12,
-                              textDecoration: "none",
-                            }}
-                          >
-                            Забыли пароль?
-                          </Link>
-                        </div>
-                      )}
+                      <div style={{ textAlign: "right", marginTop: 8 }}>
+                        <Link
+                          to={
+                            login.includes("@")
+                              ? `/forgot-password?email=${encodeURIComponent(login.trim())}`
+                              : "/forgot-password"
+                          }
+                          style={{
+                            color: "#64748b",
+                            fontSize: 12,
+                            textDecoration: "none",
+                          }}
+                        >
+                          Забыли пароль?
+                        </Link>
+                      </div>
                     </div>
 
                     <AnimatePresence>
@@ -867,64 +848,6 @@ export function LoginPage() {
                 </motion.div>
               )}
             </AnimatePresence>
-
-            {demoMode && (
-              <div
-                style={{
-                  marginTop: 24,
-                  paddingTop: 20,
-                  borderTop: "1px solid rgba(255,255,255,0.08)",
-                }}
-              >
-                <p
-                  style={{
-                    margin: "0 0 12px",
-                    fontSize: 12,
-                    fontWeight: 700,
-                    color: "#94a3b8",
-                    letterSpacing: "0.04em",
-                    textTransform: "uppercase",
-                  }}
-                >
-                  Быстрый вход
-                </p>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: 8,
-                  }}
-                >
-                  {(
-                    [
-                      { label: "Клиент", onClick: () => void quickClientLogin() },
-                      { label: "Owner", onClick: () => void quickPartnerLogin("owner-demo") },
-                      { label: "Manager", onClick: () => void quickPartnerLogin("manager-demo") },
-                      { label: "Solo", onClick: () => void quickPartnerLogin("solo-demo") },
-                    ] as const
-                  ).map(btn => (
-                    <button
-                      key={btn.label}
-                      type="button"
-                      onClick={btn.onClick}
-                      style={{
-                        padding: "10px 8px",
-                        borderRadius: 10,
-                        border: "1px solid rgba(255,255,255,0.1)",
-                        background: "rgba(255,255,255,0.04)",
-                        color: "#e2e8f0",
-                        fontSize: 12,
-                        fontWeight: 600,
-                        cursor: "pointer",
-                        fontFamily: "inherit",
-                      }}
-                    >
-                      {btn.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
         </motion.div>
       </div>

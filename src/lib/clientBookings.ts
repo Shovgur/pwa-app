@@ -237,7 +237,7 @@ export function apiBookingToBooking(row: ApiClientBooking): Booking {
     duration: row.durationMinutes || 60,
     price: row.price,
     status: row.status,
-    createdAt: row.createdAt?.slice(0, 10) ?? row.date,
+    createdAt: row.createdAt || row.date,
     venueType,
     code: row.code ?? undefined,
     crmStatus: row.crmStatus,
@@ -248,7 +248,9 @@ export function apiBookingToBooking(row: ApiClientBooking): Booking {
 export async function fetchClientBookings(): Promise<Booking[]> {
   if (isDemoMode()) return demoFetchClientBookings()
   const data = await authRequest<{ bookings: ApiClientBooking[] }>('/bookings')
-  return (data.bookings ?? []).map(apiBookingToBooking)
+  return (data.bookings ?? [])
+    .map(apiBookingToBooking)
+    .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || '') || b.id - a.id)
 }
 
 export async function createClientBooking(payload: CreateBookingPayload): Promise<Booking> {
@@ -260,10 +262,17 @@ export async function createClientBooking(payload: CreateBookingPayload): Promis
   return apiBookingToBooking(data.booking)
 }
 
-export async function cancelClientBooking(id: number): Promise<Booking> {
-  if (isDemoMode()) return demoCancelClientBooking(id)
+export async function cancelClientBooking(
+  id: number,
+  opts: { reason: string; reasonCode: string },
+): Promise<Booking> {
+  if (isDemoMode()) return demoCancelClientBooking(id, opts)
   const data = await authRequest<{ booking: ApiClientBooking }>(`/bookings/${id}/cancel`, {
     method: 'PATCH',
+    body: JSON.stringify({
+      reason: opts.reason,
+      reasonCode: opts.reasonCode,
+    }),
   })
   return apiBookingToBooking(data.booking)
 }

@@ -7,12 +7,18 @@ import type {
 import { demoBookingToPartner } from '../bookingStatus'
 import { demoDelay, read, update } from '../demoStore'
 import { requireDemoCompanyId } from './demoSession'
+import { getScopedVenueIds } from './managerScope'
 
 export async function demoFetchPartnerBookings(): Promise<PartnerBooking[]> {
   await demoDelay()
   const companyId = requireDemoCompanyId()
+  const scoped = getScopedVenueIds(companyId)
   return read()
-    .bookings.filter(b => b.companyId === companyId)
+    .bookings.filter(b => {
+      if (b.companyId !== companyId) return false
+      if (scoped == null) return true
+      return scoped.has(b.venueId)
+    })
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .map(demoBookingToPartner)
 }
@@ -23,10 +29,14 @@ export async function demoUpdatePartnerBookingStatus(
 ): Promise<PartnerBooking> {
   await demoDelay()
   const companyId = requireDemoCompanyId()
+  const scoped = getScopedVenueIds(companyId)
   let result: PartnerBooking | null = null
   update(s => {
     const bookings = s.bookings.map(b => {
       if (String(b.id) !== id || b.companyId !== companyId) return b
+      if (scoped != null && !scoped.has(b.venueId)) {
+        throw new Error('Нет доступа к этой брони')
+      }
       let paidAmount = b.paidAmount
       if (status === 'paid') paidAmount = b.amount
       const next = { ...b, status, paidAmount }
@@ -60,7 +70,7 @@ export async function demoCreatePartnerStaff(payload: CreateStaffPayload): Promi
   await demoDelay()
   const companyId = requireDemoCompanyId()
   const staff = {
-    id: `staff-${Date.now()}`,
+    id: String(Date.now()),
     companyId,
     name: payload.name.trim(),
     login: payload.login.trim(),

@@ -2,6 +2,7 @@ import { API_BASE } from '../config/api'
 import { getPartnerToken } from '../contexts/PartnerAuthContext'
 import { isDemoMode } from '../demo/demoMode'
 import {
+  demoAssignVenueManager,
   demoCreatePartnerVenue,
   demoDeletePartnerVenue,
   demoFetchPartnerVenues,
@@ -195,4 +196,16 @@ export function deletePartnerVenue(id: string): Promise<void> {
   if (isDemoMode()) return demoDeletePartnerVenue(id)
   if (USE_VENUE_MOCKS) return mockDeleteVenue(id)
   return partnerRequest<unknown>(`/partner/venues/${id}`, { method: 'DELETE' }).then(() => undefined)
+}
+
+/** Владелец назначает / снимает менеджера с площадки. */
+export function assignPartnerVenueManager(
+  venueId: string,
+  managedByStaffId: string | null,
+): Promise<PartnerVenue> {
+  if (isDemoMode()) return demoAssignVenueManager(venueId, managedByStaffId)
+  return partnerRequest<{ venue: PartnerVenue }>(`/partner/venues/${venueId}/manager`, {
+    method: 'PATCH',
+    body: JSON.stringify({ managedByStaffId }),
+  }).then(r => r.venue)
 }

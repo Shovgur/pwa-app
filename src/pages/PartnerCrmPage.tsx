@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useSearchParams } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import {
   CalendarDays,
@@ -163,8 +164,30 @@ function BookingRow({
       </div>
 
       <div className="crm-cell-customer" style={{ minWidth: 0 }}>
-        <div style={{ fontSize: 14, fontWeight: 700, color: '#f1f5f9', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-          {booking.customerName}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: '#f1f5f9', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {booking.customerName}
+          </div>
+          {booking.requestCallback && (
+            <span
+              title="Клиент просит перезвонить"
+              aria-label="Клиент просит перезвонить"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 22,
+                height: 22,
+                borderRadius: 8,
+                background: 'rgba(34,197,94,0.18)',
+                border: '1px solid rgba(34,197,94,0.4)',
+                color: '#4ade80',
+                flexShrink: 0,
+              }}
+            >
+              <Phone size={12} />
+            </span>
+          )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#94a3b8', marginTop: 3 }}>
           <Phone size={11} /> {booking.customerPhone}
@@ -300,6 +323,27 @@ function BookingDetailModal({
           <DetailField label="СОЗДАНА" value={formatDateTime(booking.createdAt)} />
         </div>
 
+        {booking.requestCallback && (
+          <div style={{ display: 'flex', gap: 10, marginTop: 18, padding: '12px 14px', borderRadius: 12, background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.28)' }}>
+            <Phone size={15} color="#22c55e" style={{ flexShrink: 0, marginTop: 2 }} />
+            <p style={{ margin: 0, fontSize: 13, color: '#bbf7d0', lineHeight: 1.5, fontWeight: 600 }}>
+              Просит перезвонить
+            </p>
+          </div>
+        )}
+
+        {booking.status === 'cancelled' && booking.cancelReason && (
+          <div style={{ display: 'flex', gap: 10, marginTop: 18, padding: '12px 14px', borderRadius: 12, background: 'rgba(248,113,113,0.1)', border: '1px solid rgba(248,113,113,0.25)' }}>
+            <X size={15} color="#f87171" style={{ flexShrink: 0, marginTop: 2 }} />
+            <div>
+              <div style={{ fontSize: 11, color: '#fca5a5', fontWeight: 700, letterSpacing: 0.4, marginBottom: 4 }}>
+                ПРИЧИНА ОТМЕНЫ
+              </div>
+              <p style={{ margin: 0, fontSize: 13, color: '#fecaca', lineHeight: 1.5 }}>{booking.cancelReason}</p>
+            </div>
+          </div>
+        )}
+
         {booking.comment && (
           <div style={{ display: 'flex', gap: 10, marginTop: 18, padding: '12px 14px', borderRadius: 12, background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.18)' }}>
             <MessageSquare size={15} color="#3b82f6" style={{ flexShrink: 0, marginTop: 2 }} />
@@ -348,13 +392,32 @@ function BookingDetailModal({
   )
 }
 
+function parseStatusFilter(raw: string | null): Filter {
+  if (!raw) return 'all'
+  return FILTERS.some(f => f.id === raw) ? (raw as Filter) : 'all'
+}
+
 export function PartnerCrmPage() {
   const { bookings, isLoading, error, updatingId, reload, changeStatus } = usePartnerCrm()
+  const [searchParams, setSearchParams] = useSearchParams()
 
-  const [filter, setFilter] = useState<Filter>('all')
+  const [filter, setFilter] = useState<Filter>(() => parseStatusFilter(searchParams.get('status')))
   const [query, setQuery] = useState('')
   const [openId, setOpenId] = useState<string | null>(null)
   const [actionError, setActionError] = useState('')
+  const venueIdFilter = searchParams.get('venueId')
+
+  useEffect(() => {
+    setFilter(parseStatusFilter(searchParams.get('status')))
+  }, [searchParams])
+
+  function applyFilter(next: Filter) {
+    setFilter(next)
+    const params = new URLSearchParams(searchParams)
+    if (next === 'all') params.delete('status')
+    else params.set('status', next)
+    setSearchParams(params, { replace: true })
+  }
 
   const counts = useMemo(() => {
     const base: Record<Filter, number> = {
@@ -374,6 +437,7 @@ export function PartnerCrmPage() {
     const qDigits = digitsOnly(q)
 
     return bookings
+      .filter(b => !venueIdFilter || String(b.venueId ?? '') === String(venueIdFilter))
       .filter(b => filter === 'all' || b.status === filter)
       .filter(b => {
         if (!q) return true
@@ -385,14 +449,19 @@ export function PartnerCrmPage() {
         )
       })
       .sort((a, b) => {
-        // Новые заявки всегда сверху — с ними и работает дежурный администратор
+        // pending всегда выше; внутри групп — новее по createdAt сверху
         const aNew = a.status === 'pending' ? 0 : 1
         const bNew = b.status === 'pending' ? 0 : 1
         if (aNew !== bNew) return aNew - bNew
-        if (a.date !== b.date) return a.date < b.date ? -1 : 1
-        return a.timeFrom < b.timeFrom ? -1 : 1
+        const aCreated = a.createdAt || ''
+        const bCreated = b.createdAt || ''
+        if (aCreated && bCreated && aCreated !== bCreated) {
+          return aCreated < bCreated ? 1 : -1
+        }
+        if (a.date !== b.date) return a.date < b.date ? 1 : -1
+        return a.timeFrom < b.timeFrom ? 1 : -1
       })
-  }, [bookings, filter, query])
+  }, [bookings, filter, query, venueIdFilter])
 
   const openBooking = openId ? bookings.find(b => b.id === openId) ?? null : null
 
@@ -413,6 +482,10 @@ export function PartnerCrmPage() {
     { label: 'Подтверждено',       value: counts.confirmed, color: '#22c55e' },
     { label: 'Оплачено',           value: counts.paid,      color: '#a855f7' },
   ]
+
+  const venueFilterName = venueIdFilter
+    ? bookings.find(b => String(b.venueId ?? '') === String(venueIdFilter))?.venueName
+    : null
 
   return (
     <div className="dashboard-page">
@@ -435,6 +508,55 @@ export function PartnerCrmPage() {
           </div>
         ))}
       </div>
+
+      {venueIdFilter && (
+        <div
+          className="card"
+          style={{
+            marginBottom: 14,
+            padding: '10px 14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            flexWrap: 'wrap',
+          }}
+        >
+          <span style={{ fontSize: 13, color: '#94a3b8' }}>Площадка:</span>
+          <span
+            style={{
+              padding: '5px 10px',
+              borderRadius: 999,
+              background: 'rgba(59,130,246,0.15)',
+              border: '1px solid rgba(59,130,246,0.35)',
+              color: '#93c5fd',
+              fontSize: 12,
+              fontWeight: 700,
+            }}
+          >
+            {venueFilterName || `ID ${venueIdFilter}`}
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              const params = new URLSearchParams(searchParams)
+              params.delete('venueId')
+              setSearchParams(params, { replace: true })
+            }}
+            style={{
+              marginLeft: 'auto',
+              background: 'none',
+              border: 'none',
+              color: '#94a3b8',
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            Сбросить
+          </button>
+        </div>
+      )}
 
       <div className="crm-toolbar">
         <div style={{ position: 'relative', flex: 1, minWidth: 0 }}>
@@ -476,7 +598,7 @@ export function PartnerCrmPage() {
             <button
               key={f.id}
               type="button"
-              onClick={() => setFilter(f.id)}
+              onClick={() => applyFilter(f.id)}
               style={{
                 display: 'inline-flex', alignItems: 'center', gap: 7,
                 padding: '9px 14px', borderRadius: 999,

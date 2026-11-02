@@ -49,7 +49,7 @@ export function PartnerSidebarContent({ onNavigate }: { onNavigate?: () => void 
       {/* Логотип — бренд всегда на главную */}
       <div style={{ padding: '22px 20px 18px', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14, textDecoration: 'none', color: 'inherit' }}>
-          <img src={APP_ICON_SRC} alt="BookinGo" width={36} height={36} style={{ width: 36, height: 36, borderRadius: 9, flexShrink: 0 }} />
+          <img src={APP_ICON_SRC} alt="BookinGo" width={36} height={36} style={{ width: 36, height: 36, borderRadius: '50%', flexShrink: 0 }} />
           <div>
             <div style={{ fontSize: 15, fontWeight: 800, color: '#fff', fontFamily: 'var(--font-display)' }}>BookinGo</div>
             <div style={{ fontSize: 10, color: roleMeta.color, fontWeight: 700, letterSpacing: '0.06em' }}>{roleMeta.label}</div>
@@ -94,12 +94,31 @@ export function PartnerSidebarContent({ onNavigate }: { onNavigate?: () => void 
                     {item.label}
                   </span>
                   {badge > 0 && (
-                    <span style={{
-                      minWidth: 20, height: 20, padding: '0 6px', borderRadius: 999,
-                      background: '#f59e0b', color: '#0f172a',
-                      fontSize: 11, fontWeight: 800,
-                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
+                    <span
+                      role="link"
+                      tabIndex={0}
+                      title="Новые заявки"
+                      onClick={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        onNavigate?.()
+                        navigate(`${PARTNER_BOOKINGS_PATH}?status=pending`)
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key !== 'Enter' && e.key !== ' ') return
+                        e.preventDefault()
+                        e.stopPropagation()
+                        onNavigate?.()
+                        navigate(`${PARTNER_BOOKINGS_PATH}?status=pending`)
+                      }}
+                      style={{
+                        minWidth: 20, height: 20, padding: '0 6px', borderRadius: 999,
+                        background: '#f59e0b', color: '#0f172a',
+                        fontSize: 11, fontWeight: 800,
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        cursor: 'pointer',
+                      }}
+                    >
                       {badge}
                     </span>
                   )}

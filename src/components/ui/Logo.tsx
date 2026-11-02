@@ -26,12 +26,14 @@ export function Logo({ to = '/', size = 'md' }: LogoProps) {
         alt="BookinGo"
         width={s.mark}
         height={s.mark}
+        decoding="async"
         style={{
           width: s.mark,
           height: s.mark,
-          borderRadius: s.mark * 0.22,
+          borderRadius: '50%',
           display: 'block',
           flexShrink: 0,
+          objectFit: 'cover',
         }}
       />
       <span className="logo-text" style={{ fontSize: s.text, fontWeight: 800, color: '#F1F5F9', letterSpacing: '-0.03em' }}>

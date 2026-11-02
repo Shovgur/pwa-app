@@ -7,7 +7,7 @@ import {
   type ReactNode,
 } from 'react'
 import { API_BASE } from '../config/api'
-import { AUTH_TOKEN_KEY, AUTH_USER_KEY, clearAuthToken, getAuthToken } from '../config/auth'
+import { AUTH_TOKEN_KEY, AUTH_USER_KEY, clearAuthToken, getAuthToken, setAuthToken } from '../config/auth'
 import { buildLoginPayload, isDuplicateEmailError, isValidPhone, normalizePhone } from '../utils/authHelpers'
 import { isDemoMode } from '../demo/demoMode'
 import { tryClientLogin } from '../demo/demoAuth'
@@ -41,12 +41,11 @@ interface AuthCtx {
 
 // ─── helpers ─────────────────────────────────────────────
 function saveSession(token: string, user: User) {
-  localStorage.setItem(TOKEN_KEY, token)
+  setAuthToken(token)
   localStorage.setItem(USER_KEY, JSON.stringify(user))
 }
 
 function clearSession() {
-  localStorage.removeItem(TOKEN_KEY)
   localStorage.removeItem(USER_KEY)
   clearAuthToken()
   // clean up legacy keys
@@ -57,7 +56,8 @@ function clearSession() {
 function loadSession(): User | null {
   try {
     // Без токена «залогиненный» user — ложная сессия (на проде даёт 403 Invalid token)
-    if (!localStorage.getItem(TOKEN_KEY)) {
+    // getAuthToken также поднимает cookie после return с ЮKassa
+    if (!getAuthToken()) {
       localStorage.removeItem(USER_KEY)
       return null
     }
@@ -71,6 +71,28 @@ function loadSession(): User | null {
 function makeAvatar(name?: string | null): string {
   if (!name) return '?'
   return name.trim().slice(0, 2).toUpperCase()
+}
+
+function localizeClientLoginError(raw: string, status?: number): string {
+  const text = raw.trim()
+  const lower = text.toLowerCase()
+  if (
+    lower.includes('user not found')
+    || lower.includes('invalid credentials')
+    || lower.includes('invalid login')
+    || lower.includes('invalid password')
+    || lower.includes('wrong password')
+    || lower.includes('incorrect password')
+    || lower.includes('unauthorized')
+    || lower.includes('authentication failed')
+    || status === 401
+    || status === 404
+  ) {
+    return 'Неверный логин или пароль'
+  }
+  // Уже русское сообщение с бэка — показываем как есть
+  if (/[а-яё]/i.test(text)) return text
+  return 'Не удалось войти. Проверьте данные.'
 }
 
 function parseApiError(data: Record<string, unknown>, status: number): string {
@@ -149,7 +171,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       saveSession(data.token, u)
       return { success: true }
     } catch (e) {
-      return { success: false, error: e instanceof Error ? e.message : 'Ошибка входа' }
+      if (e instanceof ApiRequestError) {
+        return { success: false, error: localizeClientLoginError(e.message, e.status) }
+      }
+      const message = e instanceof Error ? e.message : ''
+      return { success: false, error: localizeClientLoginError(message) }
     } finally {
       setIsLoading(false)
     }

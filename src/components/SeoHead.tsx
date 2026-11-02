@@ -1,7 +1,7 @@
 import { Helmet } from 'react-helmet-async'
 
 const SITE_URL = 'https://bookingo.ru'
-const DEFAULT_IMAGE = `${SITE_URL}/icon-512.png`
+const DEFAULT_IMAGE = `${SITE_URL}/icon-512.png?v=5`
 
 export interface SchemaVenue {
   name: string

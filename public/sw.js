@@ -1,4 +1,4 @@
-const CACHE_NAME = 'bookingo-v3';
+const CACHE_NAME = 'bookingo-v4';
 const ASSETS = ['/'];
 
 self.addEventListener('install', (event) => {

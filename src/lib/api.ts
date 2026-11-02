@@ -89,6 +89,24 @@ export function apiVerifyCode(email: string, code: string) {
   })
 }
 
+export function apiForgotPassword(email: string) {
+  return request<{ success?: boolean; message?: string }>('/auth/forgot-password', {
+    method: 'POST',
+    body: JSON.stringify({ email: email.trim() }),
+  })
+}
+
+export function apiResetPassword(email: string, code: string, newPassword: string) {
+  return request<{ success?: boolean; message?: string }>('/auth/reset-password', {
+    method: 'POST',
+    body: JSON.stringify({
+      email: email.trim(),
+      code: code.trim(),
+      newPassword,
+    }),
+  })
+}
+
 // ───────── User ─────────
 
 export interface UserProfile {
@@ -101,6 +119,22 @@ export interface UserProfile {
 
 export function apiGetProfile() {
   return request<UserProfile>('/user/profile', {}, true)
+}
+
+export async function apiChangePassword(currentPassword: string, newPassword: string) {
+  const data = await request<{ success?: boolean; message?: string; token?: string }>(
+    '/user/change-password',
+    {
+      method: 'POST',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    },
+    true,
+  )
+  // Новый JWT с обновлённым pwdv — старые сессии после смены пароля отзывают
+  if (typeof data.token === 'string' && data.token) {
+    setToken(data.token)
+  }
+  return data
 }
 
 // ───────── Bookings ─────────

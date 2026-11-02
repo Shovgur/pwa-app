@@ -10,9 +10,13 @@ import { useAuth } from '../contexts/AuthContext'
 import { isAuthExpiredError } from '../lib/authErrors'
 import { Button } from '../components/ui/Button'
 import { BookingSummaryPanel } from '../components/ui/BookingSummaryPanel'
+import { VenueMap } from '../components/ui/VenueMap'
 import { paths } from '../config/features'
 import { useBookingPageReset } from '../hooks/useBookingPageReset'
 import { colors } from '../theme/tokens'
+import { isDemoMode } from '../demo/demoMode'
+import { redirectToYookassa } from '../lib/yookassaPayments'
+import { bookingCreateErrorMessage, isSlotTakenError } from '../lib/venueAvailability'
 
 import { upcomingBookingDays } from '../utils/bookingDates'
 
@@ -27,11 +31,15 @@ export function SportBookingPage() {
   const [selectedDay, setSelectedDay] = useState(0)
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [bookError, setBookError] = useState<string | null>(null)
+  const [booking, setBooking] = useState(false)
 
   useBookingPageReset(id, () => {
     setSelectedDay(0)
     setSelectedSlot(null)
     setSuccess(false)
+    setBookError(null)
+    setBooking(false)
   })
 
   if (!court) {
@@ -47,20 +55,35 @@ export function SportBookingPage() {
   const price = venue.price
 
   async function handleBook() {
-    if (!selectedSlot) return
+    if (!selectedSlot || booking) return
     if (!isAuthenticated) {
       navigate('/login', { state: { from: `/sport/${id}` } })
       return
     }
+    setBookError(null)
+    setBooking(true)
     try {
-      await addBooking(venue, days[selectedDay].date, selectedSlot, 60, {
+      const created = await addBooking(venue, days[selectedDay].date, selectedSlot, 60, {
         isoDate: days[selectedDay].iso,
+        paymentMethod: 'online',
       })
+      if (!isDemoMode()) {
+        const left = await redirectToYookassa(created.id)
+        if (left) return
+      }
       setSuccess(true)
     } catch (e) {
       if (isAuthExpiredError(e)) {
         navigate('/login', { state: { from: `/sport/${id}` } })
+        return
       }
+      const message = bookingCreateErrorMessage(e)
+      if (isSlotTakenError(e instanceof Error ? e.message : '')) {
+        setSelectedSlot(null)
+      }
+      setBookError(message)
+    } finally {
+      setBooking(false)
     }
   }
 
@@ -114,6 +137,22 @@ export function SportBookingPage() {
               <p style={{ fontSize: 13, color: colors.text2 }}>{venue.amenities.slice(0, 4).join(' · ')}</p>
             </div>
           </motion.div>
+
+          <section className="booking-section">
+            <div className="booking-section-head">
+              <div>
+                <h2>Расположение</h2>
+                <p>{venue.address || venue.location}</p>
+              </div>
+            </div>
+            <VenueMap
+              address={venue.address || venue.location}
+              city={venue.location}
+              lat={venue.lat}
+              lng={venue.lng}
+              height={280}
+            />
+          </section>
 
           <section className="booking-section">
             <div className="booking-section-head">
@@ -177,8 +216,10 @@ export function SportBookingPage() {
         emptyMessage={!selectedSlot ? 'Время не выбрано' : undefined}
         total={price}
         accent="green"
-        buttonDisabled={!selectedSlot}
+        buttonLabel={booking ? 'Создаём бронь…' : 'Подтвердить бронь →'}
+        buttonDisabled={!selectedSlot || booking}
         onConfirm={handleBook}
+        error={bookError}
       />
     </div>
   )

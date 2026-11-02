@@ -5,7 +5,7 @@ import type { VenuePromotion } from '../lib/partnerPromotions'
 import type { PartnerRole } from '../utils/partnerAccess'
 import { createSeedState } from './demoSeed'
 
-export const STORAGE_KEY = 'bookingo.demo.v1'
+export const STORAGE_KEY = 'bookingo.demo.v2'
 
 export interface DemoCompany {
   id: string
@@ -72,6 +72,9 @@ export interface DemoBooking {
   paymentMethod: PaymentMethod
   status: BookingStatus
   comment: string | null
+  requestCallback?: boolean
+  cancelReason?: string | null
+  cancelReasonCode?: string | null
   createdAt: string
 }
 

@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { ChevronLeft, CreditCard, Loader2, Shield } from 'lucide-react'
+import { ChevronLeft, Loader2, Shield } from 'lucide-react'
 import type { Court } from '../../contexts/BookingContext'
 import { isDemoMode } from '../../demo/demoMode'
 
@@ -13,8 +13,10 @@ interface Props {
   onPay: () => void
 }
 
-export function MockPaymentStep({ court, totalPrice, paying, error, isDesktop, onBack, onPay }: Props) {
+/** Простой шаг оплаты: СБП → редирект на ЮKassa (в демо — заявка без списания). */
+export function PaymentStep({ court, totalPrice, paying, error, isDesktop, onBack, onPay }: Props) {
   const demo = isDemoMode()
+
   return (
     <motion.div
       key="payment"
@@ -30,7 +32,7 @@ export function MockPaymentStep({ court, totalPrice, paying, error, isDesktop, o
           flex: 1,
           overflowY: 'auto',
           overscrollBehavior: 'contain',
-          padding: isDesktop ? '0 32px 24px' : '0 16px 16px',
+          padding: isDesktop ? '0 20px 20px' : '0 16px 16px',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20, paddingTop: 4 }}>
@@ -73,11 +75,7 @@ export function MockPaymentStep({ court, totalPrice, paying, error, isDesktop, o
           </div>
         </div>
 
-        <div style={{ marginBottom: 16 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Способ оплаты
-          </div>
-
+        {!demo && (
           <div style={{
             display: 'flex',
             alignItems: 'center',
@@ -86,7 +84,7 @@ export function MockPaymentStep({ court, totalPrice, paying, error, isDesktop, o
             borderRadius: 16,
             background: 'rgba(34,197,94,0.1)',
             border: '1.5px solid rgba(34,197,94,0.45)',
-            marginBottom: 10,
+            marginBottom: 16,
           }}>
             <div style={{
               width: 44,
@@ -96,44 +94,21 @@ export function MockPaymentStep({ court, totalPrice, paying, error, isDesktop, o
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              fontSize: 11,
+              fontWeight: 800,
+              color: '#22c55e',
+              letterSpacing: '0.04em',
             }}>
-              <CreditCard size={22} color="#22c55e" />
+              СБП
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 14, fontWeight: 700, color: '#f1f5f9' }}>Карта •••• 4242</div>
-              <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>Visa · основная</div>
-            </div>
-            <div style={{
-              width: 20,
-              height: 20,
-              borderRadius: '50%',
-              border: '2px solid #22c55e',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
-              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#22c55e' }} />
+              <div style={{ fontSize: 14, fontWeight: 700, color: '#f1f5f9' }}>Оплата по СБП</div>
+              <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>
+                Через ЮKassa · карта или приложение банка
+              </div>
             </div>
           </div>
-
-          <button
-            type="button"
-            style={{
-              width: '100%',
-              padding: '14px 16px',
-              borderRadius: 14,
-              border: '1px dashed rgba(255,255,255,0.15)',
-              background: 'transparent',
-              color: '#64748b',
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-            }}
-          >
-            + Добавить карту
-          </button>
-        </div>
+        )}
 
         <div style={{
           display: 'flex',
@@ -148,7 +123,7 @@ export function MockPaymentStep({ court, totalPrice, paying, error, isDesktop, o
           <span style={{ fontSize: 12, color: '#94a3b8', lineHeight: 1.45 }}>
             {demo
               ? 'Демо: списание не производится. После подтверждения уйдёт заявка партнёру'
-              : 'Демо-оплата: списание не производится, бронь сохранится в вашем кабинете'}
+              : 'Откроется защищённая форма ЮKassa. Бронь станет оплаченной после успешного платежа'}
           </span>
         </div>
 
@@ -194,10 +169,12 @@ export function MockPaymentStep({ court, totalPrice, paying, error, isDesktop, o
           {paying ? (
             <>
               <Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} />
-              Обрабатываем…
+              {demo ? 'Отправляем…' : 'Переходим к оплате…'}
             </>
+          ) : demo ? (
+            <>Отправить заявку · {totalPrice.toLocaleString('ru-RU')} ₽</>
           ) : (
-            <>{demo ? 'Отправить заявку' : 'Оплатить'} · {totalPrice.toLocaleString('ru-RU')} ₽</>
+            <>Оплатить по СБП · {totalPrice.toLocaleString('ru-RU')} ₽</>
           )}
         </motion.button>
         <p style={{ margin: '12px 0 0', fontSize: 12, color: '#64748b', lineHeight: 1.5, textAlign: 'center' }}>

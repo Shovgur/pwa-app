@@ -54,6 +54,7 @@ export function demoBookingToPartner(b: DemoBooking): PartnerBooking {
     code: b.code,
     customerName: b.customerName,
     customerPhone: b.customerPhone,
+    venueId: b.venueId ? String(b.venueId) : null,
     venueName: b.venueName,
     venueKind: b.venueKind,
     date: b.date,
@@ -65,6 +66,9 @@ export function demoBookingToPartner(b: DemoBooking): PartnerBooking {
     paymentMethod: b.paymentMethod,
     status: b.status,
     comment: b.comment,
+    requestCallback: Boolean(b.requestCallback),
+    cancelReason: b.cancelReason ?? null,
+    cancelReasonCode: b.cancelReasonCode ?? null,
     createdAt: b.createdAt,
   }
 }

@@ -125,8 +125,9 @@ app.post('/api/bookings', authenticateToken, async (req, res) => {
 
     const code = await generateUniqueBookingCode(client);
     const timeTo = addMinutesToTime(time, durationMinutes);
-    const partnerStatus = paymentMethod === 'online' ? 'paid' : 'pending';
-    const paidAmount = paymentMethod === 'online' ? price : 0;
+    // Online: ждём webhook/return ЮKassa. Paid только после payment.succeeded.
+    const partnerStatus = 'pending';
+    const paidAmount = 0;
     const extrasComment = Array.isArray(addOns) && addOns.length
       ? `Доп. услуги: ${addOns.map((a) => a.name).join(', ')}`
       : null;

@@ -31,6 +31,8 @@ interface BookingSummaryPanelProps {
   buttonDisabled?: boolean
   onConfirm: () => void
   footerNote?: string
+  /** Ошибка создания брони — не уводит на экран успеха */
+  error?: string | null
 }
 
 export function BookingSummaryPanel({
@@ -48,6 +50,7 @@ export function BookingSummaryPanel({
   buttonDisabled = false,
   onConfirm,
   footerNote = 'Бесплатная отмена за 24 часа',
+  error = null,
 }: BookingSummaryPanelProps) {
   const totalClass = accent === 'loft'
     ? 'booking-summary-total-price'
@@ -129,6 +132,23 @@ export function BookingSummaryPanel({
               {total.toLocaleString()} ₽
             </motion.span>
           </div>
+          {error && (
+            <p
+              role="alert"
+              style={{
+                margin: '0 0 12px',
+                padding: '11px 12px',
+                borderRadius: 11,
+                background: 'rgba(239,68,68,0.12)',
+                border: '1px solid rgba(239,68,68,0.35)',
+                color: '#fca5a5',
+                fontSize: 13,
+                lineHeight: 1.45,
+              }}
+            >
+              {error}
+            </p>
+          )}
           <Button
             variant={buttonVariant}
             disabled={buttonDisabled}

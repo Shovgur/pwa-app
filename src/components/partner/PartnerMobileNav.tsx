@@ -72,13 +72,31 @@ export function PartnerMobileNav() {
                   <div style={{ position: 'relative' }}>
                     <Icon size={22} color={isActive ? '#22c55e' : '#64748b'} />
                     {badge > 0 && (
-                      <span style={{
-                        position: 'absolute', top: -5, right: -8,
-                        minWidth: 16, height: 16, padding: '0 4px', borderRadius: 999,
-                        background: '#f59e0b', color: '#0f172a',
-                        fontSize: 9.5, fontWeight: 800,
-                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                      }}>
+                      <span
+                        role="link"
+                        tabIndex={0}
+                        title="Новые заявки"
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          navigate(`${PARTNER_BOOKINGS_PATH}?status=pending`)
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key !== 'Enter' && e.key !== ' ') return
+                          e.preventDefault()
+                          e.stopPropagation()
+                          navigate(`${PARTNER_BOOKINGS_PATH}?status=pending`)
+                        }}
+                        style={{
+                          position: 'absolute', top: -5, right: -8,
+                          minWidth: 16, height: 16, padding: '0 4px', borderRadius: 999,
+                          background: '#f59e0b', color: '#0f172a',
+                          fontSize: 9.5, fontWeight: 800,
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                          cursor: 'pointer',
+                          zIndex: 2,
+                        }}
+                      >
                         {badge}
                       </span>
                     )}

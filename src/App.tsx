@@ -28,6 +28,7 @@ import { PartnerVenuesPage } from './pages/PartnerVenuesPage'
 import { PartnerPromotionsPage } from './pages/PartnerPromotionsPage'
 import { PartnerSettingsPage } from './pages/PartnerSettingsPage'
 import { PublicVenuePage } from './pages/PublicVenuePage'
+import { PaymentResultPage } from './pages/PaymentResultPage'
 import { can, partnerHomeRoute, PARTNER_BOOKINGS_PATH, type Capability } from './utils/partnerAccess'
 import { isDemoMode } from './demo/demoMode'
 import { DemoBadge } from './demo/DemoBadge'
@@ -88,6 +89,7 @@ function AppRoutes() {
         <Route path="/loft/:id" element={isDemoMode() ? <LegacyVenueRedirect /> : <LoftBookingPage />} />
         <Route path="/how-it-works" element={<HowItWorksPage />} />
         <Route path="/requisites" element={<RequisitesPage />} />
+        <Route path="/booking/payment-result" element={<PaymentResultPage />} />
         <Route path="/pools" element={isDemoMode() ? <LegacyVenueRedirect /> : <PoolsPage />} />
         <Route path="/pools/:id" element={isDemoMode() ? <LegacyVenueRedirect /> : <PoolDetailPage />} />
       </Route>

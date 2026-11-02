@@ -30,7 +30,8 @@ import {
   isSlotTakenError,
 } from "../lib/venueAvailability";
 import { BookingStepProgress } from "./court-sheet/BookingStepProgress";
-import { MockPaymentStep } from "./court-sheet/MockPaymentStep";
+import { PaymentStep } from "./court-sheet/PaymentStep";
+import { redirectToYookassa } from "../lib/yookassaPayments";
 import { useVenueSlots } from "../hooks/useVenueSlots";
 import { VenueSlotPicker } from "./ui/VenueSlotPicker";
 
@@ -78,7 +79,7 @@ export function CourtDetailSheet({ court, onClose }: Props) {
   const { isAuthenticated, user } = useAuth();
   const { getVenue } = usePublicVenues();
   const isDesktop = useIsDesktop();
-  const sidePad = isDesktop ? "0 32px 28px" : "0 16px 24px";
+  const sidePad = isDesktop ? "0 20px 16px" : "0 16px 24px";
   const [step, setStep] = useState<Step>("detail");
   const [photoIdx, setPhotoIdx] = useState(0);
   const [selectedDate, setSelectedDate] = useState(UPCOMING_DATES[0]);
@@ -193,7 +194,9 @@ export function CourtDetailSheet({ court, onClose }: Props) {
         return;
       }
 
-      await new Promise((r) => setTimeout(r, 1400));
+      if (isDemoMode()) {
+        await new Promise((r) => setTimeout(r, 800));
+      }
       const booking = await addBooking(
         court,
         selectedDate.date,
@@ -206,9 +209,27 @@ export function CourtDetailSheet({ court, onClose }: Props) {
           requestCallback,
         },
       );
-      setNewBooking(booking);
-      reloadSlots();
-      setStep("success");
+      if (isDemoMode()) {
+        setNewBooking(booking);
+        reloadSlots();
+        setStep("success");
+        return;
+      }
+
+      // Прод: уходим на ЮKassa. Экран «успех/оплачено» здесь больше не показываем.
+      try {
+        await redirectToYookassa(booking.id);
+        return;
+      } catch (payErr) {
+        const payMessage =
+          payErr instanceof Error ? payErr.message : "Не удалось открыть оплату";
+        setNewBooking(booking);
+        reloadSlots();
+        setPayError(
+          `Бронь создана (${booking.code ?? booking.id}), но оплата не открылась: ${payMessage}. Попробуйте ещё раз или откройте бронь в кабинете.`,
+        );
+        return;
+      }
     } catch (e) {
       if (isAuthExpiredError(e)) {
         const from = court.partnerVenueId
@@ -292,22 +313,30 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                 minHeight: 0,
               }}
             >
-              {/* Скроллируемый контент */}
+              {/* Десктоп: фото слева + инфо справа; мобилка: колонка */}
               <div
                 style={{
                   flex: 1,
-                  overflowY: "auto",
-                  overscrollBehavior: "contain",
+                  minHeight: 0,
+                  display: "flex",
+                  flexDirection: isDesktop ? "row" : "column",
+                  overflow: "hidden",
                 }}
               >
-                {/* Фото */}
+                {/* Фото — absolute fill, иначе height:100% схлопывается в flex-row */}
                 <div
                   style={{
                     position: "relative",
-                    margin: isDesktop ? "0 32px 16px" : "0 16px 16px",
-                    height: isDesktop ? 260 : 200,
-                    borderRadius: 20,
+                    margin: isDesktop ? 0 : "0 16px 16px",
+                    flex: isDesktop ? "0 0 44%" : undefined,
+                    width: isDesktop ? undefined : "auto",
+                    alignSelf: "stretch",
+                    minHeight: isDesktop ? 320 : 200,
+                    height: isDesktop ? undefined : 200,
+                    borderRadius: isDesktop ? 0 : 20,
                     overflow: "hidden",
+                    borderRight: isDesktop ? "1px solid rgba(255,255,255,0.06)" : "none",
+                    background: "#0b1220",
                   }}
                 >
                   <AnimatePresence mode="wait">
@@ -318,8 +347,8 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                       exit={{ opacity: 0 }}
                       transition={{ duration: 0.25 }}
                       style={{
-                        width: "100%",
-                        height: "100%",
+                        position: "absolute",
+                        inset: 0,
                         ...courtPhotoStyle(court, photoIdx),
                       }}
                     />
@@ -331,11 +360,13 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
+                      pointerEvents: "none",
+                      zIndex: 1,
                     }}
                   >
                     <span
                       style={{
-                        fontSize: 64,
+                        fontSize: isDesktop ? 88 : 64,
                         filter: "drop-shadow(0 4px 16px rgba(0,0,0,0.5))",
                       }}
                     >
@@ -351,11 +382,13 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                       display: "flex",
                       justifyContent: "center",
                       gap: 5,
+                      zIndex: 2,
                     }}
                   >
                     {court.photos.map((_, i) => (
                       <button
                         key={i}
+                        type="button"
                         onClick={() => setPhotoIdx(i)}
                         style={{
                           width: i === photoIdx ? 20 : 7,
@@ -374,6 +407,7 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                     ))}
                   </div>
                   <button
+                    type="button"
                     onClick={onClose}
                     style={{
                       position: "absolute",
@@ -388,6 +422,7 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
+                      zIndex: 2,
                     }}
                   >
                     <X size={16} color="#fff" />
@@ -405,22 +440,33 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                       fontWeight: 700,
                       padding: "3px 9px",
                       borderRadius: 10,
+                      zIndex: 2,
                     }}
                   >
                     {court.available ? "● Свободно" : "● Занято"}
                   </div>
                 </div>
 
-                <div style={{ padding: sidePad }}>
+                <div
+                  style={{
+                    flex: 1,
+                    minWidth: 0,
+                    minHeight: 0,
+                    overflowY: "auto",
+                    overscrollBehavior: "contain",
+                    padding: isDesktop ? "18px 20px 12px" : sidePad,
+                  }}
+                >
                   <div
                     style={{
                       display: "flex",
                       justifyContent: "space-between",
                       alignItems: "flex-start",
                       marginBottom: 6,
+                      gap: 12,
                     }}
                   >
-                    <div>
+                    <div style={{ minWidth: 0 }}>
                       <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
                         <span
                           style={{
@@ -452,29 +498,33 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                       </div>
                       <h2
                         style={{
-                          fontSize: 22,
+                          fontSize: isDesktop ? 22 : 22,
                           fontWeight: 800,
                           color: "#f1f5f9",
                           marginTop: 6,
+                          textWrap: "balance",
+                          lineHeight: 1.25,
                         }}
                       >
                         {court.name}
                       </h2>
                     </div>
-                    <div style={{ textAlign: "right" }}>
-                      <div
-                        style={{
-                          fontSize: 22,
-                          fontWeight: 800,
-                          color: court.color,
-                        }}
-                      >
-                        {court.price.toLocaleString()} ₽
+                    {!isDesktop && (
+                      <div style={{ textAlign: "right", flexShrink: 0 }}>
+                        <div
+                          style={{
+                            fontSize: 22,
+                            fontWeight: 800,
+                            color: court.color,
+                          }}
+                        >
+                          {court.price.toLocaleString()} ₽
+                        </div>
+                        <div style={{ fontSize: 11, color: "#64748b" }}>
+                          {priceUnit(court)}
+                        </div>
                       </div>
-                      <div style={{ fontSize: 11, color: "#64748b" }}>
-                        {priceUnit(court)}
-                      </div>
-                    </div>
+                    )}
                   </div>
 
                   <div
@@ -524,25 +574,26 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                     style={{
                       fontSize: 14,
                       color: "#94a3b8",
-                      lineHeight: 1.6,
-                      marginBottom: 16,
+                      lineHeight: 1.55,
+                      marginBottom: 14,
+                      textWrap: "pretty",
                     }}
                   >
                     {court.description}
                   </p>
 
-                  <div style={{ marginBottom: 20 }}>
+                  <div style={{ marginBottom: 16 }}>
                     <h3
                       style={{
-                        fontSize: 14,
+                        fontSize: 13,
                         fontWeight: 700,
                         color: "#f1f5f9",
-                        marginBottom: 10,
+                        marginBottom: 8,
                       }}
                     >
                       Удобства
                     </h3>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                       {court.amenities.map((a) => (
                         <div
                           key={a}
@@ -565,13 +616,13 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                     </div>
                   </div>
 
-                  <div style={{ marginBottom: 20 }}>
+                  <div style={{ marginBottom: 16 }}>
                     <h3
                       style={{
-                        fontSize: 14,
+                        fontSize: 13,
                         fontWeight: 700,
                         color: "#f1f5f9",
-                        marginBottom: 10,
+                        marginBottom: 8,
                       }}
                     >
                       Расположение
@@ -581,7 +632,7 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                       city={partnerVenue?.city ?? court.location}
                       lat={partnerVenue?.lat ?? court.lat}
                       lng={partnerVenue?.lng ?? court.lng}
-                      height={180}
+                      height={isDesktop ? 140 : 180}
                       accentColor={court.color}
                     />
                   </div>
@@ -589,10 +640,10 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                   <div>
                     <h3
                       style={{
-                        fontSize: 14,
+                        fontSize: 13,
                         fontWeight: 700,
                         color: "#f1f5f9",
-                        marginBottom: 10,
+                        marginBottom: 8,
                       }}
                     >
                       Ближайшие слоты — сегодня
@@ -633,8 +684,8 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                     </div>
                   </div>
 
-                  {/* Кнопка внизу контента */}
-                  {court.available && (
+                  {/* На мобиле CTA внутри скролла; на десктопе — в sticky footer */}
+                  {!isDesktop && court.available && (
                     <motion.button
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.97 }}
@@ -660,10 +711,62 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                       Забронировать <ChevronRight size={18} />
                     </motion.button>
                   )}
-                  {/* Отступ снизу — чтобы кнопка выскроллилась выше нижнего меню */}
-                  <div style={{ height: 90 }} />
+                  <div style={{ height: isDesktop ? 8 : 90 }} />
                 </div>
               </div>
+
+              {isDesktop && court.available && (
+                <div className="court-sheet-footer">
+                  <div
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 14,
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontSize: 18,
+                          fontWeight: 800,
+                          color: court.color,
+                          fontVariantNumeric: "tabular-nums",
+                          lineHeight: 1.1,
+                        }}
+                      >
+                        {court.price.toLocaleString()} ₽
+                      </div>
+                      <div style={{ fontSize: 11, color: "#64748b", marginTop: 2 }}>
+                        {priceUnit(court)}
+                      </div>
+                    </div>
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={handleStartBooking}
+                      style={{
+                        flex: 1.4,
+                        padding: "14px 16px",
+                        borderRadius: 14,
+                        background: `linear-gradient(135deg, ${court.color}, ${court.color}bb)`,
+                        color: "#fff",
+                        fontSize: 15,
+                        fontWeight: 700,
+                        border: "none",
+                        cursor: "pointer",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 6,
+                        boxShadow: `0 8px 24px ${court.color}40`,
+                        whiteSpace: "nowrap",
+                      }}
+                    >
+                      Забронировать <ChevronRight size={17} />
+                    </motion.button>
+                  </div>
+                </div>
+              )}
             </motion.div>
           )}
 
@@ -689,7 +792,7 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                   flex: 1,
                   overflowY: "auto",
                   overscrollBehavior: "contain",
-                  padding: isDesktop ? "0 32px 24px" : "0 16px 16px",
+                  padding: isDesktop ? "0 20px 20px" : "0 16px 16px",
                 }}
               >
                 <div
@@ -1172,7 +1275,7 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                   flex: 1,
                   overflowY: "auto",
                   overscrollBehavior: "contain",
-                  padding: isDesktop ? "0 32px 24px" : "0 16px 16px",
+                  padding: isDesktop ? "0 20px 20px" : "0 16px 16px",
                 }}
               >
                 <div
@@ -1390,7 +1493,7 @@ export function CourtDetailSheet({ court, onClose }: Props) {
           )}
 
           {step === "payment" && (
-            <MockPaymentStep
+            <PaymentStep
               court={court}
               totalPrice={totalPrice}
               paying={paying}
@@ -1422,7 +1525,7 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                   flex: 1,
                   overflowY: "auto",
                   overscrollBehavior: "contain",
-                  padding: isDesktop ? "24px 32px 16px" : "24px 16px 16px",
+                  padding: isDesktop ? "20px 20px 14px" : "24px 16px 16px",
                   textAlign: "center",
                 }}
               >
@@ -1460,7 +1563,7 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                 >
                   {isDemoMode()
                     ? "Заявка отправлена · ожидает подтверждения"
-                    : "Бронь подтверждена!"}
+                    : "Бронь создана"}
                 </h2>
                 <p
                   style={{
@@ -1472,7 +1575,7 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                 >
                   {isDemoMode()
                     ? `${court.name} · ${selectedDate.date} в ${selectedSlot ?? newBooking?.time}${newBooking?.code ? ` · код ${newBooking.code}` : ""}. Списание не производится — статус меняет партнёр.`
-                    : `${court.name} забронирован на ${selectedDate.date} в ${selectedSlot ?? newBooking?.time}`}
+                    : `${court.name} · ${selectedDate.date} в ${selectedSlot ?? newBooking?.time}. Оплата ещё не подтверждена — дождитесь перехода на ЮKassa или откройте бронь в кабинете.`}
                 </p>
 
                 <div
@@ -1519,7 +1622,7 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                       ["⏰ Время", selectedSlot ?? newBooking?.time],
                       ["⏱ Длительность", selectedDuration.label],
                       [
-                        isDemoMode() ? "📋 Сумма заявки" : "💳 Оплачено",
+                        isDemoMode() ? "📋 Сумма заявки" : "💰 К оплате",
                         `${totalPrice.toLocaleString()} ₽`,
                       ],
                       ...(isDemoMode() && newBooking?.code

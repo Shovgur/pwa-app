@@ -1,17 +1,41 @@
 import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
-import { CalendarCheck, Clock, ChevronRight, Share2, Edit2, LogOut, TrendingUp } from 'lucide-react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { CalendarCheck, Clock, ChevronRight, Share2, Edit2, LogOut, TrendingUp, ShieldCheck, CheckCircle2 } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useBookings } from '../../contexts/BookingContext'
 import { useNavigate } from 'react-router-dom'
-import { apiGetProfile, type UserProfile } from '../../lib/api'
+import { apiGetProfile, apiChangePassword, type UserProfile } from '../../lib/api'
 import { CharacterAvatar } from '../ui/CharacterAvatar'
 import { getDominantOutfit, OUTFITS } from '../../utils/characterOutfit'
+import { FieldError, errorInputStyle } from '../ui/FieldError'
+import { useFieldErrors } from '../../hooks/useFieldErrors'
 
 const MENU = [
   { icon: Edit2, label: 'Редактировать профиль', color: '#22c55e' },
   { icon: Share2, label: 'Пригласить друга', color: '#3b82f6' },
 ]
+
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  padding: '12px 14px',
+  borderRadius: 12,
+  background: '#243354',
+  border: '1px solid rgba(255,255,255,0.08)',
+  color: '#fff',
+  fontSize: 14,
+  outline: 'none',
+  boxSizing: 'border-box',
+  fontFamily: 'inherit',
+}
+
+const labelStyle: React.CSSProperties = {
+  display: 'block',
+  fontSize: 11,
+  fontWeight: 700,
+  color: '#94a3b8',
+  marginBottom: 7,
+  letterSpacing: 0.5,
+}
 
 function Spinner() {
   return (
@@ -31,6 +55,14 @@ export function ProfileTab() {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [loading, setLoading] = useState(true)
 
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [pwdBusy, setPwdBusy] = useState(false)
+  const [pwdError, setPwdError] = useState('')
+  const [pwdSuccess, setPwdSuccess] = useState(false)
+  const { errors, handleInvalid, clearError, setErrors } = useFieldErrors()
+
   useEffect(() => {
     if (!user) {
       setLoading(false)
@@ -43,6 +75,38 @@ export function ProfileTab() {
       .catch(() => setProfile(null))
       .finally(() => setLoading(false))
   }, [user])
+
+  async function handleChangePassword(e: React.FormEvent) {
+    e.preventDefault()
+    setPwdError('')
+    setPwdSuccess(false)
+
+    const nextErrors: Record<string, string> = {}
+    if (!currentPassword) nextErrors.currentPassword = 'Введите текущий пароль'
+    if (newPassword.length < 6) nextErrors.newPassword = 'Пароль должен быть не короче 6 символов'
+    if (newPassword !== confirmPassword) nextErrors.confirmPassword = 'Пароли не совпадают'
+    if (currentPassword && newPassword && currentPassword === newPassword) {
+      nextErrors.newPassword = 'Новый пароль должен отличаться от текущего'
+    }
+    if (Object.keys(nextErrors).length) {
+      setErrors(nextErrors)
+      return
+    }
+
+    setPwdBusy(true)
+    try {
+      await apiChangePassword(currentPassword, newPassword)
+      setCurrentPassword('')
+      setNewPassword('')
+      setConfirmPassword('')
+      setPwdSuccess(true)
+      window.setTimeout(() => setPwdSuccess(false), 3500)
+    } catch (err) {
+      setPwdError(err instanceof Error ? err.message : 'Не удалось сменить пароль')
+    } finally {
+      setPwdBusy(false)
+    }
+  }
 
   const totalBookings = bookings.length
   const upcomingBookings = bookings.filter(b => b.status === 'upcoming').length
@@ -118,7 +182,7 @@ export function ProfileTab() {
           </motion.button>
         </motion.div>
 
-        {/* Правая колонка — статистика и меню */}
+        {/* Правая колонка — статистика, безопасность, меню */}
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
             {[
@@ -137,6 +201,113 @@ export function ProfileTab() {
                 </div>
               )
             })}
+          </div>
+
+          <div className="card" style={{ padding: '20px 18px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 12, background: 'rgba(59,130,246,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <ShieldCheck size={17} color="#3b82f6" />
+              </div>
+              <div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#f1f5f9' }}>Смена пароля</div>
+                <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>После восстановления задайте свой постоянный пароль</div>
+              </div>
+            </div>
+
+            <form onSubmit={handleChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <div>
+                <label style={labelStyle}>ТЕКУЩИЙ ПАРОЛЬ</label>
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={e => { setCurrentPassword(e.target.value); clearError('currentPassword'); setPwdError('') }}
+                  onInvalid={handleInvalid('currentPassword')}
+                  placeholder="Введите текущий пароль"
+                  required
+                  autoComplete="current-password"
+                  disabled={pwdBusy}
+                  style={{ ...inputStyle, ...errorInputStyle(Boolean(errors.currentPassword)) }}
+                />
+                <FieldError message={errors.currentPassword} />
+              </div>
+
+              <div>
+                <label style={labelStyle}>НОВЫЙ ПАРОЛЬ</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={e => { setNewPassword(e.target.value); clearError('newPassword'); setPwdError('') }}
+                  onInvalid={handleInvalid('newPassword')}
+                  placeholder="Минимум 6 символов"
+                  required
+                  minLength={6}
+                  autoComplete="new-password"
+                  disabled={pwdBusy}
+                  style={{ ...inputStyle, ...errorInputStyle(Boolean(errors.newPassword)) }}
+                />
+                <FieldError message={errors.newPassword} />
+              </div>
+
+              <div>
+                <label style={labelStyle}>ПОВТОРИТЕ НОВЫЙ ПАРОЛЬ</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={e => { setConfirmPassword(e.target.value); clearError('confirmPassword'); setPwdError('') }}
+                  onInvalid={handleInvalid('confirmPassword')}
+                  placeholder="Ещё раз"
+                  required
+                  minLength={6}
+                  autoComplete="new-password"
+                  disabled={pwdBusy}
+                  style={{ ...inputStyle, ...errorInputStyle(Boolean(errors.confirmPassword)) }}
+                />
+                <FieldError message={errors.confirmPassword} />
+              </div>
+
+              <AnimatePresence>
+                {pwdSuccess && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, margin: 0, padding: '10px 12px', borderRadius: 10, background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.25)', color: '#86efac', fontSize: 13 }}
+                  >
+                    <CheckCircle2 size={15} /> Пароль обновлён
+                  </motion.p>
+                )}
+                {pwdError && (
+                  <motion.p
+                    initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                    style={{ margin: 0, padding: '10px 12px', borderRadius: 10, background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', fontSize: 13 }}
+                  >
+                    {pwdError}
+                  </motion.p>
+                )}
+              </AnimatePresence>
+
+              <motion.button
+                type="submit"
+                disabled={pwdBusy}
+                style={{
+                  width: '100%',
+                  marginTop: 4,
+                  padding: '13px 16px',
+                  borderRadius: 12,
+                  border: 'none',
+                  background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+                  color: '#fff',
+                  fontSize: 14,
+                  fontWeight: 700,
+                  cursor: pwdBusy ? 'wait' : 'pointer',
+                  opacity: pwdBusy ? 0.75 : 1,
+                  fontFamily: 'inherit',
+                  boxShadow: '0 8px 20px rgba(34,197,94,0.25)',
+                }}
+                whileHover={pwdBusy ? undefined : { scale: 1.01 }}
+                whileTap={pwdBusy ? undefined : { scale: 0.98 }}
+              >
+                {pwdBusy ? 'Сохраняем…' : 'Сохранить новый пароль'}
+              </motion.button>
+            </form>
           </div>
 
           <div className="card" style={{ overflow: 'hidden' }}>

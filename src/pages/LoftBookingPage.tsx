@@ -12,10 +12,14 @@ import { isAuthExpiredError } from '../lib/authErrors'
 import { Button } from '../components/ui/Button'
 import { AddonCard } from '../components/ui/AddonCard'
 import { BookingSummaryPanel } from '../components/ui/BookingSummaryPanel'
+import { VenueMap } from '../components/ui/VenueMap'
 import type { SummaryLineItem } from '../components/ui/BookingSummaryPanel'
 import { paths } from '../config/features'
 import { useBookingPageReset } from '../hooks/useBookingPageReset'
 import { colors } from '../theme/tokens'
+import { isDemoMode } from '../demo/demoMode'
+import { redirectToYookassa } from '../lib/yookassaPayments'
+import { bookingCreateErrorMessage, isSlotTakenError } from '../lib/venueAvailability'
 
 export function LoftBookingPage() {
   const { id } = useParams()
@@ -28,12 +32,16 @@ export function LoftBookingPage() {
   const [enabledAddons, setEnabledAddons] = useState<Set<string>>(() => new Set())
   const [addonOptions, setAddonOptions] = useState<Record<string, string>>({})
   const [success, setSuccess] = useState(false)
+  const [bookError, setBookError] = useState<string | null>(null)
+  const [booking, setBooking] = useState(false)
 
   useBookingPageReset(id, () => {
     setSelectedSlot(1)
     setEnabledAddons(new Set())
     setAddonOptions({})
     setSuccess(false)
+    setBookError(null)
+    setBooking(false)
   })
 
   const selectedAddons = useMemo(() => {
@@ -99,6 +107,7 @@ export function LoftBookingPage() {
   }
 
   async function handleBook() {
+    if (booking) return
     if (!isAuthenticated) {
       navigate('/login', { state: { from: `/loft/${id}` } })
       return
@@ -112,13 +121,27 @@ export function LoftBookingPage() {
         price,
       }
     })
+    setBookError(null)
+    setBooking(true)
     try {
-      await addLoftBooking(venue, venue.timeSlots[selectedSlot], addons, total - discount)
+      const created = await addLoftBooking(venue, venue.timeSlots[selectedSlot], addons, total - discount)
+      if (!isDemoMode()) {
+        const left = await redirectToYookassa(created.id)
+        if (left) return
+      }
       setSuccess(true)
     } catch (e) {
       if (isAuthExpiredError(e)) {
         navigate('/login', { state: { from: `/loft/${id}` } })
+        return
       }
+      const message = bookingCreateErrorMessage(e)
+      if (isSlotTakenError(e instanceof Error ? e.message : '')) {
+        setSelectedSlot(0)
+      }
+      setBookError(message)
+    } finally {
+      setBooking(false)
     }
   }
 
@@ -190,6 +213,20 @@ export function LoftBookingPage() {
           <section className="booking-section">
             <div className="booking-section-head">
               <div>
+                <h2>Расположение</h2>
+                <p>{venue.location}{venue.metro ? ` · ${venue.metro}` : ''}</p>
+              </div>
+            </div>
+            <VenueMap
+              address={venue.location}
+              height={280}
+              accentColor={colors.orange}
+            />
+          </section>
+
+          <section className="booking-section">
+            <div className="booking-section-head">
+              <div>
                 <h2>Выберите время</h2>
                 <p>Доступные слоты на сегодня</p>
               </div>
@@ -254,7 +291,10 @@ export function LoftBookingPage() {
         total={total - discount}
         accent="loft"
         buttonVariant="loft"
+        buttonLabel={booking ? 'Создаём бронь…' : 'Подтвердить бронь →'}
+        buttonDisabled={booking}
         onConfirm={handleBook}
+        error={bookError}
       />
     </div>
   )

@@ -335,11 +335,11 @@ export function DashboardTopbar() {
             </AnimatePresence>
           </motion.div>
 
-          <motion.button
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.96 }}
-            onClick={() => navigate('/dashboard/notifications')}
-            aria-label="Уведомления"
+          <button
+            type="button"
+            disabled
+            aria-label="Уведомления скоро"
+            title="Уведомления скоро"
             style={{
               position: 'relative',
               width: 38,
@@ -347,26 +347,17 @@ export function DashboardTopbar() {
               borderRadius: 10,
               border: '1px solid rgba(255,255,255,0.06)',
               background: '#2A3548',
-              cursor: 'pointer',
+              cursor: 'not-allowed',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              color: '#94a3b8',
+              color: '#475569',
               flexShrink: 0,
+              opacity: 0.45,
             }}
           >
             <Bell size={16} />
-            <span style={{
-              position: 'absolute',
-              top: 6,
-              right: 6,
-              width: 7,
-              height: 7,
-              borderRadius: 4,
-              background: '#22C55E',
-              border: '1.5px solid #1E293B',
-            }} />
-          </motion.button>
+          </button>
 
           <AvatarMenu />
         </div>

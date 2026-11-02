@@ -13,6 +13,7 @@ import {
   X,
 } from 'lucide-react'
 import {
+  assignPartnerVenueManager,
   createPartnerVenue,
   deletePartnerVenue,
   fetchPartnerVenues,
@@ -23,11 +24,18 @@ import {
   type PartnerVenue,
   type VenueKind,
 } from '../lib/partnerVenues'
+import { fetchPartnerStaff, type PartnerStaff } from '../lib/partnerCrm'
+import {
+  fetchTelegramLinks,
+  type PartnerTelegramLinkStatus,
+} from '../lib/partnerTelegram'
 import { VenueBuilderForm } from '../components/partner/VenueBuilderForm'
+import { VenueTelegramPanel } from '../components/partner/VenueTelegramPanel'
+import { FormSelect } from '../components/ui/FormSelect'
 import { venuePriceSummary } from '../utils/venuePrice'
 import { usePartnerAuth } from '../contexts/PartnerAuthContext'
 import { Link } from 'react-router-dom'
-import { PARTNER_PROMOTIONS_PATH } from '../utils/partnerAccess'
+import { isOwner, PARTNER_BOOKINGS_PATH, PARTNER_PROMOTIONS_PATH } from '../utils/partnerAccess'
 
 const KIND_COLORS: Record<VenueKind, string> = {
   sport:   '#22c55e',
@@ -43,6 +51,11 @@ function VenueCard({
   onEdit,
   busy,
   canManage,
+  ownerMode,
+  staff,
+  onAssignManager,
+  telegramLink,
+  onTelegramUpdated,
 }: {
   venue: PartnerVenue
   onToggle: () => void
@@ -50,10 +63,18 @@ function VenueCard({
   onEdit: () => void
   busy: boolean
   canManage: boolean
+  ownerMode: boolean
+  staff: PartnerStaff[]
+  onAssignManager: (staffId: string | null) => void
+  telegramLink: PartnerTelegramLinkStatus | null
+  onTelegramUpdated: (next: PartnerTelegramLinkStatus | null) => void
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const kindColor = KIND_COLORS[venue.venueKind]
   const cover = venue.photos.find(p => p.isCover) ?? venue.photos[0]
+  const managerLabel = venue.managedByName
+    || staff.find(s => s.id === String(venue.managedByStaffId))?.name
+    || null
 
   return (
     <div className="card partner-venue-card">
@@ -84,6 +105,15 @@ function VenueCard({
             }}>
               {venue.isActive ? 'АКТИВНА' : 'СКРЫТА'}
             </span>
+            {managerLabel && (
+              <span style={{
+                padding: '3px 9px', borderRadius: 999, fontSize: 10, fontWeight: 700,
+                background: 'rgba(59,130,246,0.15)', color: '#93c5fd',
+                border: '1px solid rgba(59,130,246,0.3)',
+              }}>
+                Менеджер: {managerLabel}
+              </span>
+            )}
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#94a3b8', marginBottom: 4 }}>
@@ -107,14 +137,47 @@ function VenueCard({
             {venue.extraServices.length > 0 && (
               <span>+{venue.extraServices.length} услуг</span>
             )}
-            <span>Броней: <strong style={{ color: '#f1f5f9' }}>{venue.bookingsCount}</strong></span>
-            {venue.managedByName && (
-              <span>Ведёт: <strong style={{ color: '#f1f5f9' }}>{venue.managedByName}</strong></span>
-            )}
-            {!canManage && (
+            <Link
+              to={`${PARTNER_BOOKINGS_PATH}?venueId=${encodeURIComponent(venue.id)}`}
+              style={{ color: 'inherit', textDecoration: 'none', cursor: 'pointer' }}
+            >
+              Броней:{' '}
+              <strong style={{ color: '#60a5fa' }}>
+                {venue.bookingsCount}
+              </strong>
+            </Link>
+            {!canManage && !ownerMode && (
               <span style={{ color: '#64748b' }}>только просмотр</span>
             )}
           </div>
+
+          {ownerMode && (
+            <div style={{ marginTop: 12, maxWidth: 320 }}>
+              <FormSelect
+                label="УПРАВЛЯЮЩИЙ"
+                value={venue.managedByStaffId ? String(venue.managedByStaffId) : ''}
+                disabled={busy}
+                placeholder="Не назначен"
+                accent="#3b82f6"
+                options={[
+                  { value: '', label: 'Не назначен' },
+                  ...staff.filter(s => s.isActive).map(s => ({
+                    value: String(s.id),
+                    label: `${s.name} (${s.login})`,
+                  })),
+                ]}
+                onChange={(v) => onAssignManager(v ? v : null)}
+              />
+            </div>
+          )}
+
+          <VenueTelegramPanel
+            venueId={venue.id}
+            canConnect={canManage}
+            canUnlink={canManage || ownerMode}
+            link={telegramLink}
+            onUpdated={onTelegramUpdated}
+          />
 
           {venue.amenities.length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
@@ -201,7 +264,10 @@ function VenueCard({
 
 export function PartnerVenuesPage() {
   const { partner } = usePartnerAuth()
+  const ownerMode = isOwner(partner?.role)
   const [venues, setVenues]       = useState<PartnerVenue[]>([])
+  const [staff, setStaff]         = useState<PartnerStaff[]>([])
+  const [telegramByVenue, setTelegramByVenue] = useState<Record<string, PartnerTelegramLinkStatus>>({})
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError]         = useState('')
   const [busyId, setBusyId]       = useState<string | null>(null)
@@ -211,9 +277,10 @@ export function PartnerVenuesPage() {
   const [savingEdit, setSavingEdit] = useState(false)
 
   function canManageVenue(venue: PartnerVenue): boolean {
+    if (ownerMode) return false
     if (venue.canEdit === true) return true
     if (venue.canEdit === false) return false
-    if (!partner?.staffId) return true // пока бэкенд не отдаёт staffId — не блокируем менеджера
+    if (!partner?.staffId) return true
     if (!venue.managedByStaffId) return true
     return String(venue.managedByStaffId) === String(partner.staffId)
   }
@@ -222,7 +289,16 @@ export function PartnerVenuesPage() {
     setIsLoading(true)
     setError('')
     try {
-      setVenues(await fetchPartnerVenues())
+      const [venueList, staffList, telegram] = await Promise.all([
+        fetchPartnerVenues(),
+        ownerMode ? fetchPartnerStaff().catch(() => [] as PartnerStaff[]) : Promise.resolve([] as PartnerStaff[]),
+        fetchTelegramLinks().catch(() => ({ botUsername: null, links: [] as PartnerTelegramLinkStatus[] })),
+      ])
+      setVenues(venueList)
+      setStaff(staffList)
+      const map: Record<string, PartnerTelegramLinkStatus> = {}
+      for (const link of telegram.links) map[link.venueId] = link
+      setTelegramByVenue(map)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не удалось загрузить площадки')
     } finally {
@@ -232,7 +308,20 @@ export function PartnerVenuesPage() {
 
   useEffect(() => {
     void reload()
-  }, [])
+  }, [ownerMode])
+
+  async function handleAssignManager(venue: PartnerVenue, managedByStaffId: string | null) {
+    setError('')
+    setBusyId(venue.id)
+    try {
+      const updated = await assignPartnerVenueManager(venue.id, managedByStaffId)
+      setVenues(prev => prev.map(v => (v.id === venue.id ? updated : v)))
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Не удалось назначить менеджера')
+    } finally {
+      setBusyId(null)
+    }
+  }
 
   async function handleCreate(payload: CreateVenuePayload) {
     setError('')
@@ -330,23 +419,25 @@ export function PartnerVenuesPage() {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => {
-            setEditingVenue(null)
-            setFormOpen(o => !o)
-          }}
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 18px',
-            borderRadius: 12, border: 'none',
-            background: 'linear-gradient(135deg, #22c55e, #16a34a)',
-            color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: 'inherit',
-            cursor: 'pointer', boxShadow: '0 8px 24px rgba(34,197,94,0.25)',
-          }}
-        >
-          <Plus size={16} />
-          Добавить площадку
-        </button>
+        {!ownerMode && (
+          <button
+            type="button"
+            onClick={() => {
+              setEditingVenue(null)
+              setFormOpen(o => !o)
+            }}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8, padding: '12px 18px',
+              borderRadius: 12, border: 'none',
+              background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+              color: '#fff', fontSize: 14, fontWeight: 700, fontFamily: 'inherit',
+              cursor: 'pointer', boxShadow: '0 8px 24px rgba(34,197,94,0.25)',
+            }}
+          >
+            <Plus size={16} />
+            Добавить площадку
+          </button>
+        )}
       </motion.div>
 
       <div className="card" style={{ padding: '16px 18px', marginBottom: 20, display: 'flex', gap: 13 }}>
@@ -354,8 +445,11 @@ export function PartnerVenuesPage() {
           <Info size={17} color="#3b82f6" />
         </div>
         <p style={{ margin: 0, fontSize: 13.5, color: '#94a3b8', lineHeight: 1.6 }}>
-          Видны все объекты компании, менять можно только свою точку. Акции настраиваются во вкладке{' '}
-          <Link to={PARTNER_PROMOTIONS_PATH} style={{ color: '#22c55e', fontWeight: 600 }}>Акции</Link>.
+          {ownerMode
+            ? <>Назначьте управляющего на площадку — он увидит только свои брони и акции. Раздел{' '}
+                <Link to={PARTNER_PROMOTIONS_PATH} style={{ color: '#22c55e', fontWeight: 600 }}>Акции</Link>.</>
+            : <>Вам доступны только свои площадки. Акции — во вкладке{' '}
+                <Link to={PARTNER_PROMOTIONS_PATH} style={{ color: '#22c55e', fontWeight: 600 }}>Акции</Link>.</>}
         </p>
       </div>
 
@@ -439,6 +533,19 @@ export function PartnerVenuesPage() {
               venue={venue}
               busy={busyId === venue.id}
               canManage={canManageVenue(venue)}
+              ownerMode={ownerMode}
+              staff={staff}
+              onAssignManager={(staffId) => void handleAssignManager(venue, staffId)}
+              telegramLink={telegramByVenue[venue.id] ?? null}
+              onTelegramUpdated={(next) => {
+                setTelegramByVenue(prev => {
+                  if (!next) {
+                    const { [venue.id]: _, ...rest } = prev
+                    return rest
+                  }
+                  return { ...prev, [venue.id]: next }
+                })
+              }}
               onToggle={() => void handleToggle(venue)}
               onDelete={() => void handleDelete(venue)}
               onEdit={() => {

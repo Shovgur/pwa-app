@@ -80,6 +80,10 @@ export async function demoCreateClientBooking(payload: CreateBookingPayload): Pr
     throw new Error('Слот занят')
   }
 
+  const requestCallback = Boolean(payload.requestCallback)
+  const callbackNote = requestCallback ? '📞 Клиент просит перезвонить для подтверждения' : null
+  const comment = [callbackNote, payload.comment].filter(Boolean).join('. ') || null
+
   const booking: DemoBooking = {
     id: state.nextBookingId,
     code: nextCode(state),
@@ -105,7 +109,8 @@ export async function demoCreateClientBooking(payload: CreateBookingPayload): Pr
     paidAmount: 0,
     paymentMethod: payload.paymentMethod === 'cash' ? 'cash' : 'online',
     status: 'pending',
-    comment: payload.comment ?? null,
+    comment,
+    requestCallback,
     createdAt: new Date().toISOString(),
   }
 
@@ -118,14 +123,25 @@ export async function demoCreateClientBooking(payload: CreateBookingPayload): Pr
   return apiBookingToBooking(demoBookingToApiClient(booking))
 }
 
-export async function demoCancelClientBooking(id: number): Promise<Booking> {
+export async function demoCancelClientBooking(
+  id: number,
+  opts?: { reason?: string; reasonCode?: string },
+): Promise<Booking> {
   await demoDelay()
   const clientId = requireDemoClientId()
+  const reason = opts?.reason?.trim() || null
+  const reasonCode = opts?.reasonCode?.trim() || null
+  if (!reason) throw new Error('Укажите причину отмены')
   let updated: DemoBooking | null = null
   update(s => {
     const bookings = s.bookings.map(b => {
       if (b.id !== id || b.clientId !== clientId) return b
-      updated = { ...b, status: 'cancelled' }
+      updated = {
+        ...b,
+        status: 'cancelled',
+        cancelReason: reason,
+        cancelReasonCode: reasonCode,
+      }
       return updated
     })
     if (!updated) throw new Error('Бронь не найдена')

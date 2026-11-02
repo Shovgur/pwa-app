@@ -5,8 +5,11 @@ import type {
 } from '../../lib/partnerPromotions'
 import { demoDelay, read, update } from '../demoStore'
 import { requireDemoCompanyId } from './demoSession'
+import { getScopedVenueIds } from './managerScope'
 
 function companyVenueIds(companyId: string): Set<string> {
+  const scoped = getScopedVenueIds(companyId)
+  if (scoped) return scoped
   return new Set(read().venues.filter(v => v.companyId === companyId).map(v => v.id))
 }
 

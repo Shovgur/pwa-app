@@ -10,6 +10,7 @@ import { AuthTransitionLoader } from '../components/ui/Loaders'
 import { FieldError, errorInputStyle } from '../components/ui/FieldError'
 import { isValidPhone } from '../utils/authHelpers'
 import { useFieldErrors } from '../hooks/useFieldErrors'
+import { APP_ICON_SRC } from '../config/branding'
 
 function BtnSpinner() {
   return (
@@ -143,7 +144,14 @@ export function RegisterPage() {
 
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-            <div style={{ width: 40, height: 40, borderRadius: 13, background: 'linear-gradient(135deg, #22c55e, #16a34a)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>⚡</div>
+            <img
+              src={APP_ICON_SRC}
+              alt="BookinGo"
+              width={40}
+              height={40}
+              decoding="async"
+              style={{ width: 40, height: 40, borderRadius: '50%', display: 'block', flexShrink: 0, objectFit: 'cover' }}
+            />
             <span style={{ fontSize: 24, fontWeight: 900, color: '#fff' }} className="logo-text">BookinGo</span>
           </div>
           <p style={{ color: '#64748b', fontSize: 13 }}>

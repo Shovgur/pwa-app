@@ -3,6 +3,12 @@ import { motion } from 'framer-motion'
 import { Star, MapPin, ArrowUpRight } from 'lucide-react'
 import { scrollToTop } from '../../utils/scroll'
 import { FadeImg } from './FadeImg'
+import { trackVenueView } from '../../lib/venueViews'
+
+function venueIdFromPath(to: string): string | null {
+  const m = to.match(/^\/venue\/([^/?#]+)/)
+  return m ? decodeURIComponent(m[1]) : null
+}
 
 export interface VenueCardProps {
   to: string
@@ -47,6 +53,8 @@ export function VenueCard({
       <Link
         to={to}
         onClick={() => {
+          const venueId = venueIdFromPath(to)
+          if (venueId) void trackVenueView(venueId)
           scrollToTop()
           requestAnimationFrame(scrollToTop)
         }}

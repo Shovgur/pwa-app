@@ -13,11 +13,13 @@ import type { PartnerVenue } from '../lib/partnerVenues'
 import { VENUE_KIND_LABEL } from '../lib/partnerVenues'
 import { partnerVenueToCourt, resolveVenueImageUrl, venueCoverImage } from '../utils/venueAdapters'
 import { isAuthExpiredError } from '../lib/authErrors'
-import { fetchCourtAvailability, isSlotTakenError } from '../lib/venueAvailability'
+import { bookingCreateErrorMessage, fetchCourtAvailability, isSlotTakenError } from '../lib/venueAvailability'
 import { venueMinPricePerHour } from '../utils/venuePrice'
 import { colors } from '../theme/tokens'
 import { paths } from '../config/features'
 import { isDemoMode } from '../demo/demoMode'
+import { redirectToYookassa } from '../lib/yookassaPayments'
+import { trackVenueView } from '../lib/venueViews'
 import { BILLING_LABEL } from '../utils/venueBuilderPresets'
 
 import { upcomingBookingDays } from '../utils/bookingDates'
@@ -61,6 +63,11 @@ export function PublicVenuePage() {
       setSelectedSlot(null)
     }
   }, [slotTimes, selectedSlot])
+
+  useEffect(() => {
+    if (!id) return
+    void trackVenueView(id)
+  }, [id])
 
   useEffect(() => {
     if (!id) return
@@ -114,27 +121,40 @@ export function PublicVenuePage() {
       if (!fresh.slots.some((s) => s.time === selectedSlot)) {
         reloadSlots()
         setSelectedSlot(null)
-        setBookError('Слот занят')
+        setBookError('Это время уже занято. Выберите другой слот.')
         return
       }
       const created = await addBooking(court, days[selectedDay].date, selectedSlot, BOOKING_DURATION_MINUTES, {
         isoDate: days[selectedDay].iso,
         paymentMethod: 'online',
       })
-      reloadSlots()
-      setBookingCode(created.code ?? null)
-      setSuccess(true)
+      if (isDemoMode()) {
+        reloadSlots()
+        setBookingCode(created.code ?? null)
+        setSuccess(true)
+        return
+      }
+      try {
+        await redirectToYookassa(created.id)
+        return
+      } catch (payErr) {
+        reloadSlots()
+        setBookingCode(created.code ?? null)
+        const payMessage = payErr instanceof Error ? payErr.message : 'Не удалось открыть оплату'
+        setBookError(
+          `Бронь создана (${created.code ?? created.id}), но оплата не открылась: ${payMessage}`,
+        )
+        return
+      }
     } catch (e) {
       if (isAuthExpiredError(e)) {
         navigate('/login', { state: { from: `/venue/${id}` } })
         return
       }
-      const message = e instanceof Error ? e.message : 'Не удалось создать заявку'
-      if (isSlotTakenError(message)) {
+      const message = bookingCreateErrorMessage(e)
+      if (isSlotTakenError(e instanceof Error ? e.message : '')) {
         reloadSlots()
         setSelectedSlot(null)
-        setBookError('Слот занят')
-        return
       }
       setBookError(message)
     } finally {
@@ -348,12 +368,12 @@ export function PublicVenuePage() {
           emptyMessage={!selectedSlot ? 'Выберите время' : undefined}
           total={selectedSlot ? minPrice : 0}
           accent="green"
-          buttonLabel={booking ? 'Отправляем…' : (isDemoMode() ? 'Отправить заявку' : 'Забронировать')}
+          buttonLabel={booking ? (isDemoMode() ? 'Отправляем…' : 'Переходим к оплате…') : (isDemoMode() ? 'Отправить заявку' : 'Оплатить по СБП')}
           buttonDisabled={!selectedSlot || booking}
           onConfirm={handleBook}
           footerNote={isDemoMode()
             ? 'Демо: списание не производится · партнёр подтвердит заявку'
-            : '4.9 · Партнёр BookinGo'}
+            : 'Оплата по СБП через ЮKassa · принимая, вы соглашаетесь с офертой'}
         />
         {bookError && (
           <div

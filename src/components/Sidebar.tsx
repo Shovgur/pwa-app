@@ -16,6 +16,7 @@ type NavEntry = {
   label: string
   color: string
   badge?: number
+  disabled?: boolean
 }
 
 const SIDEBAR_BG = '#1E293B'
@@ -28,7 +29,6 @@ export function Sidebar() {
   const navigate = useNavigate()
 
   const upcomingCount = bookings.filter(b => b.status === 'upcoming').length
-  const notifCount = 3
   const achievementStats = getAchievementStats(computeAchievements(bookings))
   const newAchievements = achievementStats.unlockedCount
 
@@ -42,7 +42,7 @@ export function Sidebar() {
   ]
 
   const BOTTOM: NavEntry[] = [
-    { to: '/dashboard/notifications', icon: Bell,     label: 'Уведомления',  color: '#94a3b8', badge: notifCount },
+    { to: '/dashboard/notifications', icon: Bell,     label: 'Уведомления',  color: '#94a3b8', disabled: true },
     { to: '/dashboard/settings',      icon: Settings, label: 'Настройки',    color: '#94a3b8' },
   ]
 
@@ -82,7 +82,7 @@ export function Sidebar() {
           style={{
             width: 36,
             height: 36,
-            borderRadius: 9,
+            borderRadius: '50%',
             flexShrink: 0,
             display: 'block',
           }}
@@ -210,6 +210,49 @@ export function Sidebar() {
 
 function NavItem({ item, collapsed }: { item: NavEntry; collapsed: boolean }) {
   const Icon = item.icon
+
+  if (item.disabled) {
+    return (
+      <div
+        title="Скоро"
+        aria-disabled="true"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: collapsed ? 'center' : 'flex-start',
+          gap: 10,
+          padding: '9px 12px',
+          borderRadius: 10,
+          background: 'transparent',
+          cursor: 'not-allowed',
+          opacity: 0.4,
+          position: 'relative',
+        }}
+      >
+        <Icon size={17} color="#64748b" />
+        <AnimatePresence>
+          {!collapsed && (
+            <motion.span
+              initial={{ opacity: 0, x: -6 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -6 }}
+              transition={{ duration: 0.15 }}
+              style={{
+                fontSize: 14,
+                fontWeight: 500,
+                color: '#94a3b8',
+                whiteSpace: 'nowrap',
+                flex: 1,
+              }}
+            >
+              {item.label}
+            </motion.span>
+          )}
+        </AnimatePresence>
+      </div>
+    )
+  }
+
   return (
     <NavLink to={item.to} end={item.to === '/dashboard'} style={{ textDecoration: 'none' }}>
       {({ isActive }) => (

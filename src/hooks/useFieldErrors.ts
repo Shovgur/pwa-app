@@ -53,5 +53,5 @@ export function useFieldErrors() {
 
   const resetErrors = useCallback(() => setErrors({}), [])
 
-  return { errors, handleInvalid, clearError, resetErrors }
+  return { errors, setErrors, handleInvalid, clearError, resetErrors }
 }

@@ -18,6 +18,7 @@ interface FormSelectProps {
   hasError?: boolean
   placeholder?: string
   accent?: string
+  disabled?: boolean
 }
 
 const labelStyle: React.CSSProperties = {
@@ -38,6 +39,7 @@ export function FormSelect({
   hasError,
   placeholder = 'Выберите',
   accent = '#22c55e',
+  disabled = false,
 }: FormSelectProps) {
   const uid = useId()
   const menuId = `form-select-menu-${uid}`
@@ -48,6 +50,7 @@ export function FormSelect({
   const selected = options.find(o => o.value === value)
 
   function toggleOpen() {
+    if (disabled) return
     if (open) {
       setOpen(false)
       return
@@ -90,8 +93,10 @@ export function FormSelect({
         type="button"
         className={`form-select-trigger${open ? ' form-select-trigger--open' : ''}${hasError ? ' form-select-trigger--error' : ''}`}
         onClick={toggleOpen}
+        disabled={disabled}
         aria-haspopup="listbox"
         aria-expanded={open}
+        style={disabled ? { opacity: 0.55, cursor: 'default' } : undefined}
       >
         <span className="form-select-value">{selected?.label ?? placeholder}</span>
         <ChevronDown

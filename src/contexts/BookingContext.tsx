@@ -173,7 +173,7 @@ interface BookingContextType {
     options?: AddBookingOptions,
   ) => Promise<Booking>
   addLoftBooking: (loft: Loft, timeSlot: string, addOns: AddOn[], totalPrice: number) => Promise<Booking>
-  cancelBooking: (id: number) => Promise<void>
+  cancelBooking: (id: number, opts: { reason: string; reasonCode: string }) => Promise<void>
 }
 
 const BookingContext = createContext<BookingContextType | null>(null)
@@ -277,8 +277,8 @@ export function BookingProvider({ children }: { children: ReactNode }) {
     return booking
   }
 
-  async function cancelBooking(id: number) {
-    const updated = await cancelClientBooking(id)
+  async function cancelBooking(id: number, opts: { reason: string; reasonCode: string }) {
+    const updated = await cancelClientBooking(id, opts)
     setBookings(prev => prev.map(b => (b.id === id ? updated : b)))
   }
 

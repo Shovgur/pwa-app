@@ -21,6 +21,8 @@ export interface PartnerBooking {
   code: string
   customerName: string
   customerPhone: string
+  /** Стабильный id площадки (partner_venues.id) — для статистики и скоупа менеджера */
+  venueId: string | null
   venueName: string
   venueKind: VenueKind
   /** YYYY-MM-DD */
@@ -36,6 +38,11 @@ export interface PartnerBooking {
   paymentMethod: PaymentMethod
   status: BookingStatus
   comment: string | null
+  /** Клиент просил перезвонить при создании заявки */
+  requestCallback: boolean
+  /** Причина отмены (если статус cancelled) */
+  cancelReason: string | null
+  cancelReasonCode: string | null
   /** ISO */
   createdAt: string
 }
@@ -132,10 +139,23 @@ async function partnerRequest<T>(
 }
 
 // ─── брони ───────────────────────────────────────────────
+function normalizePartnerBooking(raw: PartnerBooking): PartnerBooking {
+  const comment = raw.comment ?? null
+  return {
+    ...raw,
+    venueId: raw.venueId != null ? String(raw.venueId) : null,
+    comment,
+    requestCallback: Boolean(raw.requestCallback) || Boolean(comment?.includes('📞')),
+    cancelReason: raw.cancelReason ?? null,
+    cancelReasonCode: raw.cancelReasonCode ?? null,
+    createdAt: raw.createdAt,
+  }
+}
+
 export function fetchPartnerBookings(): Promise<PartnerBooking[]> {
   if (isDemoMode()) return demoFetchPartnerBookings()
   return partnerRequest<{ bookings: PartnerBooking[] }>('/partner/bookings')
-    .then(r => r.bookings)
+    .then(r => (r.bookings ?? []).map(normalizePartnerBooking))
 }
 
 export function updatePartnerBookingStatus(
@@ -146,7 +166,7 @@ export function updatePartnerBookingStatus(
   return partnerRequest<{ booking: PartnerBooking }>(`/partner/bookings/${id}/status`, {
     method: 'PATCH',
     body: JSON.stringify({ status }),
-  }).then(r => r.booking)
+  }).then(r => normalizePartnerBooking(r.booking))
 }
 
 // ─── сотрудники ──────────────────────────────────────────

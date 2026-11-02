@@ -1,4 +1,4 @@
-import { Routes, Route, useLocation } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { Sidebar } from '../components/Sidebar'
 import { DashboardTopbar } from '../components/DashboardTopbar'
@@ -8,7 +8,6 @@ import { CourtsTab } from '../components/tabs/CourtsTab'
 import { BookingsTab } from '../components/tabs/BookingsTab'
 import { MapTab } from '../components/tabs/MapTab'
 import { ProfileTab } from '../components/tabs/ProfileTab'
-import { NotificationsTab } from '../components/tabs/NotificationsTab'
 import { SettingsTab } from '../components/tabs/SettingsTab'
 import { AchievementsTab } from '../components/tabs/AchievementsTab'
 
@@ -55,7 +54,7 @@ export function DashboardPage() {
           <Route path="map" element={<TabPage><MapTab /></TabPage>} />
           <Route path="profile" element={<TabPage><ProfileTab /></TabPage>} />
           <Route path="achievements" element={<TabPage><AchievementsTab /></TabPage>} />
-          <Route path="notifications" element={<TabPage><NotificationsTab /></TabPage>} />
+          <Route path="notifications" element={<Navigate to="/dashboard" replace />} />
           <Route path="settings" element={<TabPage><SettingsTab /></TabPage>} />
         </Routes>
       </main>

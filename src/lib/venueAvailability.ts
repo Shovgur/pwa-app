@@ -20,7 +20,23 @@ export interface VenueAvailability {
 
 export function isSlotTakenError(message: string): boolean {
   const m = message.toLowerCase()
-  return m.includes('занят') || m.includes('occupied') || m.includes('conflict')
+  return (
+    m.includes('занят')
+    || m.includes('occupied')
+    || m.includes('conflict')
+    || m.includes('already booked')
+    || m.includes('not available')
+  )
+}
+
+/** Понятное сообщение об ошибке создания брони для UI. */
+export function bookingCreateErrorMessage(error: unknown): string {
+  const message = error instanceof Error ? error.message : ''
+  if (isSlotTakenError(message)) {
+    return 'Это время уже занято. Выберите другой слот.'
+  }
+  if (message.trim()) return message
+  return 'Не удалось создать бронь. Попробуйте ещё раз.'
 }
 
 async function parseAvailabilityResponse(res: Response): Promise<VenueAvailability> {

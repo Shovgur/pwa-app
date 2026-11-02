@@ -46,7 +46,8 @@ const VENUES: DemoVenue[] = [
     createdAt: '2025-06-01T10:00:00.000Z',
     lat: 55.789,
     lng: 37.552,
-    managedByStaffId: 'staff-1',
+    managedByStaffId: '1',
+    managedByName: 'Иван Управляющий',
     legacyRef: 'mock:court:1',
   }),
   venueBase('dv-2', NETWORK_ID, {
@@ -68,7 +69,8 @@ const VENUES: DemoVenue[] = [
     createdAt: '2025-06-05T10:00:00.000Z',
     lat: 55.765,
     lng: 37.615,
-    managedByStaffId: 'staff-1',
+    managedByStaffId: '1',
+    managedByName: 'Иван Управляющий',
   }),
   venueBase('dv-3', NETWORK_ID, {
     name: 'Бассейн «Аквамарин»',
@@ -89,7 +91,8 @@ const VENUES: DemoVenue[] = [
     createdAt: '2025-07-01T10:00:00.000Z',
     lat: 55.742,
     lng: 37.534,
-    managedByStaffId: 'staff-2',
+    managedByStaffId: '2',
+    managedByName: 'Мария Менеджер',
   }),
   venueBase('dv-4', NETWORK_ID, {
     name: 'Лофт «Маяк»',
@@ -109,7 +112,8 @@ const VENUES: DemoVenue[] = [
     createdAt: '2025-07-10T10:00:00.000Z',
     lat: 55.741,
     lng: 37.605,
-    managedByStaffId: 'staff-2',
+    managedByStaffId: '2',
+    managedByName: 'Мария Менеджер',
     legacyRef: 'mock:loft:loft-mayak',
   }),
   venueBase('dv-5', NETWORK_ID, {
@@ -130,7 +134,8 @@ const VENUES: DemoVenue[] = [
     createdAt: '2025-08-01T10:00:00.000Z',
     lat: 55.749,
     lng: 37.539,
-    managedByStaffId: 'staff-1',
+    managedByStaffId: '1',
+    managedByName: 'Иван Управляющий',
   }),
   venueBase('dv-6', NETWORK_ID, {
     name: 'Бадminton Hall',
@@ -151,7 +156,8 @@ const VENUES: DemoVenue[] = [
     createdAt: '2025-08-15T10:00:00.000Z',
     lat: 55.793,
     lng: 37.592,
-    managedByStaffId: 'staff-2',
+    managedByStaffId: '2',
+    managedByName: 'Мария Менеджер',
   }),
   venueBase('dv-7', SOLO_ID, {
     name: 'Solo Arena — мультипорт',
@@ -211,7 +217,8 @@ const VENUES: DemoVenue[] = [
     createdAt: '2025-10-01T10:00:00.000Z',
     lat: 55.761,
     lng: 37.609,
-    managedByStaffId: 'staff-1',
+    managedByStaffId: '1',
+    managedByName: 'Иван Управляющий',
   }),
   venueBase('dv-10', NETWORK_ID, {
     name: 'Йога-студия «Баланс»',
@@ -231,7 +238,8 @@ const VENUES: DemoVenue[] = [
     createdAt: '2025-10-05T10:00:00.000Z',
     lat: 55.741,
     lng: 37.627,
-    managedByStaffId: 'staff-2',
+    managedByStaffId: '2',
+    managedByName: 'Мария Менеджер',
   }),
 ]
 
@@ -350,7 +358,7 @@ export function createSeedState(): DemoState {
           city: 'Москва',
           role: 'manager',
           name: 'Иван Управляющий',
-          staffRecordId: 'staff-1',
+          staffRecordId: '1',
           staffId: 1,
           commissionPercent: 0,
           status: 'active',
@@ -366,7 +374,7 @@ export function createSeedState(): DemoState {
           city: 'Москва',
           role: 'manager',
           name: 'Мария Менеджер',
-          staffRecordId: 'staff-2',
+          staffRecordId: '2',
           staffId: 2,
           commissionPercent: 0,
           status: 'active',
@@ -463,7 +471,7 @@ export function createSeedState(): DemoState {
     ],
     staff: [
       {
-        id: 'staff-1',
+        id: '1',
         companyId: NETWORK_ID,
         name: 'Иван Управляющий',
         login: 'manager-demo',
@@ -472,7 +480,7 @@ export function createSeedState(): DemoState {
         lastLoginAt: new Date().toISOString(),
       },
       {
-        id: 'staff-2',
+        id: '2',
         companyId: NETWORK_ID,
         name: 'Мария Менеджер',
         login: 'manager2-demo',

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { MapPin, Navigation, Search } from 'lucide-react'
 import { usePublicVenues } from '../../contexts/PublicVenuesContext'
 import type { Court } from '../../contexts/BookingContext'
+import { openYandexRoute } from '../../utils/yandexRoute'
 
 type MapPinItem = Court & { x: number; y: number }
 
@@ -36,26 +37,6 @@ function projectPins(venues: Court[]): MapPinItem[] {
     x: pad + ((v.lng! - minLng) / (maxLng - minLng)) * (100 - pad * 2),
     y: pad + ((maxLat - v.lat!) / (maxLat - minLat)) * (100 - pad * 2),
   }))
-}
-
-/** Яндекс.Карты: от геолокации пользователя до площадки; без геолокации — rtext=~lat,lng. */
-function openYandexRoute(destLat: number, destLng: number) {
-  const to = `${destLat},${destLng}`
-  const open = (from?: string) => {
-    const rtext = from ? `${from}~${to}` : `~${to}`
-    window.open(`https://yandex.ru/maps/?rtext=${rtext}&rtt=auto`, '_blank', 'noopener,noreferrer')
-  }
-
-  if (!navigator.geolocation) {
-    open()
-    return
-  }
-
-  navigator.geolocation.getCurrentPosition(
-    (pos) => open(`${pos.coords.latitude},${pos.coords.longitude}`),
-    () => open(),
-    { enableHighAccuracy: true, timeout: 8000, maximumAge: 60_000 },
-  )
 }
 
 export function MapTab() {

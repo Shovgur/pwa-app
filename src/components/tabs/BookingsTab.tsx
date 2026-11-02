@@ -1,10 +1,15 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { CalendarCheck, Clock, MapPin, X, CalendarPlus } from 'lucide-react'
 import { useBookings } from '../../contexts/BookingContext'
 import type { Booking } from '../../contexts/BookingContext'
 import { BOOKING_STATUS_META, type BookingStatus } from '../../lib/partnerCrm'
+import {
+  CANCEL_REASON_OPTIONS,
+  type CancelReasonCode,
+} from '../../utils/cancelReasons'
 
 const FILTERS = [
   { id: 'all', label: 'Все' },
@@ -32,11 +37,11 @@ function resolveStatusMeta(booking: Booking): { label: string; color: string } {
 
 function BookingRow({
   booking,
-  onCancel,
+  onCancelClick,
   cancelling,
 }: {
   booking: Booking
-  onCancel: (id: number) => void | Promise<void>
+  onCancelClick: (id: number) => void
   cancelling: boolean
 }) {
   const meta = resolveStatusMeta(booking)
@@ -100,7 +105,7 @@ function BookingRow({
         {booking.status === 'upcoming' && (
           <button
             type="button"
-            onClick={() => onCancel(booking.id)}
+            onClick={() => onCancelClick(booking.id)}
             disabled={cancelling}
             aria-label="Отменить бронь"
             style={{
@@ -119,21 +124,193 @@ function BookingRow({
   )
 }
 
+function CancelBookingDialog({
+  booking,
+  busy,
+  error,
+  onClose,
+  onConfirm,
+}: {
+  booking: Booking
+  busy: boolean
+  error: string | null
+  onClose: () => void
+  onConfirm: (opts: { reason: string; reasonCode: CancelReasonCode }) => void
+}) {
+  const [code, setCode] = useState<CancelReasonCode | null>(null)
+  const [customText, setCustomText] = useState('')
+
+  const canSubmit = code != null && (code !== 'other' || customText.trim().length > 0)
+
+  function submit() {
+    if (!code || !canSubmit || busy) return
+    const reason = code === 'other'
+      ? customText.trim()
+      : (CANCEL_REASON_OPTIONS.find(o => o.code === code)?.label ?? code)
+    onConfirm({ reason, reasonCode: code })
+  }
+
+  return createPortal(
+    <div
+      style={{
+        position: 'fixed', inset: 0, zIndex: 12000,
+        background: 'rgba(2,6,23,0.72)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: 16,
+      }}
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 16, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 10, scale: 0.98 }}
+        onClick={e => e.stopPropagation()}
+        style={{
+          width: '100%', maxWidth: 420,
+          background: '#1a2332',
+          border: '1px solid rgba(255,255,255,0.1)',
+          borderRadius: 18,
+          padding: 20,
+          boxShadow: '0 24px 64px rgba(0,0,0,0.45)',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
+          <div>
+            <h2 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#f1f5f9', fontFamily: 'var(--font-display)' }}>
+              Отменить бронь?
+            </h2>
+            <p style={{ margin: '6px 0 0', fontSize: 13, color: '#94a3b8', lineHeight: 1.45 }}>
+              {booking.court.name} · {booking.date} · {booking.time}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Закрыть"
+            style={{
+              background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: 10, padding: 8, color: '#94a3b8', cursor: 'pointer',
+            }}
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        <p style={{ margin: '0 0 10px', fontSize: 12, fontWeight: 700, color: '#64748b', letterSpacing: '0.04em' }}>
+          ПРИЧИНА ОТМЕНЫ
+        </p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {CANCEL_REASON_OPTIONS.map(opt => {
+            const active = code === opt.code
+            return (
+              <button
+                key={opt.code}
+                type="button"
+                onClick={() => setCode(opt.code)}
+                style={{
+                  textAlign: 'left',
+                  padding: '12px 14px',
+                  borderRadius: 12,
+                  border: active ? '1px solid rgba(248,113,113,0.55)' : '1px solid rgba(255,255,255,0.08)',
+                  background: active ? 'rgba(248,113,113,0.12)' : 'rgba(255,255,255,0.03)',
+                  color: active ? '#fecaca' : '#e2e8f0',
+                  fontSize: 14,
+                  fontWeight: active ? 700 : 500,
+                  cursor: 'pointer',
+                  fontFamily: 'inherit',
+                }}
+              >
+                {opt.label}
+              </button>
+            )
+          })}
+        </div>
+
+        {code === 'other' && (
+          <textarea
+            value={customText}
+            onChange={e => setCustomText(e.target.value)}
+            placeholder="Опишите причину"
+            rows={3}
+            style={{
+              width: '100%',
+              marginTop: 12,
+              boxSizing: 'border-box',
+              padding: '12px 14px',
+              borderRadius: 12,
+              border: '1px solid rgba(255,255,255,0.1)',
+              background: '#243354',
+              color: '#fff',
+              fontSize: 14,
+              fontFamily: 'inherit',
+              resize: 'vertical',
+              outline: 'none',
+            }}
+          />
+        )}
+
+        {error && (
+          <p style={{ margin: '12px 0 0', fontSize: 13, color: '#f87171' }}>{error}</p>
+        )}
+
+        <div style={{ display: 'flex', gap: 10, marginTop: 18 }}>
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={busy}
+            style={{
+              flex: 1, padding: '12px 14px', borderRadius: 12,
+              border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.04)',
+              color: '#cbd5e1', fontWeight: 600, fontSize: 14, cursor: 'pointer', fontFamily: 'inherit',
+            }}
+          >
+            Назад
+          </button>
+          <button
+            type="button"
+            onClick={submit}
+            disabled={!canSubmit || busy}
+            style={{
+              flex: 1, padding: '12px 14px', borderRadius: 12, border: 'none',
+              background: canSubmit && !busy ? 'linear-gradient(135deg, #ef4444, #dc2626)' : 'rgba(248,113,113,0.25)',
+              color: '#fff', fontWeight: 700, fontSize: 14,
+              cursor: canSubmit && !busy ? 'pointer' : 'default',
+              fontFamily: 'inherit',
+              opacity: busy ? 0.7 : 1,
+            }}
+          >
+            {busy ? 'Отменяем…' : 'Отменить бронь'}
+          </button>
+        </div>
+      </motion.div>
+    </div>,
+    document.body,
+  )
+}
+
 export function BookingsTab() {
   const navigate = useNavigate()
   const { bookings, cancelBooking, error: loadError, reload } = useBookings()
   const [filter, setFilter] = useState<typeof FILTERS[number]['id']>('all')
   const [actionError, setActionError] = useState<string | null>(null)
   const [cancellingId, setCancellingId] = useState<number | null>(null)
+  const [cancelTargetId, setCancelTargetId] = useState<number | null>(null)
+  const [dialogError, setDialogError] = useState<string | null>(null)
 
-  async function handleCancel(id: number) {
-    if (cancellingId != null) return
+  const cancelTarget = cancelTargetId != null
+    ? bookings.find(b => b.id === cancelTargetId) ?? null
+    : null
+
+  async function confirmCancel(opts: { reason: string; reasonCode: CancelReasonCode }) {
+    if (cancelTargetId == null || cancellingId != null) return
+    setDialogError(null)
     setActionError(null)
-    setCancellingId(id)
+    setCancellingId(cancelTargetId)
     try {
-      await cancelBooking(id)
+      await cancelBooking(cancelTargetId, opts)
+      setCancelTargetId(null)
     } catch (e) {
-      setActionError(e instanceof Error ? e.message : 'Не удалось отменить бронь')
+      setDialogError(e instanceof Error ? e.message : 'Не удалось отменить бронь')
     } finally {
       setCancellingId(null)
     }
@@ -256,7 +433,10 @@ export function BookingsTab() {
               <BookingRow
                 key={b.id}
                 booking={b}
-                onCancel={handleCancel}
+                onCancelClick={(id) => {
+                  setDialogError(null)
+                  setCancelTargetId(id)
+                }}
                 cancelling={cancellingId === b.id}
               />
             ))}
@@ -295,6 +475,22 @@ export function BookingsTab() {
           </motion.button>
         </motion.div>
       )}
+
+      <AnimatePresence>
+        {cancelTarget && (
+          <CancelBookingDialog
+            booking={cancelTarget}
+            busy={cancellingId === cancelTarget.id}
+            error={dialogError}
+            onClose={() => {
+              if (cancellingId != null) return
+              setCancelTargetId(null)
+              setDialogError(null)
+            }}
+            onConfirm={opts => void confirmCancel(opts)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   )
 }
