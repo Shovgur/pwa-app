@@ -90,6 +90,9 @@ export interface PartnerVenue {
   canEdit?: boolean
   /** Активные акции (для публичного каталога / кабинета) */
   promotions?: VenuePromotionSummary[]
+  /** Агрегат публичных отзывов (Stage 1+); null пока нет published */
+  ratingAvg?: number | null
+  ratingCount?: number
 }
 
 export interface VenuePromotionSummary {
