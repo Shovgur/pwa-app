@@ -38,7 +38,7 @@ export function LandingPage() {
         title: POOLS[0].name,
         badge: '🏊 Бассейн',
         price: POOLS[0].price,
-        rating: 4.8,
+        rating: null,
         location: POOLS[0].city,
         description: `Олимпийский комплекс Лужники. Свободное плавание, сауна${POOLS[0].medCert ? '' : ', без справки'}.`,
         image: POOLS[0].image,

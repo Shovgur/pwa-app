@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
-  Star,
   MapPin,
   ChevronRight,
   Check,
@@ -12,6 +11,7 @@ import {
   ChevronDown,
   Plus,
 } from "lucide-react";
+import { RatingBadge } from "./ui/RatingBadge";
 import type { Booking, Court } from "../contexts/BookingContext";
 import { useBookings } from "../contexts/BookingContext";
 import { useAuth } from "../contexts/AuthContext";
@@ -34,6 +34,7 @@ import { PaymentStep } from "./court-sheet/PaymentStep";
 import { redirectToYookassa } from "../lib/yookassaPayments";
 import { useVenueSlots } from "../hooks/useVenueSlots";
 import { VenueSlotPicker } from "./ui/VenueSlotPicker";
+import { stashBookingBeforeAuth } from "../utils/bookingDraft";
 
 const DURATIONS = [
   { label: "30 мин", value: 30 },
@@ -170,6 +171,15 @@ export function CourtDetailSheet({ court, onClose }: Props) {
     const from = court.partnerVenueId
       ? `/venue/${court.partnerVenueId}`
       : "/catalog";
+    if (court.partnerVenueId && selectedSlot) {
+      stashBookingBeforeAuth({
+        venueId: court.partnerVenueId,
+        dateIso: selectedDate.iso,
+        slot: selectedSlot,
+        durationMinutes: effectiveDurationMinutes,
+        returnPath: from,
+      });
+    }
     onClose();
     navigate("/login", { state: { from } });
     return false;
@@ -216,9 +226,13 @@ export function CourtDetailSheet({ court, onClose }: Props) {
         return;
       }
 
-      // Прод: уходим на ЮKassa. Экран «успех/оплачено» здесь больше не показываем.
+      // Прод: уходим на ЮKassa. Если редиректа нет (демо) — success без /booking/payment-result.
       try {
-        await redirectToYookassa(booking.id);
+        const left = await redirectToYookassa(booking.id);
+        if (left) return;
+        setNewBooking(booking);
+        reloadSlots();
+        setStep("success");
         return;
       } catch (payErr) {
         const payMessage =
@@ -235,6 +249,15 @@ export function CourtDetailSheet({ court, onClose }: Props) {
         const from = court.partnerVenueId
           ? `/venue/${court.partnerVenueId}`
           : "/catalog";
+        if (court.partnerVenueId && selectedSlot) {
+          stashBookingBeforeAuth({
+            venueId: court.partnerVenueId,
+            dateIso: selectedDate.iso,
+            slot: selectedSlot,
+            durationMinutes: effectiveDurationMinutes,
+            returnPath: from,
+          });
+        }
         onClose();
         navigate("/login", { state: { from } });
         return;
@@ -535,23 +558,12 @@ export function CourtDetailSheet({ court, onClose }: Props) {
                       marginBottom: 12,
                     }}
                   >
-                    <div
-                      style={{ display: "flex", alignItems: "center", gap: 4 }}
-                    >
-                      <Star size={14} fill="#f59e0b" color="#f59e0b" />
-                      <span
-                        style={{
-                          fontSize: 13,
-                          fontWeight: 700,
-                          color: "#f1f5f9",
-                        }}
-                      >
-                        {court.rating}
-                      </span>
-                      <span style={{ fontSize: 12, color: "#64748b" }}>
-                        ({court.reviews})
-                      </span>
-                    </div>
+                    <RatingBadge
+                      rating={court.rating}
+                      count={court.reviews}
+                      showCount
+                      size={14}
+                    />
                     <div
                       style={{
                         width: 4,

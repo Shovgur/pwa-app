@@ -56,7 +56,7 @@ export interface Loft {
   sqm: number
   capacity: number
   price: number
-  rating: number
+  rating: number | null
   reviews: number
   location: string
   metro: string
@@ -108,8 +108,8 @@ export const LOFTS: Loft[] = [
     sqm: 80,
     capacity: 30,
     price: 5000,
-    rating: 4.9,
-    reviews: 128,
+    rating: null,
+    reviews: 0,
     location: 'Москва, Таганская',
     metro: 'м. Таганская',
     features: ['Панорамные окна', 'Кухня', 'Бар', 'Проектор'],
@@ -132,8 +132,8 @@ export const LOFTS: Loft[] = [
     sqm: 120,
     capacity: 50,
     price: 7000,
-    rating: 4.8,
-    reviews: 86,
+    rating: null,
+    reviews: 0,
     location: 'Москва, Курская',
     metro: 'м. Курская',
     features: ['Кирпичные стены', 'Высокие потолки', 'Сцена', 'Кухня'],
@@ -153,8 +153,8 @@ export const LOFTS: Loft[] = [
     sqm: 60,
     capacity: 20,
     price: 4500,
-    rating: 4.9,
-    reviews: 94,
+    rating: null,
+    reviews: 0,
     location: 'СПб, Невский',
     metro: 'м. Маяковская',
     features: ['Фото-зона', 'Проектор', 'Белые стены', 'Естественный свет'],

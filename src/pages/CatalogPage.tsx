@@ -27,7 +27,7 @@ type CatalogItem = {
   location: string
   description: string
   price: string
-  rating: number
+  rating: number | null
   gradient: string
   image?: string
   type: 'sport' | 'loft' | 'pool' | 'meeting'
@@ -121,7 +121,7 @@ export function CatalogPage() {
     location: `${p.address} · ${p.city}`,
     description: `${p.sauna ? 'Сауна · ' : ''}${p.medCert ? 'Мед. справка' : 'Без справки'}`,
     price: `от ${p.price}`,
-    rating: 4.7,
+    rating: null,
     gradient: 'linear-gradient(135deg, #0c4a6e 0%, #0e7490 100%)',
     image: p.image,
     type: 'pool' as const,

@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import {
-  ArrowLeft, MapPin, Star, Flame, GraduationCap, ShieldCheck, ShieldX,
+  ArrowLeft, MapPin, Flame, GraduationCap, ShieldCheck, ShieldX,
   ExternalLink,
 } from 'lucide-react'
 import { SeoHead } from '../components/SeoHead'
@@ -112,7 +112,7 @@ export function PoolDetailPage() {
                 {poolDescription(pool)}
               </p>
               <div className="booking-hero-meta">
-                <span><Star size={15} fill="#EAB308" color="#EAB308" /> 4.7 · партнёр basseiny.online</span>
+                <span>Партнёр basseiny.online</span>
                 <span><MapPin size={15} color={colors.green} /> {pool.address}, {pool.city}</span>
               </div>
               <p style={{ fontSize: 13, color: colors.text2 }}>{amenities.join(' · ')}</p>

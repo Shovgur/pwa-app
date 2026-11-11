@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Search, MapPin, Star, X } from 'lucide-react'
+import { Search, MapPin, X } from 'lucide-react'
+import { RatingBadge } from '../ui/RatingBadge'
 import { COURTS } from '../../contexts/BookingContext'
 import type { Court } from '../../contexts/BookingContext'
 import { usePublicVenues } from '../../contexts/PublicVenuesContext'
@@ -169,11 +170,7 @@ export function CourtsTab() {
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                  <Star size={12} fill="#f59e0b" color="#f59e0b" />
-                  <span style={{ fontSize: 12, fontWeight: 700, color: '#f1f5f9' }}>{court.rating}</span>
-                  <span style={{ fontSize: 11, color: '#475569' }}>({court.reviews})</span>
-                </div>
+                <RatingBadge rating={court.rating} count={court.reviews} showCount size={12} />
                 <div style={{ width: 3, height: 3, borderRadius: '50%', background: '#334155' }} />
                 <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
                   <MapPin size={11} color="#64748b" />

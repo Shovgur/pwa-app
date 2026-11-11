@@ -84,9 +84,9 @@ const FAQ = [
 
 function CatalogVisual() {
   const cards = [
-    { label: 'Бассейн', loc: 'Москва', price: '1 200 ₽', r: 4.8, color: colors.blue },
-    { label: 'Теннисный корт', loc: 'СПб', price: '800 ₽', r: 4.6, color: colors.green },
-    { label: 'Лофт Sunset', loc: 'Москва', price: '3 500 ₽', r: 4.9, color: colors.orange },
+    { label: 'Бассейн', loc: 'Москва', price: '1 200 ₽', color: colors.blue },
+    { label: 'Теннисный корт', loc: 'СПб', price: '800 ₽', color: colors.green },
+    { label: 'Лофт Sunset', loc: 'Москва', price: '3 500 ₽', color: colors.orange },
   ]
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -131,9 +131,6 @@ function CatalogVisual() {
           </div>
           <div style={{ textAlign: 'right' }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: colors.text }}>{c.price}/час</div>
-            <div style={{ fontSize: 11, color: '#EAB308', display: 'flex', alignItems: 'center', gap: 3, justifyContent: 'flex-end' }}>
-              <Star size={10} fill="#EAB308" color="#EAB308" /> {c.r}
-            </div>
           </div>
         </motion.div>
       ))}
@@ -472,7 +469,7 @@ const PERKS = [
   { icon: Zap, label: 'Мгновенное бронирование', color: colors.green },
   { icon: Shield, label: 'Гарантия возврата', color: colors.blue },
   { icon: Users, label: 'Площадки для любых событий', color: colors.orange },
-  { icon: Star, label: 'Рейтинг 4.9 от клиентов', color: '#A855F7' },
+  { icon: Star, label: 'Прозрачные цены', color: '#A855F7' },
 ]
 
 /* ── Page ── */
