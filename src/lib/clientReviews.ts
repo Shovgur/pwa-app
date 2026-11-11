@@ -1,4 +1,5 @@
 import { API_BASE } from '../config/api'
+import { getAuthToken } from '../config/auth'
 import { getPartnerToken } from '../contexts/PartnerAuthContext'
 import { features } from '../config/features'
 import { isDemoMode } from '../demo/demoMode'
@@ -96,4 +97,35 @@ export async function fetchClientRisk(bookingId: string): Promise<ClientRisk> {
     `/partner/bookings/${bookingId}/client-risk`,
   )
   return data.clientRisk ?? { warning: false, reasons: [] }
+}
+
+export interface MyClientReview {
+  rating: number
+  presets: string[]
+  text: string
+  createdAt: string
+  venueName: string
+  visitDate: string | null
+}
+
+export async function fetchMyClientReviews(): Promise<MyClientReview[]> {
+  if (!features.clientReviews) return []
+  if (isDemoMode()) return []
+  const token = getAuthToken()
+  if (!token) throw new Error('Войдите в аккаунт')
+  const res = await fetch(`${API_BASE}/me/client-reviews`, {
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  })
+  const data = (await res.json().catch(() => ({}))) as {
+    reviews?: MyClientReview[]
+    error?: string
+  }
+  if (!res.ok) {
+    if (data.error === 'feature_disabled') return []
+    throw new Error(data.error || `Ошибка ${res.status}`)
+  }
+  return data.reviews ?? []
 }
