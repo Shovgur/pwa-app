@@ -65,16 +65,25 @@ export function registerClientReviewRoutes(app, pool, { authenticateToken, requi
     try {
       if (!featureClientReviewsEnabled()) return featureOff(res)
       const { userId } = req.user
+      const userRow = await pool.query('SELECT phone FROM users WHERE id = $1', [userId])
+      const phoneNorm = normalizePhone(userRow.rows[0]?.phone)
+      const params = [userId]
+      let phoneClause = ''
+      if (phoneNorm) {
+        params.push(phoneNorm)
+        phoneClause = ` OR cr.client_phone_norm = $${params.length}`
+      }
       const result = await pool.query(
         `SELECT cr.rating, cr.presets, cr.body, cr.created_at,
                 v.name AS venue_name, pb.date AS visit_date
          FROM client_reviews cr
          LEFT JOIN partner_venues v ON v.id = cr.venue_id
          LEFT JOIN partner_bookings pb ON pb.id = cr.partner_booking_id
-         WHERE cr.client_user_id = $1 AND cr.status = 'published'
+         WHERE cr.status = 'published'
+           AND (cr.client_user_id = $1${phoneClause})
          ORDER BY cr.created_at DESC
          LIMIT 100`,
-        [userId],
+        params,
       )
       res.json({
         reviews: result.rows.map((r) => ({

@@ -15,6 +15,7 @@ function presetLabel(id: string): string {
 export function MyClientReviewsSection() {
   const [reviews, setReviews] = useState<MyClientReview[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!features.clientReviews) {
@@ -23,16 +24,26 @@ export function MyClientReviewsSection() {
     }
     let cancelled = false
     void fetchMyClientReviews()
-      .then((list) => { if (!cancelled) setReviews(list) })
-      .catch(() => { if (!cancelled) setReviews([]) })
-      .finally(() => { if (!cancelled) setLoading(false) })
+      .then((list) => {
+        if (cancelled) return
+        setReviews(list)
+        setError(null)
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return
+        setReviews([])
+        setError(err instanceof Error ? err.message : 'Не удалось загрузить отзывы')
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
     return () => { cancelled = true }
   }, [])
 
   if (!features.clientReviews) return null
 
   return (
-    <section style={{ marginTop: 28 }}>
+    <section style={{ marginTop: 0 }}>
       <h2 style={{ fontSize: 18, fontWeight: 800, color: '#f1f5f9', margin: '0 0 12px' }}>
         Отзывы обо мне
       </h2>
@@ -41,6 +52,8 @@ export function MyClientReviewsSection() {
       </p>
       {loading ? (
         <p style={{ color: '#64748b', fontSize: 13 }}>Загрузка…</p>
+      ) : error ? (
+        <p style={{ color: '#f87171', fontSize: 13 }}>{error}</p>
       ) : reviews.length === 0 ? (
         <p style={{ color: '#64748b', fontSize: 13 }}>Пока нет отзывов о ваших визитах.</p>
       ) : (
