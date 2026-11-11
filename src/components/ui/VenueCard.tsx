@@ -1,9 +1,10 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { Star, MapPin, ArrowUpRight } from 'lucide-react'
+import { MapPin, ArrowUpRight } from 'lucide-react'
 import { scrollToTop } from '../../utils/scroll'
 import { FadeImg } from './FadeImg'
 import { trackVenueView } from '../../lib/venueViews'
+import { RatingBadge } from './RatingBadge'
 
 function venueIdFromPath(to: string): string | null {
   const m = to.match(/^\/venue\/([^/?#]+)/)
@@ -16,7 +17,7 @@ export interface VenueCardProps {
   title: string
   location: string
   price: string
-  rating: number
+  rating: number | null
   gradient: string
   image?: string
   delay?: number
@@ -125,8 +126,7 @@ export function VenueCard({
                 <span className="venue-card-price">{price.replace(/^от\s*/, '')}</span>
               </div>
               <div className="venue-card-rating">
-                <Star size={15} fill="#EAB308" color="#EAB308" />
-                <span>{rating}</span>
+                <RatingBadge rating={rating} />
               </div>
             </div>
             {featured && (

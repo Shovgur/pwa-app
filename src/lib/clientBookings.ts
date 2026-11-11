@@ -61,19 +61,23 @@ export interface ApiClientBooking {
   statusLabel?: string
 }
 
-async function authRequest<T>(path: string, options: RequestInit = {}): Promise<T> {
+async function authRequest<T>(
+  path: string,
+  options: RequestInit & { clearOnAuthFail?: boolean } = {},
+): Promise<T> {
+  const { clearOnAuthFail = true, ...fetchOpts } = options
   const token = getAuthToken()
   if (!token) {
-    clearClientAuthStorage()
+    // Не чистим storage при отсутствии токена — иначе гонка с cookie-restore после ЮKassa
     throw new AuthExpiredError('Войдите в аккаунт, чтобы забронировать', 401)
   }
 
   const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
+    ...fetchOpts,
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
-      ...(options.headers as Record<string, string> | undefined),
+      ...(fetchOpts.headers as Record<string, string> | undefined),
     },
   })
 
@@ -81,7 +85,7 @@ async function authRequest<T>(path: string, options: RequestInit = {}): Promise<
 
   if (!res.ok) {
     if (isAuthFailureStatus(res.status, data)) {
-      clearClientAuthStorage()
+      if (clearOnAuthFail) clearClientAuthStorage()
       throw new AuthExpiredError(
         (data.message ?? data.error) as string | undefined
           ?? 'Сессия истекла. Войдите снова.',
@@ -204,7 +208,7 @@ function rebuildCourt(row: ApiClientBooking): Court {
     name: row.venueName,
     location: row.venueAddress ?? '',
     address: row.venueAddress ?? '',
-    rating: 4.8,
+    rating: null,
     reviews: 0,
     price: row.price,
     color: row.venueColor ?? '#22c55e',

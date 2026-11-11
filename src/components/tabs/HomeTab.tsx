@@ -11,6 +11,7 @@ import { isDemoMode } from '../../demo/demoMode'
 import { CourtDetailSheet } from '../CourtDetailSheet'
 import type { Court } from '../../contexts/BookingContext'
 import { courtCardBannerStyle } from '../../utils/venueAdapters'
+import { RatingBadge } from '../ui/RatingBadge'
 
 const NEWS = [
   {
@@ -309,7 +310,7 @@ export function HomeTab() {
                     <MapPin size={11} /> {c.location}
                   </span>
                   <span style={{ fontSize: 12, color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 3 }}>
-                    <Star size={11} fill="#f59e0b" color="#f59e0b" /> {c.rating}
+                    <RatingBadge rating={c.rating} count={c.reviews} size={11} />
                   </span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'flex-end', gap: 4 }}>

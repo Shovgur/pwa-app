@@ -20,7 +20,7 @@ export interface Court {
   name: string
   location: string
   address: string
-  rating: number
+  rating: number | null
   reviews: number
   price: number
   color: string
@@ -71,7 +71,7 @@ export const COURTS: Court[] = [
   {
     id: 1, emoji: '🎾', sport: 'Теннис', name: 'Корт "Спарта"',
     location: 'Парк Горького', address: 'ул. Крымский Вал, 9, Москва',
-    rating: 4.9, reviews: 128, price: 1500, color: '#22c55e',
+    rating: null, reviews: 0, price: 1500, color: '#22c55e',
     available: true, distance: '1.2 км',
     amenities: ['Освещение', 'Душ', 'Прокат ракеток', 'Парковка', 'Кафе'],
     description: 'Профессиональный хард-корт в самом центре Парка Горького. Новое покрытие, отличное освещение, услуги тренера по запросу.',
@@ -86,7 +86,7 @@ export const COURTS: Court[] = [
   {
     id: 2, emoji: '⚽', sport: 'Футбол', name: 'Поле "Олимп" 5×5',
     location: 'Олимпийский', address: 'Олимпийский пр., 16, Москва',
-    rating: 4.6, reviews: 95, price: 2400, color: '#3b82f6',
+    rating: null, reviews: 0, price: 2400, color: '#3b82f6',
     available: true, distance: '2.4 км',
     amenities: ['Искусственный газон', 'Табло', 'Раздевалки', 'Душ', 'Освещение'],
     description: 'Современное поле 5×5 с искусственным газоном FIFA Quality Pro. Подходит для мини-футбола и тренировок.',
@@ -101,7 +101,7 @@ export const COURTS: Court[] = [
   {
     id: 3, emoji: '🏀', sport: 'Баскетбол', name: 'Arena ЦСКА',
     location: 'Ленинградский пр.', address: 'Ленинградский пр., 39с1, Москва',
-    rating: 4.7, reviews: 84, price: 900, color: '#f97316',
+    rating: null, reviews: 0, price: 900, color: '#f97316',
     available: true, distance: '3.1 км',
     amenities: ['Трибуны', 'Электронное табло', 'Кафе', 'Парковка'],
     description: 'Профессиональный баскетбольный зал с паркетным покрытием. Идеален для игр и тренировок любого уровня.',
@@ -116,7 +116,7 @@ export const COURTS: Court[] = [
   {
     id: 4, emoji: '🏸', sport: 'Бадминтон', name: 'Бадминтон Plaza',
     location: 'Сокольники', address: 'ул. Сокольнический Вал, 1, Москва',
-    rating: 4.8, reviews: 56, price: 700, color: '#a855f7',
+    rating: null, reviews: 0, price: 700, color: '#a855f7',
     available: false, distance: '4.5 км',
     amenities: ['Профессиональное освещение', 'Прокат ракеток', 'Воланы в аренду'],
     description: 'Крытый зал для бадминтона с 6 кортами. Профессиональное освещение, деревянное покрытие.',
@@ -131,7 +131,7 @@ export const COURTS: Court[] = [
   {
     id: 5, emoji: '🎾', sport: 'Теннис', name: 'Лужники — Корт 1',
     location: 'Лужники', address: 'Лужнецкая наб., 24, Москва',
-    rating: 5.0, reviews: 210, price: 3000, color: '#22c55e',
+    rating: null, reviews: 0, price: 3000, color: '#22c55e',
     available: true, distance: '5.0 км',
     amenities: ['Покрытие Roland Garros', 'Освещение', 'Душ', 'Услуги тренера', 'Видеоразбор'],
     description: 'Легендарный корт Олимпийского комплекса Лужники. Грунтовое покрытие, как на Roland Garros. Лучший выбор для соревнований.',
@@ -146,7 +146,7 @@ export const COURTS: Court[] = [
   {
     id: 7, emoji: '🏐', sport: 'Волейбол', name: 'Динамо Волей',
     location: 'Динамо', address: 'Ленинградский пр., 36, Москва',
-    rating: 4.4, reviews: 43, price: 1200, color: '#06b6d4',
+    rating: null, reviews: 0, price: 1200, color: '#06b6d4',
     available: true, distance: '3.8 км',
     amenities: ['Профессиональные сетки', 'Трибуны', 'Душ'],
     description: 'Волейбольный зал клуба Динамо с профессиональным деревянным покрытием. Трибуны на 200 мест.',

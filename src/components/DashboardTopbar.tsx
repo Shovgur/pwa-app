@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   Search, Bell, CalendarCheck, LayoutDashboard,
-  HelpCircle, Settings, Globe, LogOut, MapPin, Star, X,
+  HelpCircle, Settings, Globe, LogOut, MapPin, X,
 } from 'lucide-react'
+import { RatingBadge } from './ui/RatingBadge'
 import { useAuth } from '../contexts/AuthContext'
 import { useBookings, COURTS } from '../contexts/BookingContext'
 import { usePublicVenues } from '../contexts/PublicVenuesContext'
@@ -297,9 +298,7 @@ export function DashboardTopbar() {
                               <span style={{ fontSize: 11, color: '#64748b', display: 'flex', alignItems: 'center', gap: 3 }}>
                                 <MapPin size={10} /> {c.location}
                               </span>
-                              <span style={{ fontSize: 11, color: '#f59e0b', display: 'flex', alignItems: 'center', gap: 2 }}>
-                                <Star size={10} fill="#f59e0b" color="#f59e0b" /> {c.rating}
-                              </span>
+                              <RatingBadge rating={c.rating} count={c.reviews} size={10} />
                             </div>
                           </div>
                           <div style={{ fontSize: 13, fontWeight: 700, color: c.color, flexShrink: 0 }}>

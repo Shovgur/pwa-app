@@ -109,7 +109,6 @@ export function HeroStats() {
   const stats = [
     { v: '3', l: 'Партнёра' },
     { v: '50+', l: 'Площадок' },
-    { v: '4.9', l: 'Средний рейтинг' },
   ]
 
   return (

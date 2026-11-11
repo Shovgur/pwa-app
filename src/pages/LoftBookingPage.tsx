@@ -1,9 +1,10 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
 import { SeoHead } from '../components/SeoHead'
 import type { SchemaVenue } from '../components/SeoHead'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Star, MapPin, Sparkles, CheckCircle2, Clock, Tag } from 'lucide-react'
+import { ArrowLeft, MapPin, Sparkles, CheckCircle2, Clock, Tag } from 'lucide-react'
+import { RatingBadge } from '../components/ui/RatingBadge'
 import { getLoft, getAddonPrice, getAddonOption } from '../data/venues'
 import type { AddOn } from '../data/venues'
 import { useBookings } from '../contexts/BookingContext'
@@ -20,6 +21,12 @@ import { colors } from '../theme/tokens'
 import { isDemoMode } from '../demo/demoMode'
 import { redirectToYookassa } from '../lib/yookassaPayments'
 import { bookingCreateErrorMessage, isSlotTakenError } from '../lib/venueAvailability'
+import {
+  clearBookingDraft,
+  loadBookingDraft,
+  stashBookingBeforeAuth,
+} from '../utils/bookingDraft'
+import { todayIsoDate } from '../utils/bookingDates'
 
 export function LoftBookingPage() {
   const { id } = useParams()
@@ -34,6 +41,8 @@ export function LoftBookingPage() {
   const [success, setSuccess] = useState(false)
   const [bookError, setBookError] = useState<string | null>(null)
   const [booking, setBooking] = useState(false)
+  const [restoreBanner, setRestoreBanner] = useState<'ready' | 'slot_taken' | null>(null)
+  const restoreTried = useRef(false)
 
   useBookingPageReset(id, () => {
     setSelectedSlot(1)
@@ -42,7 +51,23 @@ export function LoftBookingPage() {
     setSuccess(false)
     setBookError(null)
     setBooking(false)
+    setRestoreBanner(null)
   })
+
+  useEffect(() => {
+    if (!isAuthenticated || !id || !loft || restoreTried.current) return
+    restoreTried.current = true
+    const draft = loadBookingDraft(id)
+    if (!draft) return
+    const idx = loft.timeSlots.indexOf(draft.slot)
+    if (idx >= 0) {
+      setSelectedSlot(idx)
+      setRestoreBanner('ready')
+    } else {
+      setRestoreBanner('slot_taken')
+    }
+    clearBookingDraft()
+  }, [isAuthenticated, id, loft])
 
   const selectedAddons = useMemo(() => {
     if (!loft) return []
@@ -77,6 +102,7 @@ export function LoftBookingPage() {
     address: venue.location,
     pricePerHour: venue.price,
     rating: venue.rating,
+    reviewCount: venue.reviews,
     type: 'EventVenue',
     url: `https://bookingo.ru/loft/${id}`,
   }
@@ -106,10 +132,23 @@ export function LoftBookingPage() {
     setAddonOptions((prev) => ({ ...prev, [addonId]: optionId }))
   }
 
+  function redirectToLoginWithDraft() {
+    if (!id || !venue) return
+    const returnPath = `/loft/${id}`
+    stashBookingBeforeAuth({
+      venueId: id,
+      dateIso: todayIsoDate(),
+      slot: venue.timeSlots[selectedSlot] ?? venue.timeSlots[0],
+      durationMinutes: 120,
+      returnPath,
+    })
+    navigate('/login', { state: { from: returnPath } })
+  }
+
   async function handleBook() {
     if (booking) return
     if (!isAuthenticated) {
-      navigate('/login', { state: { from: `/loft/${id}` } })
+      redirectToLoginWithDraft()
       return
     }
     const addons = selectedAddons.map((addon) => {
@@ -122,8 +161,10 @@ export function LoftBookingPage() {
       }
     })
     setBookError(null)
+    setRestoreBanner(null)
     setBooking(true)
     try {
+      clearBookingDraft()
       const created = await addLoftBooking(venue, venue.timeSlots[selectedSlot], addons, total - discount)
       if (!isDemoMode()) {
         const left = await redirectToYookassa(created.id)
@@ -132,7 +173,7 @@ export function LoftBookingPage() {
       setSuccess(true)
     } catch (e) {
       if (isAuthExpiredError(e)) {
-        navigate('/login', { state: { from: `/loft/${id}` } })
+        redirectToLoginWithDraft()
         return
       }
       const message = bookingCreateErrorMessage(e)
@@ -195,6 +236,30 @@ export function LoftBookingPage() {
             <ArrowLeft size={18} /> Назад
           </button>
 
+          {restoreBanner && (
+            <div
+              role="status"
+              style={{
+                marginBottom: 16,
+                padding: '12px 16px',
+                borderRadius: 12,
+                border: restoreBanner === 'ready'
+                  ? '1px solid rgba(34,197,94,0.35)'
+                  : '1px solid rgba(251,191,36,0.35)',
+                background: restoreBanner === 'ready'
+                  ? 'rgba(34,197,94,0.12)'
+                  : 'rgba(251,191,36,0.1)',
+                color: restoreBanner === 'ready' ? '#86efac' : '#fcd34d',
+                fontSize: 14,
+                fontWeight: 600,
+              }}
+            >
+              {restoreBanner === 'ready'
+                ? 'Вы вошли — проверьте детали и нажмите Оплатить'
+                : 'Выбранное время недоступно — выберите другое время'}
+            </div>
+          )}
+
           <motion.div className="booking-hero" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <div className="booking-hero-image" style={{ background: venue.gradient }}>
               <span className="booking-hero-badge">Loft & Co</span>
@@ -203,7 +268,7 @@ export function LoftBookingPage() {
               <h1>{venue.name} · {venue.sqm}м²</h1>
               <p style={{ color: colors.muted, fontSize: 15, lineHeight: 1.55 }}>{venue.description}</p>
               <div className="booking-hero-meta">
-                <span><Star size={15} fill="#EAB308" color="#EAB308" /> {venue.rating} · {venue.reviews} отзывов</span>
+                <RatingBadge rating={venue.rating} count={venue.reviews} showCount />
                 <span><MapPin size={15} color={colors.orange} /> {venue.metro}</span>
               </div>
               <p style={{ fontSize: 13, color: colors.text2 }}>{venue.features.join(' · ')}</p>

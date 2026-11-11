@@ -1,4 +1,5 @@
 import { Helmet } from 'react-helmet-async'
+import { hasPublicRating } from '../utils/rating'
 
 const SITE_URL = 'https://bookingo.ru'
 const DEFAULT_IMAGE = `${SITE_URL}/icon-512.png?v=5`
@@ -8,7 +9,7 @@ export interface SchemaVenue {
   description: string
   address: string
   pricePerHour: number
-  rating: number
+  rating?: number | null
   reviewCount?: number
   type: 'SportsActivityLocation' | 'EventVenue'
   url: string
@@ -40,18 +41,22 @@ export function SeoHead({ title, description, path = '/', image = DEFAULT_IMAGE,
           addressCountry: 'RU',
         },
         priceRange: `от ${schema.pricePerHour.toLocaleString()} ₽/час`,
-        aggregateRating: {
-          '@type': 'AggregateRating',
-          ratingValue: schema.rating,
-          bestRating: 5,
-          reviewCount: schema.reviewCount ?? 12,
-        },
+        ...(hasPublicRating(schema.rating, schema.reviewCount ?? 0)
+          ? {
+              aggregateRating: {
+                '@type': 'AggregateRating',
+                ratingValue: schema.rating,
+                bestRating: 5,
+                reviewCount: schema.reviewCount,
+              },
+            }
+          : {}),
         provider: {
           '@type': 'Organization',
           name: 'BookinGo',
           url: SITE_URL,
         },
-      })
+      }).replace(/</g, '\\u003c')
     : null
 
   return (
