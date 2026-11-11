@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { readReturnPath, rememberReturnPath } from './utils/authReturn'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { PartnerAuthProvider, usePartnerAuth } from './contexts/PartnerAuthContext'
 import { BookingProvider } from './contexts/BookingContext'
@@ -26,10 +27,12 @@ import { PartnerCrmPage } from './pages/PartnerCrmPage'
 import { PartnerStaffPage } from './pages/PartnerStaffPage'
 import { PartnerVenuesPage } from './pages/PartnerVenuesPage'
 import { PartnerPromotionsPage } from './pages/PartnerPromotionsPage'
+import { PartnerReviewsPage } from './pages/PartnerReviewsPage'
 import { PartnerSettingsPage } from './pages/PartnerSettingsPage'
 import { PublicVenuePage } from './pages/PublicVenuePage'
 import { PaymentResultPage } from './pages/PaymentResultPage'
 import { can, partnerHomeRoute, PARTNER_BOOKINGS_PATH, type Capability } from './utils/partnerAccess'
+import { features } from './config/features'
 import { isDemoMode } from './demo/demoMode'
 import { DemoBadge } from './demo/DemoBadge'
 
@@ -44,14 +47,21 @@ function LegacyVenueRedirect() {
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth()
+  const location = useLocation()
   if (isLoading) return <FullPageLoader message="Проверяем сессию..." />
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" replace />
+  if (isAuthenticated) return <>{children}</>
+  const from = `${location.pathname}${location.search}`
+  rememberReturnPath(from)
+  return <Navigate to="/login" replace state={{ from }} />
 }
 
-// Гостевой маршрут: если уже залогинен → /dashboard
+// Гостевой маршрут: если уже залогинен → from или /dashboard
 function GuestRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth()
-  return isAuthenticated ? <Navigate to="/dashboard" replace /> : <>{children}</>
+  const location = useLocation()
+  if (!isAuthenticated) return <>{children}</>
+  const next = readReturnPath(location.state) ?? '/dashboard'
+  return <Navigate to={next} replace />
 }
 
 // Защищённый маршрут для кабинета партнёра (роль подтверждается на бэкенде:
@@ -130,6 +140,13 @@ function AppRoutes() {
             <PartnerPromotionsPage />
           </PartnerCapabilityRoute>
         } />
+        {features.venueReviews && (
+          <Route path="/partner/reviews" element={
+            <PartnerCapabilityRoute cap="reviews">
+              <PartnerReviewsPage />
+            </PartnerCapabilityRoute>
+          } />
+        )}
         <Route path="/partner/settings" element={<PartnerSettingsPage />} />
       </Route>
 

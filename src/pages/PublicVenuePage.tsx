@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { ArrowLeft, CheckCircle2, Clock, MapPin, Tag } from 'lucide-react'
 import { SeoHead } from '../components/SeoHead'
+import { VenueReviewList } from '../components/reviews/VenueReviewList'
 import { Button } from '../components/ui/Button'
+import { RatingBadge } from '../components/ui/RatingBadge'
 import { BookingSummaryPanel } from '../components/ui/BookingSummaryPanel'
 import { VenueMap } from '../components/ui/VenueMap'
 import { useAuth } from '../contexts/AuthContext'
@@ -21,12 +23,20 @@ import { isDemoMode } from '../demo/demoMode'
 import { redirectToYookassa } from '../lib/yookassaPayments'
 import { trackVenueView } from '../lib/venueViews'
 import { BILLING_LABEL } from '../utils/venueBuilderPresets'
+import {
+  clearBookingDraft,
+  loadBookingDraft,
+  stashBookingBeforeAuth,
+  type BookingDraft,
+} from '../utils/bookingDraft'
 
 import { upcomingBookingDays } from '../utils/bookingDates'
 import { useVenueSlots } from '../hooks/useVenueSlots'
 import { VenueSlotPicker } from '../components/ui/VenueSlotPicker'
 
 const BOOKING_DURATION_MINUTES = 60
+
+type RestoreBanner = 'ready' | 'slot_taken' | null
 
 export function PublicVenuePage() {
   const { id } = useParams()
@@ -44,6 +54,9 @@ export function PublicVenuePage() {
   const [bookingCode, setBookingCode] = useState<string | null>(null)
   const [bookError, setBookError] = useState<string | null>(null)
   const [booking, setBooking] = useState(false)
+  const [restoreBanner, setRestoreBanner] = useState<RestoreBanner>(null)
+  const [pendingRestore, setPendingRestore] = useState<BookingDraft | null>(null)
+  const restoreTried = useRef(false)
 
   const selectedDateIso = days[selectedDay]?.iso ?? days[0].iso
   const {
@@ -87,6 +100,36 @@ export function PublicVenuePage() {
     return () => { cancelled = true }
   }, [id, getVenue])
 
+  // После login/register: подтянуть день из черновика
+  useEffect(() => {
+    if (!isAuthenticated || !id || restoreTried.current) return
+    restoreTried.current = true
+    const draft = loadBookingDraft(id)
+    if (!draft) return
+    const dayIdx = days.findIndex((d) => d.iso === draft.dateIso)
+    if (dayIdx < 0) {
+      clearBookingDraft()
+      setRestoreBanner('slot_taken')
+      return
+    }
+    setSelectedDay(dayIdx)
+    setPendingRestore(draft)
+  }, [isAuthenticated, id, days])
+
+  // Применить слот только когда слоты загружены (иначе эффект выше сбросит выбор)
+  useEffect(() => {
+    if (!pendingRestore || slotsLoading) return
+    if (days[selectedDay]?.iso !== pendingRestore.dateIso) return
+    if (slotTimes.includes(pendingRestore.slot)) {
+      setSelectedSlot(pendingRestore.slot)
+      setRestoreBanner('ready')
+    } else {
+      setRestoreBanner('slot_taken')
+    }
+    clearBookingDraft()
+    setPendingRestore(null)
+  }, [pendingRestore, slotsLoading, slotTimes, selectedDay, days])
+
   if (loading) {
     return <div className="page-center"><p style={{ color: colors.muted }}>Загружаем площадку…</p></div>
   }
@@ -104,13 +147,27 @@ export function PublicVenuePage() {
   const minPrice = venueMinPricePerHour(venue) || venue.basePricePerHour
   const court = partnerVenueToCourt(venue)
 
+  function redirectToLoginWithDraft() {
+    if (!selectedSlot || !id) return
+    const returnPath = `/venue/${id}`
+    stashBookingBeforeAuth({
+      venueId: id,
+      dateIso: days[selectedDay].iso,
+      slot: selectedSlot,
+      durationMinutes: BOOKING_DURATION_MINUTES,
+      returnPath,
+    })
+    navigate('/login', { state: { from: returnPath } })
+  }
+
   async function handleBook() {
     if (!selectedSlot || !id || booking) return
     if (!isAuthenticated) {
-      navigate('/login', { state: { from: `/venue/${id}` } })
+      redirectToLoginWithDraft()
       return
     }
     setBookError(null)
+    setRestoreBanner(null)
     setBooking(true)
     try {
       const fresh = await fetchCourtAvailability({
@@ -124,6 +181,7 @@ export function PublicVenuePage() {
         setBookError('Это время уже занято. Выберите другой слот.')
         return
       }
+      clearBookingDraft()
       const created = await addBooking(court, days[selectedDay].date, selectedSlot, BOOKING_DURATION_MINUTES, {
         isoDate: days[selectedDay].iso,
         paymentMethod: 'online',
@@ -135,7 +193,11 @@ export function PublicVenuePage() {
         return
       }
       try {
-        await redirectToYookassa(created.id)
+        const left = await redirectToYookassa(created.id)
+        if (left) return
+        reloadSlots()
+        setBookingCode(created.code ?? null)
+        setSuccess(true)
         return
       } catch (payErr) {
         reloadSlots()
@@ -148,7 +210,7 @@ export function PublicVenuePage() {
       }
     } catch (e) {
       if (isAuthExpiredError(e)) {
-        navigate('/login', { state: { from: `/venue/${id}` } })
+        redirectToLoginWithDraft()
         return
       }
       const message = bookingCreateErrorMessage(e)
@@ -194,6 +256,18 @@ export function PublicVenuePage() {
         title={`${venue.name} — бронирование`}
         description={venue.description.slice(0, 140)}
         path={`/venue/${venue.id}`}
+        schema={{
+          name: venue.name,
+          description: venue.description,
+          address: `${venue.city}, ${venue.address}`,
+          pricePerHour: venueMinPricePerHour(venue) || venue.basePricePerHour,
+          rating: (venue.ratingCount ?? 0) > 0 ? venue.ratingAvg ?? null : null,
+          reviewCount: venue.ratingCount ?? 0,
+          type: venue.venueKind === 'loft' || venue.venueKind === 'meeting'
+            ? 'EventVenue'
+            : 'SportsActivityLocation',
+          url: `https://bookingo.ru/venue/${venue.id}`,
+        }}
       />
 
       <button
@@ -203,6 +277,31 @@ export function PublicVenuePage() {
       >
         <ArrowLeft size={18} /> Назад
       </button>
+
+      {restoreBanner && (
+        <div
+          role="status"
+          style={{
+            marginBottom: 16,
+            padding: '12px 16px',
+            borderRadius: 12,
+            border: restoreBanner === 'ready'
+              ? '1px solid rgba(34,197,94,0.35)'
+              : '1px solid rgba(251,191,36,0.35)',
+            background: restoreBanner === 'ready'
+              ? 'rgba(34,197,94,0.12)'
+              : 'rgba(251,191,36,0.1)',
+            color: restoreBanner === 'ready' ? '#86efac' : '#fcd34d',
+            fontSize: 14,
+            fontWeight: 600,
+            lineHeight: 1.45,
+          }}
+        >
+          {restoreBanner === 'ready'
+            ? 'Вы вошли — проверьте детали и нажмите Оплатить'
+            : 'Выбранное время недоступно — выберите другое время'}
+        </div>
+      )}
 
       <div className="booking-layout">
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
@@ -235,8 +334,9 @@ export function PublicVenuePage() {
                 ))}
               </div>
               <h1 style={{ fontSize: 32, fontWeight: 800, color: '#fff', margin: '0 0 8px' }}>{venue.name}</h1>
-              <p style={{ margin: 0, color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: 6, fontSize: 14 }}>
+              <p style={{ margin: 0, color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: 6, fontSize: 14, flexWrap: 'wrap' }}>
                 <MapPin size={14} /> {venue.city}, {venue.address}
+                <RatingBadge rating={venue.ratingAvg} count={venue.ratingCount ?? 0} showCount size={14} />
               </p>
             </div>
           </div>
@@ -256,6 +356,8 @@ export function PublicVenuePage() {
           )}
 
           <p style={{ color: colors.text2, lineHeight: 1.65, marginBottom: 20 }}>{venue.description}</p>
+
+          <VenueReviewList venueId={venue.id} />
 
           {venue.amenities.length > 0 && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>

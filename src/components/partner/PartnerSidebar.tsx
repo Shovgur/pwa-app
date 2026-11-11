@@ -1,9 +1,10 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { Building2, ClipboardList, Home, LogOut, Percent, Settings, Users } from 'lucide-react'
+import { Building2, ClipboardList, Home, LogOut, MessageSquareText, Percent, Settings, Users } from 'lucide-react'
 import { usePartnerAuth } from '../../contexts/PartnerAuthContext'
 import { usePartnerCrm } from '../../contexts/PartnerCrmContext'
-import { can, ROLE_META, PARTNER_BOOKINGS_PATH, PARTNER_VENUES_PATH, PARTNER_PROMOTIONS_PATH, type Capability } from '../../utils/partnerAccess'
+import { can, ROLE_META, PARTNER_BOOKINGS_PATH, PARTNER_VENUES_PATH, PARTNER_PROMOTIONS_PATH, PARTNER_REVIEWS_PATH, type Capability } from '../../utils/partnerAccess'
 import { APP_ICON_SRC } from '../../config/branding'
+import { features } from '../../config/features'
 
 interface NavItem {
   to: string
@@ -15,12 +16,13 @@ interface NavItem {
 }
 
 const NAV: NavItem[] = [
-  { to: '/partner/dashboard',    icon: Home,          label: 'Главная',    end: true,  cap: null },
-  { to: PARTNER_BOOKINGS_PATH,   icon: ClipboardList, label: 'Брони',      end: false, cap: 'crm' },
-  { to: PARTNER_VENUES_PATH,     icon: Building2,     label: 'Площадки',   end: false, cap: 'venues' },
-  { to: PARTNER_PROMOTIONS_PATH, icon: Percent,       label: 'Акции',      end: false, cap: 'promotions' },
-  { to: '/partner/staff',        icon: Users,         label: 'Сотрудники', end: false, cap: 'staff' },
-  { to: '/partner/settings',     icon: Settings,      label: 'Настройки',  end: false, cap: null },
+  { to: '/partner/dashboard',    icon: Home,              label: 'Главная',    end: true,  cap: null },
+  { to: PARTNER_BOOKINGS_PATH,   icon: ClipboardList,     label: 'Брони',      end: false, cap: 'crm' },
+  { to: PARTNER_VENUES_PATH,     icon: Building2,         label: 'Площадки',   end: false, cap: 'venues' },
+  { to: PARTNER_PROMOTIONS_PATH, icon: Percent,           label: 'Акции',      end: false, cap: 'promotions' },
+  { to: PARTNER_REVIEWS_PATH,    icon: MessageSquareText, label: 'Отзывы',     end: false, cap: 'reviews' },
+  { to: '/partner/staff',        icon: Users,             label: 'Сотрудники', end: false, cap: 'staff' },
+  { to: '/partner/settings',     icon: Settings,          label: 'Настройки',  end: false, cap: null },
 ]
 
 /** Содержимое навигации кабинета партнёра — используется и в десктопном
@@ -32,7 +34,10 @@ export function PartnerSidebarContent({ onNavigate }: { onNavigate?: () => void 
 
   const role = partner?.role
   const roleMeta = role ? ROLE_META[role] : { label: '…', color: '#64748b' }
-  const items = NAV.filter(item => item.cap === null || (role != null && can(role, item.cap)))
+  const items = NAV.filter(item => {
+    if (item.to === PARTNER_REVIEWS_PATH && !features.venueReviews) return false
+    return item.cap === null || (role != null && can(role, item.cap))
+  })
 
   // Управляющий работает от имени компании, поэтому в шапке — его имя,
   // а компания уходит во вторую строку
