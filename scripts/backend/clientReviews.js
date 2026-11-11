@@ -60,6 +60,38 @@ async function loadClientReviewHistory(pool, { partnerId, userId, phoneNorm, net
 }
 
 export function registerClientReviewRoutes(app, pool, { authenticateToken, requirePartner }) {
+  /** Client sees reviews about themselves — no author FIO / staff_id. */
+  app.get('/api/me/client-reviews', authenticateToken, async (req, res) => {
+    try {
+      if (!featureClientReviewsEnabled()) return featureOff(res)
+      const { userId } = req.user
+      const result = await pool.query(
+        `SELECT cr.rating, cr.presets, cr.body, cr.created_at,
+                v.name AS venue_name, pb.date AS visit_date
+         FROM client_reviews cr
+         LEFT JOIN partner_venues v ON v.id = cr.venue_id
+         LEFT JOIN partner_bookings pb ON pb.id = cr.partner_booking_id
+         WHERE cr.client_user_id = $1 AND cr.status = 'published'
+         ORDER BY cr.created_at DESC
+         LIMIT 100`,
+        [userId],
+      )
+      res.json({
+        reviews: result.rows.map((r) => ({
+          rating: Number(r.rating),
+          presets: r.presets || [],
+          text: r.body || '',
+          createdAt: r.created_at,
+          venueName: r.venue_name || 'Площадка',
+          visitDate: r.visit_date || null,
+        })),
+      })
+    } catch (err) {
+      console.error('GET /api/me/client-reviews', err)
+      res.status(500).json({ error: 'Ошибка сервера' })
+    }
+  })
+
   app.post('/api/partner/bookings/:id/client-review', authenticateToken, requirePartner, async (req, res) => {
     const client = await pool.connect()
     try {

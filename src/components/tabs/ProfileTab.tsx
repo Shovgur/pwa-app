@@ -9,6 +9,8 @@ import { CharacterAvatar } from '../ui/CharacterAvatar'
 import { getDominantOutfit, OUTFITS } from '../../utils/characterOutfit'
 import { FieldError, errorInputStyle } from '../ui/FieldError'
 import { useFieldErrors } from '../../hooks/useFieldErrors'
+import { MyClientReviewsSection } from '../profile/MyClientReviewsSection'
+import { features } from '../../config/features'
 
 const MENU = [
   { icon: Edit2, label: 'Редактировать профиль', color: '#22c55e' },
@@ -326,6 +328,12 @@ export function ProfileTab() {
               )
             })}
           </div>
+
+          {features.clientReviews && (
+            <div className="card" style={{ padding: '18px 20px' }}>
+              <MyClientReviewsSection />
+            </div>
+          )}
 
           {bookings.length > 0 && (
             <div className="card" style={{ padding: '18px 20px' }}>

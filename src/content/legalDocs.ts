@@ -11,6 +11,11 @@ export const LEGAL_PDFS = [
     label: 'Оферта',
     download: 'Publichnaya-oferta-BookinGo.pdf',
   },
+  {
+    href: '/docs/pravila-otzyvov-bookingo.pdf',
+    label: 'Правила отзывов',
+    download: 'Pravila-otzyvov-BookinGo.pdf',
+  },
 ] as const
 
 export const FOOTER_LEGAL_LINKS = [
