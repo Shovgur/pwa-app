@@ -34,6 +34,14 @@ import {
   formatRelative,
   isToday,
 } from '../utils/partnerCrmFormat'
+import { features } from '../config/features'
+import {
+  fetchClientReview,
+  fetchClientRisk,
+  type ClientRisk,
+} from '../lib/clientReviews'
+import { ClientReviewDialog } from '../components/partner/ClientReviewDialog'
+import { ClientRiskBadge } from '../components/partner/ClientRiskBadge'
 
 type Filter = 'all' | BookingStatus
 
@@ -134,11 +142,13 @@ function BookingRow({
   onOpen,
   onAction,
   isUpdating,
+  risk,
 }: {
   booking: PartnerBooking
   onOpen: () => void
   onAction: (status: BookingStatus) => void
   isUpdating: boolean
+  risk?: ClientRisk | null
 }) {
   // В списке показываем только продвигающее действие — отмена живёт в карточке,
   // чтобы её нельзя было нажать случайно при скролле
@@ -168,6 +178,7 @@ function BookingRow({
           <div style={{ fontSize: 14, fontWeight: 700, color: '#f1f5f9', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {booking.customerName}
           </div>
+          <ClientRiskBadge risk={risk} />
           {booking.requestCallback && (
             <span
               title="Клиент просит перезвонить"
@@ -246,11 +257,17 @@ function BookingDetailModal({
   onClose,
   onAction,
   isUpdating,
+  risk,
+  canReviewClient,
+  onReviewClient,
 }: {
   booking: PartnerBooking
   onClose: () => void
   onAction: (status: BookingStatus) => void
   isUpdating: boolean
+  risk?: ClientRisk | null
+  canReviewClient?: boolean
+  onReviewClient?: () => void
 }) {
   const [confirmCancel, setConfirmCancel] = useState(false)
 
@@ -290,6 +307,9 @@ function BookingDetailModal({
             <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#f1f5f9', fontFamily: 'var(--font-display)' }}>
               {booking.customerName}
             </h2>
+            <div style={{ marginTop: 6 }}>
+              <ClientRiskBadge risk={risk} />
+            </div>
             <a
               href={`tel:${digitsOnly(booking.customerPhone)}`}
               style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 6, fontSize: 14, color: '#22c55e', textDecoration: 'none', fontWeight: 600 }}
@@ -386,6 +406,28 @@ function BookingDetailModal({
             })}
           </div>
         )}
+
+        {canReviewClient && (
+          <button
+            type="button"
+            onClick={onReviewClient}
+            style={{
+              width: '100%',
+              marginTop: 12,
+              padding: '12px 16px',
+              borderRadius: 11,
+              border: '1px solid rgba(234,179,8,0.35)',
+              background: 'rgba(234,179,8,0.1)',
+              color: '#fbbf24',
+              fontSize: 13,
+              fontWeight: 700,
+              fontFamily: 'inherit',
+              cursor: 'pointer',
+            }}
+          >
+            Оставить отзыв о клиенте
+          </button>
+        )}
       </motion.div>
     </motion.div>,
     document.body,
@@ -405,6 +447,9 @@ export function PartnerCrmPage() {
   const [query, setQuery] = useState('')
   const [openId, setOpenId] = useState<string | null>(null)
   const [actionError, setActionError] = useState('')
+  const [clientReviewTarget, setClientReviewTarget] = useState<PartnerBooking | null>(null)
+  const [riskByBooking, setRiskByBooking] = useState<Record<string, ClientRisk>>({})
+  const [reviewedIds, setReviewedIds] = useState<Record<string, boolean>>({})
   const venueIdFilter = searchParams.get('venueId')
 
   useEffect(() => {
@@ -474,7 +519,33 @@ export function PartnerCrmPage() {
     }
     // Отменённую или завершённую бронь больше не нужно держать открытой
     if (status === 'cancelled' || status === 'completed') setOpenId(null)
+    if (status === 'completed' && features.clientReviews) {
+      const booking = bookings.find((b) => b.id === id)
+      if (booking && !reviewedIds[id]) setClientReviewTarget(booking)
+    }
   }
+
+  useEffect(() => {
+    if (!features.clientReviews) return
+    const completed = bookings.filter((b) => b.status === 'completed').slice(0, 30)
+    let cancelled = false
+    void Promise.all(
+      completed.map(async (b) => {
+        try {
+          const [risk, review] = await Promise.all([
+            fetchClientRisk(b.id),
+            fetchClientReview(b.id),
+          ])
+          if (cancelled) return
+          setRiskByBooking((prev) => ({ ...prev, [b.id]: risk }))
+          if (review) setReviewedIds((prev) => ({ ...prev, [b.id]: true }))
+        } catch {
+          /* ignore per-row */
+        }
+      }),
+    )
+    return () => { cancelled = true }
+  }, [bookings])
 
   const STAT_CARDS = [
     { label: 'Ждут подтверждения', value: counts.pending,   color: '#f59e0b' },
@@ -649,6 +720,7 @@ export function PartnerCrmPage() {
               onOpen={() => { setActionError(''); setOpenId(b.id) }}
               onAction={status => void handleAction(b.id, status)}
               isUpdating={updatingId === b.id}
+              risk={riskByBooking[b.id]}
             />
           ))}
         </div>
@@ -661,9 +733,29 @@ export function PartnerCrmPage() {
             onClose={() => setOpenId(null)}
             onAction={status => void handleAction(openBooking.id, status)}
             isUpdating={updatingId === openBooking.id}
+            risk={riskByBooking[openBooking.id]}
+            canReviewClient={
+              features.clientReviews
+              && openBooking.status === 'completed'
+              && !reviewedIds[openBooking.id]
+            }
+            onReviewClient={() => setClientReviewTarget(openBooking)}
           />
         )}
       </AnimatePresence>
+
+      {clientReviewTarget && (
+        <ClientReviewDialog
+          open
+          bookingId={clientReviewTarget.id}
+          customerName={clientReviewTarget.customerName}
+          onClose={() => setClientReviewTarget(null)}
+          onSubmitted={() => {
+            setReviewedIds((prev) => ({ ...prev, [clientReviewTarget.id]: true }))
+            setClientReviewTarget(null)
+          }}
+        />
+      )}
     </div>
   )
 }
