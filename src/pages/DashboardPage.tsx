@@ -10,6 +10,7 @@ import { MapTab } from '../components/tabs/MapTab'
 import { ProfileTab } from '../components/tabs/ProfileTab'
 import { SettingsTab } from '../components/tabs/SettingsTab'
 import { AchievementsTab } from '../components/tabs/AchievementsTab'
+import { ReviewPromptPopup } from '../components/reviews/ReviewPromptPopup'
 
 function TabPage({ children }: { children: React.ReactNode }) {
   return (
@@ -60,6 +61,7 @@ export function DashboardPage() {
       </main>
 
       <MobileNav />
+      <ReviewPromptPopup />
     </div>
   )
 }

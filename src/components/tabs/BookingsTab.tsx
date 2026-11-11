@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import { CalendarCheck, Clock, MapPin, X, CalendarPlus } from 'lucide-react'
+import { CalendarCheck, Clock, MapPin, Star, X, CalendarPlus } from 'lucide-react'
 import { useBookings } from '../../contexts/BookingContext'
 import type { Booking } from '../../contexts/BookingContext'
 import { BOOKING_STATUS_META, type BookingStatus } from '../../lib/partnerCrm'
@@ -10,6 +10,12 @@ import {
   CANCEL_REASON_OPTIONS,
   type CancelReasonCode,
 } from '../../utils/cancelReasons'
+import { features } from '../../config/features'
+import {
+  fetchPendingVenueReviews,
+  type PendingVenueReview,
+} from '../../lib/venueReviews'
+import { VenueReviewDialog } from '../reviews/VenueReviewDialog'
 
 const FILTERS = [
   { id: 'all', label: 'Все' },
@@ -39,10 +45,14 @@ function BookingRow({
   booking,
   onCancelClick,
   cancelling,
+  canReview,
+  onReviewClick,
 }: {
   booking: Booking
   onCancelClick: (id: number) => void
   cancelling: boolean
+  canReview: boolean
+  onReviewClick: () => void
 }) {
   const meta = resolveStatusMeta(booking)
   const court = booking.court
@@ -102,6 +112,22 @@ function BookingRow({
         }}>
           {meta.label}
         </span>
+        {canReview && (
+          <button
+            type="button"
+            onClick={onReviewClick}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '6px 12px', borderRadius: 10, flexShrink: 0,
+              border: '1px solid rgba(234,179,8,0.35)', background: 'rgba(234,179,8,0.1)',
+              color: '#fbbf24', cursor: 'pointer', fontFamily: 'inherit',
+              fontSize: 12, fontWeight: 700,
+            }}
+          >
+            <Star size={13} fill="#EAB308" color="#EAB308" />
+            Оставить отзыв
+          </button>
+        )}
         {booking.status === 'upcoming' && (
           <button
             type="button"
@@ -296,10 +322,30 @@ export function BookingsTab() {
   const [cancellingId, setCancellingId] = useState<number | null>(null)
   const [cancelTargetId, setCancelTargetId] = useState<number | null>(null)
   const [dialogError, setDialogError] = useState<string | null>(null)
+  const [pendingReviews, setPendingReviews] = useState<PendingVenueReview[]>([])
+  const [reviewTarget, setReviewTarget] = useState<PendingVenueReview | null>(null)
 
   const cancelTarget = cancelTargetId != null
     ? bookings.find(b => b.id === cancelTargetId) ?? null
     : null
+
+  useEffect(() => {
+    if (!features.venueReviews) return
+    let cancelled = false
+    void fetchPendingVenueReviews()
+      .then((list) => { if (!cancelled) setPendingReviews(list) })
+      .catch(() => { if (!cancelled) setPendingReviews([]) })
+    return () => { cancelled = true }
+  }, [bookings])
+
+  function pendingForBooking(b: Booking): PendingVenueReview | undefined {
+    if (!features.venueReviews) return undefined
+    if (b.code) {
+      const byCode = pendingReviews.find((p) => p.code && p.code === b.code)
+      if (byCode) return byCode
+    }
+    return pendingReviews.find((p) => p.partnerBookingId === String(b.id))
+  }
 
   async function confirmCancel(opts: { reason: string; reasonCode: CancelReasonCode }) {
     if (cancelTargetId == null || cancellingId != null) return
@@ -429,7 +475,9 @@ export function BookingsTab() {
       {filtered.length > 0 ? (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <AnimatePresence>
-            {filtered.map(b => (
+            {filtered.map(b => {
+              const pending = pendingForBooking(b)
+              return (
               <BookingRow
                 key={b.id}
                 booking={b}
@@ -438,8 +486,11 @@ export function BookingsTab() {
                   setCancelTargetId(id)
                 }}
                 cancelling={cancellingId === b.id}
+                canReview={Boolean(pending)}
+                onReviewClick={() => { if (pending) setReviewTarget(pending) }}
               />
-            ))}
+              )
+            })}
           </AnimatePresence>
         </div>
       ) : (
@@ -491,6 +542,21 @@ export function BookingsTab() {
           />
         )}
       </AnimatePresence>
+
+      {reviewTarget && (
+        <VenueReviewDialog
+          open
+          bookingId={reviewTarget.partnerBookingId}
+          venueName={reviewTarget.venueName}
+          onClose={() => setReviewTarget(null)}
+          onSubmitted={() => {
+            setPendingReviews((prev) =>
+              prev.filter((p) => p.partnerBookingId !== reviewTarget.partnerBookingId),
+            )
+            setReviewTarget(null)
+          }}
+        />
+      )}
     </div>
   )
 }
