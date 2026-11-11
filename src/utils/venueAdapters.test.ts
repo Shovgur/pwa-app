@@ -37,4 +37,12 @@ describe('venueAdapters ratings', () => {
     expect(court.rating).toBeNull()
     expect(court.reviews).toBe(0)
   })
+
+  it('прокидывает реальный ratingAvg при ratingCount≥1', () => {
+    const court = partnerVenueToCourt(
+      venue({ ratingAvg: 4.5, ratingCount: 3, bookingsCount: 40 }),
+    )
+    expect(court.rating).toBe(4.5)
+    expect(court.reviews).toBe(3)
+  })
 })
