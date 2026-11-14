@@ -359,6 +359,88 @@ input:-webkit-autofill:focus {
   border-radius: 4px;
 }
 
+.cookie-banner {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 60;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+  pointer-events: none;
+}
+
+.cookie-banner-inner {
+  pointer-events: auto;
+  box-sizing: border-box;
+  width: min(920px, 100%);
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px 20px;
+  padding: 16px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  background: #111827;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+}
+
+.cookie-banner-title {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #F8FAFC;
+}
+
+.cookie-banner-text {
+  margin: 0;
+  max-width: 62ch;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #CBD5E1;
+}
+
+.cookie-banner-text a {
+  color: #86EFAC;
+}
+
+.cookie-banner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.cookie-banner-btn {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: transparent;
+  color: #E2E8F0;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 10px 14px;
+  cursor: pointer;
+}
+
+.cookie-banner-btn--primary {
+  border-color: transparent;
+  background: #22C55E;
+  color: #052E16;
+}
+
+.cookie-banner-btn:focus-visible {
+  outline: 2px solid #22C55E;
+  outline-offset: 3px;
+}
+
+/* На высоком экране форма влезает целиком — убираем лишний overflow у панели логина */
+@media (min-height: 760px) {
+  .auth-form-pane {
+    overflow-y: hidden !important;
+  }
+}
+
 /* fixed: не увеличивает высоту страницы и не даёт лишний скролл на логине/регистрации */
 .site-legal--anchored {
   position: fixed;
@@ -1627,6 +1709,11 @@ input:-webkit-autofill:focus {
   display: flex;
   flex-direction: column;
   gap: 14px;
+}
+
+.booking-row-focus {
+  outline: 2px solid rgba(34, 197, 94, 0.55);
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.15);
 }
 
 @media (min-width: 720px) {

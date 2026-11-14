@@ -36,6 +36,7 @@ export function SiteLegalBar({ anchored = false }: { anchored?: boolean }) {
             <span key={fact}>{fact}</span>
           ))}
           <a href={`mailto:${SELLER.email}`}>{SELLER.email}</a>
+          <a href={`tel:${SELLER.phone}`}>{SELLER.phoneDisplay}</a>
         </p>
       </div>
     </div>

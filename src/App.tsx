@@ -15,6 +15,7 @@ import { SportBookingPage } from './pages/SportBookingPage'
 import { LoftBookingPage } from './pages/LoftBookingPage'
 import { HowItWorksPage } from './pages/HowItWorksPage'
 import { RequisitesPage } from './pages/RequisitesPage'
+import { LegalDocumentPage } from './pages/LegalDocumentPage'
 import { PoolsPage } from './pages/PoolsPage'
 import { PoolDetailPage } from './pages/PoolDetailPage'
 import { LoginPage } from './pages/LoginPage'
@@ -35,6 +36,7 @@ import { can, partnerHomeRoute, PARTNER_BOOKINGS_PATH, type Capability } from '.
 import { features } from './config/features'
 import { isDemoMode } from './demo/demoMode'
 import { DemoBadge } from './demo/DemoBadge'
+import { CookieConsentBanner } from './components/CookieConsentBanner'
 
 const DashboardPage = lazy(() =>
   import('./pages/DashboardPage').then((m) => ({ default: m.DashboardPage })),
@@ -99,6 +101,7 @@ function AppRoutes() {
         <Route path="/loft/:id" element={isDemoMode() ? <LegacyVenueRedirect /> : <LoftBookingPage />} />
         <Route path="/how-it-works" element={<HowItWorksPage />} />
         <Route path="/requisites" element={<RequisitesPage />} />
+        <Route path="/legal/:slug" element={<LegalDocumentPage />} />
         <Route path="/booking/payment-result" element={<PaymentResultPage />} />
         <Route path="/pools" element={isDemoMode() ? <LegacyVenueRedirect /> : <PoolsPage />} />
         <Route path="/pools/:id" element={isDemoMode() ? <LegacyVenueRedirect /> : <PoolDetailPage />} />
@@ -176,6 +179,7 @@ export default function App() {
           <PublicVenuesProvider>
             <BookingProvider>
               <AppRoutes />
+              <CookieConsentBanner />
               <DemoBadge />
             </BookingProvider>
           </PublicVenuesProvider>
